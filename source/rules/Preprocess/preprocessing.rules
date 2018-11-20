@@ -5,6 +5,7 @@ localrules:
     sortmerna_zip_other_fastq,
     sortmerna_link_pe,
     sortmerna_link_se,
+    download_phix,
     bowtie_build_phix,
     fastuniq_se,
     avg_seq_length
@@ -329,6 +330,16 @@ rule cutadapt_se:
     shell:
         """
         cutadapt -a {params.adapter} -o {output.fastq} {input[0]} > {log}
+        """
+
+rule download_phix:
+    output: opj(config["resource_path"],"phix","phix.fasta")
+    params:
+        url_base = "ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/819/615/GCF_000819615.1_ViralProj14015"
+    shell:
+        """
+        curl -L -o {output[0]}.gz {params.url_base}/GCF_000819615.1_ViralProj14015_genomic.fna.gz
+        gunzip {output[0]}.gz
         """
 
 rule bowtie_build_phix:
