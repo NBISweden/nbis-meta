@@ -1,0 +1,9 @@
+name: checkm
+channels:
+  - bioconda
+dependencies:
+  - python=2.7
+  - checkm-genome
+  - hmmer
+  - prodigal
+  - samtools

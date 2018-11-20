@@ -1,0 +1,13 @@
+centrifugefiles = []
+
+if config["centrifuge_map_filtered"]:
+    centrifugefiles.append(opj(config["report_path"],"bowtie2","mean_genome_coverage.pdf"))
+centrifugefiles.append(opj(config["report_path"],"centrifuge","centrifuge.krona.html"))
+include: "../rules/Classify/centrifuge.rules"
+include: "../rules/Classify/filtering.rules"
+
+rule centrifuge_classify_done:
+    input:
+        centrifugefiles
+    output:
+        temp(touch(opj(config["results_path"],"progress","centrifuge_classify.done")))

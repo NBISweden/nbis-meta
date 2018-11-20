@@ -1,0 +1,11 @@
+krakenfiles = []
+
+krakenfiles.append(opj(config["report_path"],"kraken","all_reports"))
+krakenfiles.append(opj(config["report_path"],"kraken","kraken.krona.html"))
+
+include: "../rules/Classify/kraken.rules"
+rule kraken_classify_done:
+    input:
+        krakenfiles
+    output:
+        temp(touch(opj(config["results_path"],"progress","kraken_classify.done")))

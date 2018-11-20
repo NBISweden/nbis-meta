@@ -1,0 +1,185 @@
+#############
+### PATHS ###
+#############
+# NOTE: Paths should not include trailing "/"
+workdir: .
+sample_list: samples/sample_annotation_example.tab
+taxdb: resources/taxonomy
+results_path: results
+intermediate_path: results/intermediate
+temp_path: temp
+scratch_path: temp
+resource_path: resources
+report_path: results/report
+pipeline_config_file: results/pipeline_config.txt
+
+#####################
+### PREPROCESSING ###
+#####################
+# trimmomatic
+trimmomatic: True
+trimmomatic_home: ""
+trim_adapters: True
+pe_adapter_params: "2:30:15"
+se_adapter_params: "2:30:15"
+pe_pre_adapter_params: ""
+pe_post_adapter_params: "LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:31"
+se_pre_adapter_params: ""
+se_post_adapter_params: "LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:31"
+# cutadapt
+cutadapt: False
+adapter_sequence: AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC # Adapter sequence for trimming. Shown here is for Illumina TruSeq Universal Adapter.
+rev_adapter_sequence: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT
+# fastuniq
+fastuniq: False
+# filter phiX
+phix_filter: True
+# SortMeRNA
+sortmerna: False
+# Sortmerna produces files with reads aligning to rRNA ('rRNA' extension) and not aligning to rRNA ('non_rRNA') extension
+# Which reads should be used for downstream analyses
+sortmerna_keep: 'non_rRNA'
+# Remove filtered reads (i.e. the reads NOT specified in 'keep:')
+sortmerna_remove_filtered: False
+sortmerna_dbs: ["rfam-5s-database-id98.fasta","rfam-5.8s-database-id98.fasta","silva-arc-16s-id95.fasta","silva-arc-23s-id98.fasta","silva-bac-16s-id90.fasta","silva-bac-23s-id98.fasta","silva-euk-18s-id95.fasta","silva-euk-28s-id98.fasta"]
+# 'paired_in' puts both reads in a pair into the 'rRNA' bin if one of them aligns (i.e. more strict)
+# 'paired_out' puts both reads in the 'other' bin
+sortmerna_paired_strategy: "paired_in"
+sortmerna_params: "--num_alignments 1 -v"
+
+######################
+### POSTPROCESSING ###
+######################
+# Whether the picard tool MarkDuplicates should be run to remove duplicates after mapping.
+# Set to False if doing metatranscriptomics.
+markduplicates: True
+picard_jar: ""
+picard_path: ""
+
+###############################
+### Assembly and annotation ###
+###############################
+assembly: True
+assembly_threads: 1
+megahit_keep_intermediate: False
+# To use the 'Megahit ep k21-k91' setting from the CAMI paper (Sczyrba et al 2017) set
+# additional_settings: to '--min-contig-len 300 --prune-level 3'
+megahit_additional_settings: '--min-contig-len 300 --prune-level 3'
+
+# Eggnog-mapper
+eggnog: False
+
+# PFAM-scan
+pfam: False
+
+# BLAST database for taxonomic annotation.
+# Should be formatted using diamond.
+taxonomic_annotation: False
+diamond_dbpath: resources/diamond
+# dbtype options are: nr, uniref50, uniref90, uniref100
+# nr typically has around 432,300,014 sequences
+# uniref100 has around 114,464,072 sequences
+# uniref90 has around 59,207,328 sequences
+# uniref50 has around 24,713,224 sequences
+diamond_dbtype: uniref100
+diamond_threads: 20
+
+# Infernal ncRNA detection
+infernal: False
+infernal_threads: 2
+infernal_dbpath: resources/infernal
+
+###############
+### BINNING ###
+###############
+binning: False
+min_contig_length: 1000
+binning_threads: 10
+# Do QA on produced bins using Checkm?
+checkm: False
+
+###############
+### MAPPING ###
+###############
+bowtie2_threads: 10
+
+####################################
+### REFERENCE BASED READ MAPPING ###
+####################################
+reference_map: False
+refmap_min_read_count: 50
+
+######################
+### CLASSIFICATION ###
+######################
+# Path to where the classifier (Kraken/Centrifuge/Kaiju) database will be stored. If possible, this
+# should be on a fast disk.
+classifier_db_path: resources/classify_db
+
+##############
+### KRAKEN ###
+##############
+kraken: False
+
+# The length of kmers used in Kraken. Impacts the memory requirements for jellyfish,
+# but also the specificity. 31 bp is the default.
+kraken_kmer_length: 31
+
+# This can be a list containing any combination of "archaea", "bacteria", "plasmid","viral" and "human".
+kraken_domains: ['bacteria','archaea','viral']
+
+# Special parameters for kraken-build.
+kraken_build_params: ''
+
+###################
+### Centrifuge  ###
+###################
+centrifuge: False
+
+# Mask low complexity regions using dustmasker
+mask_low_complexity: True
+
+# What domain libraries to download?
+# This list may contain 'bacteria', 'viral', 'archaea', 'fungi', 'protozoa', 'invertebrate', 'plant', 'vertebrate_mammalian', 'vertebrate_other'
+centrifuge_domains: ["archaea","bacteria","viral"]
+
+# List of taxonomic ids to download. If using this option, be sure to set the list of domains (above) to match
+# the domains contained in your taxid list
+centrifuge_taxidlist: ""
+
+# What assembly level to include libraries for?
+# This list may contain "Complete Genome","Contig","Chromosome","Scaffold"
+centrifuge_assembly_level: ["Complete Genome"]
+
+# Summarize at rank
+# Specify a taxonomic rank to summarize the database at (total sequences and total size).
+# Leave blank to not do summarization
+centrifuge_summarize_rank: superkingdom
+
+centrifuge_map_filtered: False
+# Minimum score for classifications by centrifuge.
+# Because centrifuge doesn't have a filtering algorithm, we use this min_score to filter results.
+centrifuge_min_score: 75
+
+# Fraction of kmer hashes to compute using sourmash
+# The number of hashes is 1 in <hash_fraction>
+sourmash_fraction: 100
+
+# Minimum coverage estimated from sourmash (0.1 corresponds to 10% of a genome covered by a sample)
+sourmash_min_cov: 0.1
+
+# Filtering of genomes
+# Set minimum read count required during the pre-filtering step to include a genome for downstream analysis
+# Note that this is not uniquely classified reads
+centrifuge_min_read_count: 5000
+
+# Maximum number of assignments per read
+# By default this is set to 5 in centrifuge, increase to show more specific assignments
+# Set to 1 to implement LCA-classification as in Kraken
+centrifuge_max_assignments: 10
+
+#############
+### KAIJU ###
+#############
+
+kaiju: False

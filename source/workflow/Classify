@@ -1,0 +1,29 @@
+inputfiles = []
+
+if config["classify"]["run_centrifuge"]:
+    include: "../rules/Classify/centrifuge.rules"
+    include: "../rules/Classify/prepare_centrifuge.rules"
+    inputfiles.append(opj(config["results_path"],"centrifuge","centrifuge.krona.html"))
+    if config["centrifuge"]["map_filtered"]:
+        inputfiles.append(opj(config["report_path"],"mean_genome_coverage.pdf"))
+        include: "../rules/Classify/filtering.rules"
+
+if config["classify"]["run_kraken"]:
+    include: "../rules/Classify/kraken.rules"
+    inputfiles.append(opj(config["results_path"],"kraken","kraken.krona.html"))
+
+rule classify:
+    input:
+        inputfiles
+    output:
+        temp(touch(opj(config["results_path"],"progress","classify.done")))
+
+rule centrifuge_db:
+    input:
+        opj(config["classifier_db_path"],"centrifuge","centrifuge_db.taxtree.tab"),
+        opj(config["classifier_db_path"],"centrifuge","centrifuge_db.{rank}.summary.tab"),
+        opj(config["classifier_db_path"],"centrifuge","genome_sizes.tab"),
+        expand(opj(config["classifier_db_path"],"centrifuge","centrifuge_db.{index}.cf"), index = [1,2,3])
+
+rule kraken_db:
+    input:

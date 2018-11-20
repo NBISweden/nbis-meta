@@ -1,0 +1,9 @@
+include: "../rules/Preprocess/preprocessing.rules"
+include: "../rules/Preprocess/sample_report.rules"
+
+rule preprocess_done:
+    input:
+        opj(config["report_path"],"samples_report.html")
+    message: "Preprocessing done"
+    output:
+        temp(touch(opj(config["results_path"],"progress","preprocess.done")))

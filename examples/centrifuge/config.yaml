@@ -1,0 +1,7 @@
+pipeline_config_file: results/pipeline_config_centrifuge.txt
+assembly: False
+sample_list: examples/centrifuge/sample_annotation.tab
+centrifuge: True
+centrifuge_map_filtered: True
+centrifuge_domains: ['bacteria', 'fungi']
+centrifuge_taxidlist: examples/centrifuge/taxids

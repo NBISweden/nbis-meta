@@ -1,0 +1,12 @@
+section_comments:
+    bowtie2: "This section shows the number of reads aligning to the PhiX-reference genome"
+
+extra_fn_clean_exts:
+    - '_se'
+    - '_pe'
+    - '.trimmomatic'
+    - '_merged'
+    - '_PHIX'
+    - '.sortmerna'
+    - '_R1'
+    - '_R2'

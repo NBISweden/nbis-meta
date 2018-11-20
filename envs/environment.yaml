@@ -1,0 +1,40 @@
+name: nbis-meta
+
+channels:
+  - etetoolkit
+  - conda-forge
+  - biocore
+  - bioconda
+
+dependencies:
+  - python=3.5
+  - snakemake>=4.4.0
+  - fastqc
+  - sortmerna
+  - centrifuge
+  - seqtk
+  - pandas
+  - ete3
+  - scikit-learn
+  - conda
+  - bowtie2
+  - samtools
+  - multiqc
+  - cutadapt
+  - sourmash
+  - bedtools
+  - scikit-bio=0.5.1
+  - krona>=2.7
+  - hmmer>=3.1b2
+  - megahit
+  - prodigal
+  - trimmomatic
+  - diamond>=0.8
+  - seaborn
+  - picard
+  - fastuniq
+  - biopython
+  - gffutils
+  - infernal
+  - subread
+  - blast

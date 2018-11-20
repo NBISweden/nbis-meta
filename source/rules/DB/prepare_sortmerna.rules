@@ -1,0 +1,30 @@
+localrules:
+    download_rRNA_database
+
+rule download_rRNA_database:
+    output:
+        expand(opj(config["resource_path"],"rRNA_databases","{file}"), file = config["sortmerna_dbs"])
+    params: outdir = opj(config["resource_path"],"rRNA_databases")
+    message: "Downloading SortMeRNA rRNA database from https://raw.githubusercontent.com/biocore/sortmerna/master/rRNA_databases/"
+    run:
+        for f in config["sortmerna_dbs"]:
+            outfile = opj(params.outdir,f)
+            shell("curl -o {outfile} https://raw.githubusercontent.com/biocore/sortmerna/master/rRNA_databases/{f}")
+        f = "silva_ids_acc_tax.tar.gz"
+        outfile = opj(params.outdir,f)
+        shell("curl -o {outfile} https://raw.githubusercontent.com/biocore/sortmerna/master/rRNA_databases/{f}")
+
+rule index_db:
+    input:
+        expand(opj(config["resource_path"],"rRNA_databases","{file}"), file = config["sortmerna_dbs"])
+    output:
+        expand(opj(config["resource_path"],"rRNA_databases","{file}.idx.bursttrie_0.dat"), file = config["sortmerna_dbs"]),
+        expand(opj(config["resource_path"],"rRNA_databases","{file}.idx.kmer_0.dat"), file = config["sortmerna_dbs"]),
+        expand(opj(config["resource_path"],"rRNA_databases","{file}.idx.pos_0.dat"), file = config["sortmerna_dbs"]),
+        expand(opj(config["resource_path"],"rRNA_databases","{file}.idx.stats"), file = config["sortmerna_dbs"])
+    message: "Indexing SortMeRNA database"
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*5
+    run:
+        for f in input:
+            shell("indexdb_rna --ref {f},{f}.idx")

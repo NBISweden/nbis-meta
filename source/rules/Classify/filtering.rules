@@ -1,0 +1,369 @@
+localrules:
+    centrifuge_filter,
+    get_filtered_genome_seqs,
+    collate_sourmash,
+    sourmash_filter,
+    make_filtered_genomefile,
+    collate_genomecov,
+    plot_genomecov
+
+##################################################
+## Filter out genome sequences using Centrifuge ##
+##################################################
+
+rule centrifuge_filter:
+    """Filter genomes by centrifuge read counts"""
+    input:
+        opj(config["results_path"],"centrifuge","{sample}_{run}_{seq_type}.report"),
+        opj(config["classifier_db_path"],"centrifuge","taxonomy","taxdb.sqlite"),
+        opj(config["classifier_db_path"],"centrifuge","seqid2taxid.map")
+    output:
+        opj(config["results_path"],"centrifuge","{sample}_{run}_{seq_type}.filtered_genomes")
+    params:
+        min_read_count = int(config["centrifuge_min_read_count"]),
+        script = "source/utils/centrifuge_filter_genomes.py"
+    shell:
+        """
+        python {params.script} -i {input[0]} -d {input[1]} -M {input[2]} -m {params.min_read_count} -o {output[0]}
+        """
+
+def get_filtered_genome_files(samples):
+    files = []
+    for sample in samples.keys():
+        for run in samples[sample].keys():
+            if is_pe(samples[sample][run]):
+                seq_type = "pe"
+            else:
+                seq_type = "se"
+            files.append(opj(config["results_path"],"centrifuge","{sample}_{run}_{seq_type}.filtered_genomes".format(
+                                sample=sample, run=run, seq_type=seq_type)))
+    return files
+
+rule get_filtered_genome_seqs:
+    """Extracts nucleotide fasta files for the filtered genomes"""
+    input:
+        genome_files = get_filtered_genome_files(samples),
+        filemap = opj(config["classifier_db_path"],"centrifuge","seqid2file.map")
+    output:
+       opj(config["results_path"],"centrifuge","filtered","genomes.tab")
+    params:
+        out_dir = opj(config["results_path"],"centrifuge","filtered")
+    run:
+        from Bio import SeqIO
+        shell("mkdir -p {params.out_dir}")
+        df = pd.DataFrame()
+        for f in input.genome_files:
+            _df = pd.read_table(f)
+            df = pd.concat([df,_df])
+        # Make unique by seqid
+        df = df.groupby("seq").first().reset_index()
+        # A taxonomy ID may have multiple genomes which in turn may have multiple contigs
+        # In the end we want to place each genome in its own file
+        filemap = pd.read_table(input.filemap, header=None, names=["seq","file"])
+        merged = pd.merge(df, filemap, left_on="seq", right_on="seq")
+        # Sort by sequence id
+        merged.sort_values("seq",inplace=True)
+        # Select the first row for each file
+        merged = merged.groupby("file").first().reset_index()
+        # Iterate the unique rows and copy the original file
+        for i in merged.index:
+            r = merged.loc[i]
+            # Original fasta file is f
+            f = r["file"]
+            # seq is sequence id
+            seq = r["seq"]
+            # fasta_file is new file to use for mapping
+            fasta_file = opj(params.out_dir,"{}.fna".format(seq))
+            # Open the fasta file and re-sort by ids
+            seq_dict = SeqIO.to_dict(SeqIO.parse(f, 'fasta'))
+            with open("{}".format(fasta_file), 'w') as fasta_out:
+                for key in sorted(seq_dict.keys()):
+                    r = seq_dict[key]
+                    fasta_out.write(">{}\n{}\n".format(r.description,str(r.seq)))
+        df.to_csv(output[0], sep="\t", index=False, header=True)
+
+###########################################
+## Filter genomes further using sourmash ##
+###########################################
+rule sourmash_hash_genomes:
+    """Compute k-mer signatures for filtered genomes"""
+    input:
+        opj(config["results_path"],"centrifuge","filtered","genomes.tab")
+    output:
+        opj(config["results_path"],"centrifuge","filtered","genomes.sig")
+    params:
+        hash_fraction = config["sourmash_fraction"],
+        in_dir = opj(config["results_path"],"centrifuge","filtered")
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*2
+    shell:
+        """
+        sourmash compute -k 31 --name-from-first --scaled {params.hash_fraction} -o {output[0]} -f {params.in_dir}/*.fna
+        """
+
+rule sourmash_hash_sample_pe:
+    """Compute k-mer signatures for paired-end samples"""
+    input:
+        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+PREPROCESS+".fastq.gz")
+    output:
+        opj(config["results_path"],"sourmash","{sample}_{run}_pe.sig")
+    params:
+        hash_fraction = config["sourmash_fraction"]
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*2
+    shell:
+        """
+        sourmash compute -k 31 --scaled {params.hash_fraction} --merge {wildcards.sample}_{wildcards.run} \
+        -o {output[0]} {input.R1}
+        """
+
+rule sourmash_hash_sample_se:
+    """Compute k-mer signatures for single-end samples"""
+    input:
+        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+PREPROCESS+".fastq.gz")
+    output:
+        opj(config["results_path"],"sourmash","{sample}_{run}_se.sig")
+    params:
+        hash_fraction = config["sourmash_fraction"]
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*2
+    shell:
+        """
+        sourmash compute -k 31 --scaled {params.hash_fraction} --merge {wildcards.sample}_{wildcards.run} \
+        -o {output[0]} {input.se}
+        """
+
+rule sourmash_coverage:
+    """Calculate coverage of filtered genomes for each sample"""
+    input:
+        sample = opj(config["results_path"],"sourmash","{sample}_{run}_{seq_type}.sig"),
+        genome = opj(config["results_path"],"centrifuge","filtered","genomes.sig")
+    output:
+        opj(config["results_path"],"centrifuge","filtered","{sample}_{run}_{seq_type}.csv")
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
+    shell:
+        """
+        sourmash gather -o {output[0]} -k 31 {input.sample} {input.genome}
+        """
+
+def get_sourmash_results(samples):
+    files = []
+    for sample in samples.keys():
+        for run in samples[sample].keys():
+            if is_pe(samples[sample][run]):
+                seq_type = "pe"
+            else:
+                seq_type = "se"
+            files.append(opj(config["results_path"],"centrifuge","filtered","{sample}_{run}_{seq_type}.csv".format(
+                                sample=sample, run=run, seq_type=seq_type)))
+    return files
+
+rule collate_sourmash:
+    """Collate all sourmash coverage files"""
+    input:
+        get_sourmash_results(samples)
+    output:
+        opj(config["results_path"],"centrifuge","filtered","sourmash.csv")
+    run:
+        df = pd.DataFrame()
+        for f in input:
+            sample_run = os.path.basename(f).rstrip(".csv")
+            _df = pd.read_csv(f, header=0)
+            _df = _df.assign(sample=pd.Series([sample_run]*len(_df)))
+            df = pd.concat([df,_df])
+        df.set_index("sample")
+        df.to_csv(output[0], index=True, header=True)
+
+rule sourmash_filter:
+    """Reads results from sourmash and outputs a fasta file with genomes reaching a certain coverage threshold"""
+    input:
+        opj(config["results_path"],"centrifuge","filtered","sourmash.csv")
+    output:
+        opj(config["results_path"],"centrifuge","filtered","genomes.filtered.fna")
+    params:
+        min_cov = config["sourmash_min_cov"]
+    run:
+        from Bio.SeqIO import parse
+        df = pd.read_csv(input[0])
+        df = df.loc[df.f_match>=params.min_cov]
+        genome_ids = list(set([x.split(" ")[0] for x in df.name]))
+        with open(output[0], 'w') as fh_out:
+            for id in genome_ids:
+                fasta_file = opj(config["results_path"],"centrifuge","filtered","{id}.fna".format(id=id))
+                for i, record in enumerate(parse(fasta_file, 'fasta')):
+                    if i>0:
+                        # Write a 500 long stretch of 'N' between contigs
+                        fh_out.write("{}\n".format("".join(["N"]*500)))
+                    else:
+                        # Try to format the header to be readable with enough info
+                        desc = record.description
+                        desc = desc.replace(", complete genome","")
+                        id,g,s = desc.split(" ")[0:3]
+                        new_desc = "{}_{}._{}".format(id,g[0],s)
+                        fh_out.write(">{}\n".format(new_desc))
+                    fh_out.write("{}\n".format(str(record.seq)))
+
+##########################################
+## Map samples against filtered genomes ##
+##########################################
+rule bowtie2build_filtered:
+    """Build bowtie2 index of genomes that pass the centrifuge and sourmash filters"""
+    input:
+        opj(config["results_path"],"centrifuge","filtered","genomes.filtered.fna")
+    output:
+        expand(opj(config["results_path"],"centrifuge","bowtie2","genomes.filtered.{index}.bt2l"), index=range(1,5))
+    params:
+        prefix = opj(config["results_path"],"centrifuge","bowtie2","genomes.filtered")
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*2
+    shell:
+        """
+        bowtie2-build --large-index {input[0]} {params.prefix}
+        """
+
+rule bowtie2_map_against_filtered_pe:
+    """Map paired-end sample against the genomes passing both centrifuge and sourmash filters"""
+    input:
+        index = expand(opj(config["results_path"],"centrifuge","bowtie2","genomes.filtered.{index}.bt2l"), index=range(1,5)),
+        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
+        R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+PREPROCESS+".fastq.gz")
+    output:
+        temp(opj(config["results_path"],"centrifuge","bowtie2","{sample}_{run}_pe.sam"))
+    threads: 10
+    params:
+        prefix = opj(config["results_path"],"centrifuge","bowtie2","genomes.filtered"),
+        tmp_out = opj(config["scratch_path"],"{sample}_{run}_pe.filtered.sam")
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
+    shell:
+        """
+        bowtie2 -x {params.prefix} -1 {input.R1} -2 {input.R2} --no-unal -p {threads} > {params.tmp_out}
+        mv {params.tmp_out} {output[0]}
+        """
+
+rule bowtie2_map_against_filtered_se:
+    """Map paired-end sample against the genomes passing both centrifuge and sourmash filters"""
+    input:
+        index = expand(opj(config["results_path"],"centrifuge","bowtie2","genomes.filtered.{index}.bt2l"), index=range(1,5)),
+        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+PREPROCESS+".fastq.gz")
+    output:
+        temp(opj(config["results_path"],"centrifuge","bowtie2","{sample}_{run}_se.sam"))
+    threads: 10
+    params:
+        prefix = opj(config["results_path"],"centrifuge","bowtie2","genomes.filtered"),
+        tmp_out = opj(config["scratch_path"],"{sample}_{run}_se.filtered.sam")
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
+    shell:
+        """
+        bowtie2 -x {params.prefix} -U {input.R1} --no-unal -p {threads} > {params.tmp_out}
+        mv {params.tmp_out} {output[0]}
+        """
+
+######################################
+## Convert sam files to sorted bams ##
+######################################
+rule sort_filtered_sam:
+    """Convert to bam and sort in one rule"""
+    input:
+        opj(config["results_path"],"centrifuge","bowtie2","{sample}_{run}_{seq_type}.sam")
+    output:
+        opj(config["report_path"],"bowtie2","{sample}_{run}_{seq_type}.bam"),
+        opj(config["report_path"],"bowtie2","{sample}_{run}_{seq_type}.bam.bai")
+    params:
+        tmp_out = opj(config["scratch_path"],"{sample}_{run}_{seq_type}.filtered.sorted.bam")
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
+    shell:
+        """
+        samtools view -bh {input[0]} | samtools sort - > {params.tmp_out}
+        mv {params.tmp_out} {output[0]}
+        samtools index {output[0]}
+        """
+
+##############################################
+## Calculate genome coverage from bam files ##
+##############################################
+rule make_filtered_genomefile:
+    """Creates the genome file for use with bedtools genomecov"""
+    input:
+        opj(config["results_path"],"centrifuge","filtered","genomes.filtered.fna")
+    output:
+        opj(config["results_path"],"centrifuge","filtered","genomes.filtered.bed")
+    run:
+        with open(output[0], 'w') as fh_out:
+            for line in shell("seqtk comp {input[0]} | cut -f1,2", iterable=True):
+                seq,size = line.rstrip().split("\t")
+                fh_out.write("{}\t0\t{}\n".format(seq,size))
+
+rule calculate_genomecov:
+    """Calculates genome coverage for filtered genomes"""
+    input:
+        bam = opj(config["report_path"],"bowtie2","{sample}_{run}_{seq_type}.bam"),
+        bed = opj(config["results_path"],"centrifuge","filtered","genomes.filtered.bed")
+    output:
+        opj(config["results_path"],"centrifuge","bowtie2","{sample}_{run}_{seq_type}.coverage")
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
+    shell:
+        """
+        bedtools coverage -b {input.bam} -a {input.bed} > {output[0]}
+        """
+
+def get_genomecov_files(samples):
+    files = []
+    for sample in samples.keys():
+        for run in samples[sample].keys():
+            if is_pe(samples[sample][run]):
+                seq_type = "pe"
+            else:
+                seq_type = "se"
+            files.append(opj(config["results_path"],"centrifuge","bowtie2","{sample}_{run}_{seq_type}.coverage".format(
+                                sample=sample, run=run, seq_type=seq_type)))
+    return files
+
+rule collate_genomecov:
+    input:
+        get_genomecov_files(samples)
+    output:
+        opj(config["report_path"],"bowtie2","genome_coverage.tab")
+    run:
+        df = pd.DataFrame()
+        for f in input:
+            sample = os.path.basename(f).replace(".coverage","")
+            _df = pd.read_table(f, header=None)
+            _df = _df.assign(sample=pd.Series([sample]*len(_df)))
+            df = pd.concat([df,_df])
+        df = df.iloc[:,[0,6,7]]
+        df.columns = ["genome","coverage","sample"]
+        df.sort_values("genome", inplace=True)
+        df.to_csv(output[0], sep="\t", index=False)
+
+rule plot_genomecov:
+    input:
+        opj(config["report_path"],"bowtie2","genome_coverage.tab")
+    output:
+        opj(config["report_path"],"bowtie2","mean_genome_coverage.pdf"),
+        opj(config["report_path"],"bowtie2","samplewise_genome_coverage.pdf")
+    run:
+        import matplotlib as mpl
+        mpl.use('agg')
+        import seaborn as sns, matplotlib.pyplot as plt
+        plt.style.use('ggplot')
+
+        df = pd.read_table(input[0])
+        df["genome"] = [x.replace("_"," ") for x in df.genome]
+        # Plot average coverage per genome
+        ax = sns.barplot(data=df, x="coverage", y="genome", errwidth=.5)
+        plt.savefig(output[0], dpi=300, bbox_inches="tight")
+        plt.close()
+
+        # Plot coverage per sample
+        ax = sns.factorplot(data=df, col="genome", x="sample", y="coverage", kind="bar", col_wrap=4, size=3)
+        plt.subplots_adjust(wspace=0.1)
+        ax.set_xticklabels(rotation=90)
+        ax.set_titles("{col_name}",size=6)
+        plt.savefig(output[1], dpi=300, bbox_inches="tight")
+        plt.close()
+

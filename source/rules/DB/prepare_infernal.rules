@@ -1,0 +1,21 @@
+localrules:
+    download_infernal_db
+
+rule download_infernal_db:
+    output:
+        cmfile=opj(config["infernal_dbpath"],"Rfam.cm"),
+        claninfile=opj(config["infernal_dbpath"],"Rfam.clanin"),
+        readme=opj(config["infernal_dbpath"],"README"),
+        cmversion=opj(config["infernal_dbpath"],"Rfam.version")
+    shell:
+        """
+        curl -o {output.cmfile}.gz ftp://ftp.ebi.ac.uk/pub/databases/Rfam/CURRENT/Rfam.cm.gz
+        gunzip {output.cmfile}.gz
+        cmpress {output.cmfile}
+
+        curl -o {output.claninfile} ftp://ftp.ebi.ac.uk/pub/databases/Rfam/CURRENT/Rfam.clanin
+
+        # Get release
+        curl -o {output.readme} ftp://ftp.ebi.ac.uk/pub/databases/Rfam/CURRENT/README
+        grep -m 1 Release {output.readme} > {output.cmversion}
+        """

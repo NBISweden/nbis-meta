@@ -1,0 +1,27 @@
+$schema: "http://json-schema.org/draft-04/schema#"
+description: an entry in the sample sheet
+properties:
+  sampleID:
+    type: string
+    description: sample name/identifier
+  runID:
+    type: integer
+    description: run identifier
+  assemblyGroup:
+    type: string
+    description: Assembly group(s) separated by comma
+  fileName:
+    type: string
+    description: File path for the sequence file
+  pair:
+    type: string
+    description: File path for the paired sequence file for paired-end samples
+  interleaved:
+    type: boolean
+    description: Indicates whether the file path specified by fileName contains interleaved paired-end data
+    default: false
+
+required:
+  - sampleID
+  - runID
+  - fileName

@@ -1,0 +1,23 @@
+localrules: centrifuge_db_done
+
+domains = ['bacteria', 'viral', 'archaea', 'fungi', 'protozoa', 'invertebrate', 'plant', 'vertebrate_mammalian', 'vertebrate_other']
+
+# Add db files if there is at least one domain specified
+if len(set(config["centrifuge_domains"]).intersection(domains)) > 0:
+    inputs = [opj(config["classifier_db_path"],"centrifuge","centrifuge_db."+str(index)+".cf") for index in [1,2,3]]
+    inputs.append(opj(config["classifier_db_path"],"centrifuge","genome_sizes.tab"))
+    inputs.append(opj(config["classifier_db_path"],"centrifuge","centrifuge_db.taxtree.tab"))
+    if config["centrifuge_summarize_rank"]:
+        inputs.append(opj(config["classifier_db_path"],"centrifuge","centrifuge_db.{}.summary.tab".format(config["centrifuge_summarize_rank"])))
+
+
+include: "../rules/Classify/prepare_centrifuge.rules"
+
+rule centrifuge_db_done:
+    input:
+        inputs
+    output:
+        temp(touch(opj(config["results_path"],"progress","centrifuge_db.done")))
+    message: "Centrifuge database created"
+
+

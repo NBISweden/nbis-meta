@@ -1,0 +1,104 @@
+localrules:
+    centrifuge_to_kronainput,
+    centrifuge_to_krona_html,
+    all_centrifuge_to_krona
+
+rule centrifuge_pe:
+    input:
+        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
+        R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+PREPROCESS+".fastq.gz"),
+        db = expand(opj(config["classifier_db_path"],"centrifuge","centrifuge_db.{index}.cf"), index = [1,2,3])
+    output:
+        opj(config["results_path"],"centrifuge","{sample}_{run}_pe.out"),
+        opj(config["results_path"],"centrifuge","{sample}_{run}_pe.report")
+    params:
+        prefix = opj(config["classifier_db_path"],"centrifuge","centrifuge_db"),
+        tmp_out = opj(config["scratch_path"],"{sample}_{run}_pe.out"),
+        tmp_report = opj(config["scratch_path"],"{sample}_{run}_pe.report")
+    message: "Running centrifuge on {wildcards.sample}_{wildcards.run}"
+    threads: 20
+    resources:
+        runtime = lambda wildcards, attempt: attempt**60*2
+    shell:
+        """
+        centrifuge -k {config[centrifuge_max_assignments]} -1 {input.R1} -2 {input.R2} -x {params.prefix} \
+        -S {params.tmp_out} --report-file {params.tmp_report} -p {threads}
+        mv {params.tmp_out} {output[0]}
+        mv {params.tmp_report} {output[1]}
+        """
+
+rule centrifuge_se:
+    input:
+        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+PREPROCESS+".fastq.gz"),
+        db = expand(opj(config["classifier_db_path"],"centrifuge","centrifuge_db.{index}.cf"), index = [1,2,3])
+    output:
+        opj(config["results_path"],"centrifuge","{sample}_{run}_se.out"),
+        opj(config["results_path"],"centrifuge","{sample}_{run}_se.report")
+    params:
+        prefix = opj(config["classifier_db_path"],"centrifuge","centrifuge_db"),
+        tmp_out = opj(config["scratch_path"],"{sample}_{run}_se.out"),
+        tmp_report = opj(config["scratch_path"],"{sample}_{run}_se.report")
+    threads: 20
+    resources:
+        runtime = lambda wildcards, attempt: attempt**60*2
+    message: "Running centrifuge on {wildcards.sample}_{wildcards.run}"
+    shell:
+        """
+        centrifuge -k {config[centrifuge][max_assignments]} -U {input.se} -x {params.prefix} -S {params.tmp_out} --report-file {params.tmp_report} -p {threads}
+        mv {params.tmp_out} {output[0]}
+        mv {params.tmp_report} {output[1]}
+        """
+
+rule centrifuge2kraken_report:
+    input:
+        opj(config["results_path"],"centrifuge","{sample}_{run}_{seq_type}.out"),
+        expand(opj(config["classifier_db_path"],"centrifuge","centrifuge_db.{index}.cf"), index = [1,2,3])
+    output:
+        opj(config["report_path"],"centrifuge","{sample}_{run}_{seq_type}.kraken_report")
+    params:
+        prefix = opj(config["classifier_db_path"],"centrifuge","centrifuge_db"),
+        min_score = config["centrifuge_min_score"]
+    message: "Generating Kraken-style report for {wildcards.sample}_{wildcards.run}"
+    shell:
+        """
+        centrifuge-kreport --min-score {params.min_score} -x {params.prefix} {input[0]} > {output[0]}
+        """
+
+rule centrifuge_to_kronainput:
+    input:
+        opj(config["report_path"],"centrifuge","{sample}_{run}_{seq_type}.kraken_report"),
+        opj(config["classifier_db_path"],"centrifuge","taxonomy","taxdb.sqlite")
+    output:
+        opj(config["results_path"],"centrifuge","{sample}_{run}_{seq_type}.krona.txt")
+    params:
+        script = opj("source/utils/centrifuge_kreport2krona_input.py")
+    shell:
+        """
+        python {params.script} -i {input[0]} -t {input[1]} > {output[0]}
+        """
+
+rule centrifuge_to_krona_html:
+    input:
+        opj(config["results_path"],"centrifuge","{sample}_{run}_{seq_type}.krona.txt")
+    output:
+        opj(config["report_path"],"centrifuge","{sample}_{run}_{seq_type}.krona.html")
+    shell:
+        """
+        ktImportText {input[0]},{wildcards.sample}_{wildcards.run} -o {output[0]}
+        """
+
+rule all_centrifuge_to_krona:
+    input:
+        get_all_files(samples, opj(config["results_path"],"centrifuge"), ".krona.txt")
+    output:
+        opj(config["report_path"],"centrifuge","centrifuge.krona.html")
+    run:
+        input_string = ""
+        for f in input:
+            sample_run = os.path.basename(f).replace("_pe.krona.txt","").replace("_se.krona.txt","")
+            print(sample_run,f)
+            input_string+=" {},{}".format(f,sample_run)
+        shell("ktImportText {input_string} -o {output[0]}")
+
+
+

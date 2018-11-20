@@ -1,0 +1,7 @@
+__default__:
+  account: ""
+  time: "03:00:00"
+  n: 1
+  partition: "core"
+  log: "logs/%x-%j-%u.log"
+  extra: ""

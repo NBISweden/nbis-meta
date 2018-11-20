@@ -1,0 +1,46 @@
+localrules:
+    download_checkm_data,
+    set_checkm_root,
+    get_checkm_taxon_set
+
+rule download_checkm_data:
+    output:
+        temp("temp/checkm_data.tar.gz"),
+        "resources/checkm/download.done"
+    message: "Downloading checkm data files"
+    shell:
+        """
+        curl -s https://data.ace.uq.edu.au/public/CheckM_databases/checkm_data_2015_01_16.tar.gz > {output[0]}
+        tar xf {output[0]} -C resources/checkm/
+        touch {output[1]}
+        """
+
+rule set_checkm_root:
+    input:
+        "resources/checkm/download.done"
+    output:
+        touch("resources/checkm/root_set.done")
+    conda:
+        "../../../envs/checkm.yaml"
+    message: "Setting data directory for checkm to resources/checkm"
+    shell:
+        """
+        printf "$(pwd)/resources/checkm" | checkm data setRoot
+        """
+
+rule get_checkm_taxon_set:
+    input:
+        "resources/checkm/root_set.done"
+    output:
+        "resources/checkm/Prokaryote.ms"
+    conda:
+        "../../../envs/checkm.yaml"
+    params:
+        rank="life",
+        taxon = "Prokaryote"
+    message: "Setting checkm taxon file"
+    shell:
+        """
+        printf "$(pwd)/resources/checkm\n" | checkm data setRoot
+        checkm taxon_set {params.rank} {params.taxon} {output}
+        """

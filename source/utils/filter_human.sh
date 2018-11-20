@@ -1,0 +1,1 @@
+awk '/^>/{N=0} /Homo sapiens/ && !/CHM1_1.1/{N=1} {if(N) print}' $1

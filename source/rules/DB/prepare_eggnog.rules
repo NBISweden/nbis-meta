@@ -1,0 +1,48 @@
+localrules:
+    download_eggnog,
+    get_eggnog_version,
+    get_kegg_info
+
+rule download_eggnog:
+    output:
+        opj(config["resource_path"],"eggnog-mapper","eggnog.db")
+    log: opj(config["resource_path"],"eggnog-mapper","download_eggnog_data.log")
+    conda: "../../../envs/eggnog-mapper.yaml"
+    params:
+        dbs = "none",
+        resource_path = opj(config["resource_path"], "eggnog-mapper")
+    shell:
+        """
+        download_eggnog_data.py --data_dir {params.resource_path} -y {params.dbs} > {log} 2>&1
+        """
+
+rule get_eggnog_version:
+    output:
+        opj(config["resource_path"],"eggnog-mapper","eggnog.version")
+    run:
+      import re, pandas as pd
+      regex = re.compile("eggnog_\d+\.\d+")
+      versions = []
+      for line in shell("curl http://eggnogdb.embl.de/download/ 2>/dev/null| grep eggnog_", iterable=True):
+          m = regex.search(line)
+          try:
+              versions.append(m.group())
+          except AttributeError:
+              continue
+      latest = sorted([float(x.split("_")[-1]) for x in versions])[-1]
+      with open(output[0], 'w') as fh:
+          fh.write("eggnog_"+str(latest))
+
+rule get_kegg_info:
+    output:
+        ko2ec = opj(config["resource_path"],"kegg","kegg_ko2ec.tsv"),
+        ec2path = opj(config["resource_path"],"kegg","kegg_ec2pathways.tsv"),
+        ko2path = opj(config["resource_path"],"kegg","kegg_ko2pathways.tsv"),
+        pathways = opj(config["resource_path"],"kegg","kegg_pathways.tsv"),
+        kos = opj(config["resource_path"],"kegg","kegg_kos.tsv")
+    params:
+        resource_dir = opj(config["resource_path"], "kegg")
+    shell:
+        """
+        python source/utils/eggnog-parser.py download {params.resource_dir}
+        """

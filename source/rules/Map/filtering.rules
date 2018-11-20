@@ -1,0 +1,105 @@
+localrules:
+    filter_taxids
+####################################################
+## Use Centrifuge to get a list of potential taxa ##
+####################################################
+rule filter_taxids:
+    """Creates a list per sample with taxids that have a read count above the minimum"""
+    input:
+        opj(config["results_path"],"centrifuge","{sample}_{run}_{seq_type}.out")
+    output:
+        opj(config["results_path"],"refmap","filtered","{sample}_{run}_{seq_type}.filtered_ids")
+    params:
+        min_read_count = config["refmap_min_read_count"]
+    run:
+        ids = []
+        for line in shell("cut -f2,3 {input[0]} | grep -v taxID | sort | uniq -c", iterable = True):
+            items = line.rstrip().lstrip().rsplit()
+            count = items[0]
+            seqid = items[1:-1]
+            taxid = items[-1]
+            if int(count) < int(params.min_read_count):
+                continue
+            ids.append((seqid,taxid))
+        with open(output[0], 'w') as fh:
+            for item in ids:
+                seqid, taxid = item
+                fh.write("{}\t{}\n".format(seqid, taxid))
+
+
+def get_filtered_id_files(samples):
+    files = []
+    for sample in samples.keys():
+        for run in samples[sample].keys():
+            seq_type = "se"
+            if is_pe(samples[sample][run]):
+                seq_type = "pe"
+            files.append(opj(config["results_path"],"refmap","filtered","{}_{}_{}.filtered_ids".format(sample,run,seq_type)))
+    return files
+
+rule download_filtered_genomes:
+    input:
+        assembly_lists = expand(opj(config["resource_path"],"ncbi","assembly_lists", "assembly_summary_{domain}.txt"),
+            domain = ["archaea", "bacteria", "fungi", "invertebrate", "plant", "protozoa", "vertebrate_mammalian", "vertebrate_other", "viral"]),
+        id_files = get_filtered_id_files(samples)
+    output:
+        opj(config["results_path"],"refmap","downloads","genome_list.tab"),
+        opj(config["results_path"],"refmap","downloads","genome_names.tab"),
+        temp(opj(config["results_path"],"refmap","filtered","assembly_list"))
+    params:
+        dldir = opj(config["results_path"],"refmap","downloads")
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*5
+    run:
+        all_ids = set()
+        for f in input.id_files:
+            with open(f, 'r') as fh:
+                for line in fh:
+                    line = line.rstrip()
+                    seqid, taxid = line.split("\t")
+                    all_ids.add(taxid)
+        # Make temporary assembly_list
+        id_string = "|".join(list(all_ids))
+        shell('egrep -w "{id_string}" {input.assembly_lists} | cut -f2- -d ":" > {output[2]}')
+        # Read the assembly list
+        df = pd.read_table(output[2], header = None, dtype = str)
+        # Filter to match taxids
+        df = df.loc[df[5].isin(list(all_ids))]
+        # Filter to complete genomes
+        df = df.loc[df[11] == "Complete Genome"]
+        # Filter to one assembly per strain
+        df = df.groupby(df[5]).first().reset_index()
+        # Download genomes
+        shell("mkdir -p {params.dldir}")
+        out_lines = []
+        seqid2name = {}
+        for j, i in enumerate(df.index, start=1):
+            r = df.loc[i]
+            accession = r[0]
+            ftp_base = r[19]
+            ftp_name = os.path.basename(ftp_base)
+            key = "{}_{}".format(r[17],r[15])
+            taxname = r[7]
+            out_dir = "{}_{}".format(taxname.replace(" ", "_"), accession)
+            strain = r[8]
+            print("Downloading data for {} ({} {}) ({}/{})".format(taxname, strain, accession, j, len(df)))
+            out_lines.append("{taxname}\t{strain}\t{accession}\t{bioproject}\t{biosample}\t{taxid}".format(taxname=taxname, strain=strain, accession=accession, bioproject=r[1], biosample=r[2], taxid=r[5]))
+            rsync_base = ftp_base.replace("ftp://","rsync://")
+            shell("mkdir -p {params.dldir}/{out_dir}")
+            shell("rsync {rsync_base}/{ftp_name}_genomic.gff.gz {params.dldir}/{out_dir}/. >/dev/null 2>/dev/null")
+            # Download protein fasta
+            shell("rsync {rsync_base}/{ftp_name}_protein.faa.gz {params.dldir}/{out_dir}/. >/dev/null 2>/dev/null")
+            # Download genomic fasta
+            shell("rsync {rsync_base}/{ftp_name}_genomic.fna.gz {params.dldir}/{out_dir}/. >/dev/null 2>/dev/null")
+            # Unzip files
+            shell("gunzip {params.dldir}/{out_dir}/*.gz")
+            # Map seqid to names
+            for line in shell("grep '>' {params.dldir}/{out_dir}/*.fna", iterable = True):
+                seqid = line.rsplit()[0].lstrip(">")
+                seqid2name[seqid] = taxname
+        with open(output[0], 'w') as fh:
+            for line in out_lines:
+                fh.write("{}\n".format(line))
+        with open(output[1], 'w') as fh:
+            for seqid, name in seqid2name.items():
+                fh.write("{}\t{}\n".format(seqid,name))

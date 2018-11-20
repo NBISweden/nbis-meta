@@ -1,0 +1,17 @@
+kaijufiles = []
+
+for sample in samples.keys():
+    for run in samples[sample].keys():
+        if "R2" in samples[sample][run].keys():
+            seq_type = "pe"
+        else:
+            seq_type = "se"
+        kaijufiles.append(opj(config["results_path"],"kaiju","{}_{}_{}.html".format(sample,run,seq_type)))
+
+include: "../rules/Classify/kaiju.rules"
+
+rule kaiju_classify_done:
+    input:
+        kaijufiles
+    output:
+        temp(touch(opj(config["results_path"],"progress","kaiju_classify.done")))

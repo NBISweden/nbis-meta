@@ -1,0 +1,25 @@
+rule run_maxbin:
+    input:
+        fa = opj(config["results_path"],"assembly","{group}","final_contigs.fa"),
+        faa = opj(config["results_path"],"annotation","{group}","final_contigs.faa"),
+        abund_list = opj(config["results_path"], "binning", "map", "{group}","abund_list")
+    output:
+        summary_file = touch(opj(config["results_path"],"binning","bin","{group}","{group}.summary")),
+        flag = temp(touch(opj(config["results_path"],"progress","{group}.binning.done")))
+    params:
+        dir = opj(config["results_path"], "binning", "bin", "{group}"),
+        min_contig_length = config["min_contig_length"],
+        tmp_dir = opj(config["scratch_path"],"{group}-binning")
+    threads: config["binning_threads"]
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*5
+    message: "Running MaxBin2 on {wildcards.group}"
+    conda: "../../../envs/maxbin.yaml"
+    shell:
+        """
+        mkdir -p {params.dir}
+        mkdir -p {params.tmp_dir}
+        run_MaxBin.pl -contig {input.fa} -contig_faa {input.faa} -abund_list {input.abund_list}\
+         -min_contig_length {params.min_contig_length} -thread {threads} -out {params.tmp_dir}/{wildcards.group}
+         mv {params.tmp_dir}/* {params.dir}
+        """

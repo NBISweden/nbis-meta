@@ -1,0 +1,6 @@
+name: kraken
+channels:
+  - bioconda
+dependencies:
+  - kraken
+  - kaiju

@@ -1,0 +1,157 @@
+localrules:
+    binning_generate_abund_list,
+    generate_contig_SAF,
+    link_bam
+ruleorder: link_bam > binning_markduplicates
+ruleorder: link_bam > map_pe_for_binning > map_se_for_binning
+
+# Generate SAF file for contigs
+rule generate_contig_SAF:
+    input: 
+        opj(config["results_path"],"assembly","{group}","final_contigs.fa")
+    output: 
+        opj(config["results_path"], "binning", "map","{group}","{group}.SAF")
+    message: 
+        "Generate simplified annotation format (SAF) file for {wildcards.group}"
+    shell:
+        """
+        python source/utils/fasta2bed.py --saf -i {input[0]} -o {output[0]}
+        """
+
+rule link_bam:
+    input:
+        target = lambda wildcards: link_files[wildcards.group][wildcards.sample][wildcards.run][wildcards.seq_type]
+    output:
+        temp(opj(config["results_path"], "binning", "map","{group}","{sample}_{run}_{seq_type}"+POSTPROCESS+".bam"))
+    message: "Symlinking existing bam file for {wildcards.sample}_{wildcards.run} vs. {wildcards.group}"
+    run:
+        abs_out = os.path.abspath(output[0])
+        shell("ln -s {input.target} {abs_out}")
+
+# Map all samples against all assemblies
+rule map_pe_for_binning:
+    input:
+        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
+        R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+PREPROCESS+".fastq.gz"),
+        fa = expand(opj(config["results_path"],"assembly","{{group}}","final_contigs.fa.{index}.bt2l"),index=range(1,5))
+    output:
+        bam=temp(opj(config["results_path"], "binning", "map","{group}","{sample}_{run}_pe.bam")),
+    log:
+        opj(config["results_path"], "binning", "map","{group}","{sample}_{run}_pe.bam.log")
+    params:
+        temp_bam = opj(config["scratch_path"],"{group}-bin_map-{sample}_{run}_pe.bam"),
+        out_dir = opj(config["results_path"], "binning", "map","{group}"),
+        setting = "--very-sensitive-local",
+        prefix = opj(config["results_path"],"assembly","{group}","final_contigs.fa"),
+        temp_dir = config["scratch_path"]
+    message: "Mapping reads from {wildcards.sample}_{wildcards.run} against {wildcards.group} for binning"
+    threads: config["bowtie2_threads"]
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
+    shell:
+        """
+        mkdir -p {params.temp_dir}
+        bowtie2 {params.setting} -p {threads} -x {params.prefix} -1 {input.R1} -2 {input.R2} 2>{log} | \
+        samtools view -bh - | samtools sort -o {params.temp_bam}
+        mv {params.temp_bam} {output.bam}
+        """
+
+rule map_se_for_binning:
+    input:
+        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+PREPROCESS+".fastq.gz"),
+        fa = expand(opj(config["results_path"],"assembly","{{group}}","final_contigs.fa.{index}.bt2l"),index=range(1,5))
+    output:
+        bam=temp(opj(config["results_path"], "binning", "map","{group}","{sample}_{run}_se.bam")),
+    log:
+        opj(config["results_path"], "binning", "map","{group}","{sample}_{run}_se.bam.log")
+    params:
+        temp_bam=opj(config["scratch_path"],"{group}-bin_map-{sample}_{run}_se.bam"),
+        out_dir = opj(config["results_path"], "binning", "map","{group}"),
+        setting = "--very-sensitive-local",
+        prefix = opj(config["results_path"],"assembly","{group}","final_contigs.fa"),
+        temp_dir = config["scratch_path"]
+    message: "Mapping reads from {wildcards.sample}_{wildcards.run} against {wildcards.group} for binning"
+    threads: config["bowtie2_threads"]
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
+    shell:
+        """
+        mkdir -p {params.temp_dir}
+        bowtie2 {params.setting} -p {threads} -x {params.prefix} -U {input.se} 2>{output.log} | samtools view -bh - | \
+         samtools sort -o {params.temp_bam}
+        mv {params.temp_sam} {output.bam}
+        """
+
+rule binning_markduplicates:
+    input:
+        opj(config["results_path"], "binning", "map","{group}","{sample}_{run}_{seq_type}.bam")
+    output:
+        bam = temp(opj(config["results_path"], "binning", "map","{group}","{sample}_{run}_{seq_type}.markdup.bam")),
+        metric = opj(config["results_path"], "binning", "map","{group}","{sample}_{run}_{seq_type}.markdup.metrics")
+    log:
+        opj(config["results_path"], "binning", "map","{group}","{sample}_{run}_{seq_type}.markdup.log")
+    message: "Removing duplicates for {wildcards.group} contigs in {wildcards.sample}_{wildcards.run}"
+    params:
+        temp_bam=opj(config["scratch_path"],"{group}-bin_map-{sample}_{run}_{seq_type}.markdup.bam"),
+        temp_sort_bam=opj(config["scratch_path"],"{group}-bin_map-{sample}_{run}_{seq_type}.markdup.re_sort.bam"),
+        jarfile=config["picard_jar"],
+        picard_path=config["picard_path"],
+        java_opt="-Xms2g -Xmx64g"
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*5
+    threads: 10
+    shell:
+        """
+        java {params.java_opt} -XX:ParallelGCThreads={threads} -cp params.picard_path -jar {params.jarfile} MarkDuplicates \
+            I={input} O={params.temp_bam} M={output.metric} ASO=coordinate REMOVE_DUPLICATES=TRUE 2> {log}
+        samtools sort -@ 11 -o {params.temp_sort_bam} {params.temp_bam}
+        mv {params.temp_sort_bam} {output.bam}
+        """
+
+rule contig_featurecount:
+    input:
+        saf = opj(config["results_path"], "binning", "map","{group}","{group}.SAF"),
+        bam=opj(config["results_path"], "binning", "map","{group}","{sample}_{run}_{seq_type}"+POSTPROCESS+".bam")
+    output:
+        opj(config["results_path"], "binning", "map","{group}","{sample}_{run}_{seq_type}.fc.tab"),
+        opj(config["results_path"], "binning", "map","{group}","{sample}_{run}_{seq_type}.fc.tab.summary")
+    threads: 4
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*30
+    params:
+        tmpdir = opj(config["scratch_path"],"{group}-{sample}_{run}")
+    message: "Quantifying {wildcards.group} contigs in {wildcards.sample}_{wildcards.run}"
+    run:
+        shell("mkdir -p {params.tmpdir}")
+        if wildcards.seq_type == "pe":
+            shell("featureCounts -a {input.saf} -F SAF -T {threads} -o {output[0]} -M -p -B --tmpDir {params.tmpdir} {input.bam}")
+        elif wildcards.seq_type == "se":
+            shell("featureCounts -a {input.saf} -F SAF -T {threads} -o {output[0]} -M -B --tmpDir {params.tmpdir} {input.bam}")
+        shell("rm -r {params.tmpdir}")
+
+rule binning_normalize_contigs:
+    input:
+        fc = opj(config["results_path"], "binning", "map","{group}","{sample}_{run}_{seq_type}.fc.tab"),
+        sample_info = opj(config["intermediate_path"],"preprocess","read_lengths.tab")
+    output:
+        tpm = opj(config["results_path"], "binning", "map","{group}","{sample}_{run}_{seq_type}.tpm.tab")
+    message: "Normalizing abundance values for {wildcards.group} contigs in {wildcards.sample}_{wildcards.run}"
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
+    shell:
+        """
+        rl=$(grep -w {wildcards.sample}_{wildcards.run} {input.sample_info} | cut -f2)
+        python source/utils/featureCountsTPM.py -i {input.fc} --rl $rl --sampleName {wildcards.sample} | grep -v \
+         {wildcards.sample} > {output.tpm}
+        """
+
+rule binning_generate_abund_list:
+    input:
+        tpms = get_all_files(samples, opj(config["results_path"], "binning", "map","{group}"), ".tpm.tab")
+    output:
+        abund_list = opj(config["results_path"], "binning", "map","{group}","abund_list")
+    message: "Generating abundance list for assembly {wildcards.group} ({output.abund_list})"
+    run:
+        with open(output.abund_list, 'w') as fh:
+            for f in input.tpms:
+                fh.write("{}\n".format(f))

@@ -1,0 +1,12 @@
+## Config file for reference based map example
+sample_list: examples/refmap/sample_annotation.tab
+results_path: results/examples/
+intermediate_path: results/examples/refmap/intermediate
+report_path: results/examples/refmap/report
+pipeline_config_file: results/examples/refmap/pipeline_config_refmap.txt
+assembly: False
+reference_map: True
+centrifuge: True
+centrifuge_min_read_count: 5000
+centrifuge_domains: ['bacteria', 'fungi']
+centrifuge_taxidlist: examples/refmap/taxids

@@ -1,0 +1,468 @@
+localrules:
+    link_files,
+    sortmerna_unzip_fastq,
+    sortmerna_zip_aligned_fastq,
+    sortmerna_zip_other_fastq,
+    sortmerna_link_pe,
+    sortmerna_link_se,
+    bowtie_build_phix,
+    fastuniq_se,
+    avg_seq_length
+
+def link(target,link_name):
+    target_abs = os.path.abspath(target)
+    link_abs = os.path.abspath(link_name)
+    shell("ln -s {target_abs} {link_abs}")
+
+def get_interleaved(sample,runID):
+    files = []
+    if "interleaved" in samples[sample][runID].keys():
+        inter = samples[sample][runID]["interleaved"]
+        R1 = samples[sample][runID]["R1"]
+        R2 = samples[sample][runID]["R2"]
+        files.append(inter)
+    else:
+        files.append("")
+    return files
+
+rule deinterleave_fastq:
+    input:
+        lambda wildcards: get_interleaved(wildcards.sample,wildcards.run)
+    output:
+        R1=opj(config["intermediate_path"],"deinterleaved","{sample}_{run}_R1.fastq.gz"),
+        R2=opj(config["intermediate_path"],"deinterleaved","{sample}_{run}_R2.fastq.gz")
+    params:
+        script="source/utils/deinterleave_fastq.sh",
+        tmp_r1=opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_R1.fastq.gz"),
+        tmp_r2=opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_R2.fastq.gz")
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*24
+    run:
+        for item in input:
+            if not item:
+                continue
+            shell("echo {params.script} {item} {params.tmp_r1} {params.tmp_r2} compress")
+            shell("{params.script} {item} {params.tmp_r1} {params.tmp_r2} compress")
+            shell("mv {params.tmp_r1} {output.R1}")
+            shell("mv {params.tmp_r2} {output.R2}")
+
+rule link_files:
+    """Symlink sample to make downstream processing easier"""
+    input:
+        lambda wildcards: samples[wildcards.sample][wildcards.run][wildcards.pair]
+    output:
+        opj(config["intermediate_path"],"preprocess","{sample}_{run}_{pair}.fastq.gz")
+    message: "Linking {wildcards.sample}_{wildcards.run}_{wildcards.pair}.fastq.gz"
+    run:
+        cmd = "ln -s "+os.path.abspath(samples[wildcards.sample][wildcards.run][wildcards.pair])+ " "+str(output)
+        shell(cmd)
+
+rule sortmerna_merge_fastq:
+    input:
+        R1=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1.fastq.gz"),
+        R2=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2.fastq.gz")
+    output:
+        temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.fastq"))
+    message: "rule sortmerna_merge: Merging fastq files for SortMeRNA for {wildcards.sample}_{wildcards.run}"
+    params:
+        scratch = os.path.expandvars(config["scratch_path"]),
+        R1_unzipped = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_R1.fastq"),
+        R2_unzipped = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_R2.fastq"),
+        merged = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_merged.fastq")
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*6
+    run:
+        if not os.path.isdir(params.scratch):
+            shell("mkdir -p {params.scratch}")
+        # Unzip to scratch dir
+        shell("gunzip -c {input.R1} > {params.R1_unzipped}")
+        shell("gunzip -c {input.R2} > {params.R2_unzipped}")
+        shell("merge-paired-reads.sh {params.R1_unzipped} {params.R2_unzipped} {params.merged}")
+        shell("mv {params.merged} {output[0]}")
+        shell("rm {params.R1_unzipped} {params.R2_unzipped}")
+
+rule sortmerna_fastq_pe:
+    input:
+        opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.fastq"),
+        idx=expand(opj(config["resource_path"],"rRNA_databases","{file}.idx.stats"), file = config["sortmerna_dbs"])
+    output:
+        aligned = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.rRNA.fastq")),
+        other = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.non_rRNA.fastq")),
+    log:
+        opj(config["intermediate_path"],"preprocess","{sample}_{run}_pe.sortmerna.log")
+    params:
+        paired_strategy = config["sortmerna_paired_strategy"],
+        score_params = config["sortmerna_params"],
+        other_prefix = opj(config["scratch_path"],"{sample}_{run}_merged.non_rRNA"),
+        aligned_prefix = opj(config["scratch_path"],"{sample}_{run}_merged.rRNA"),
+        scratch = config["scratch_path"]
+    message: "rule sortmerna_fastq_pe: Identifying rRNA sequences for {wildcards.sample}_{wildcards.run}"
+    threads: 10
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
+    run:
+        shell("mkdir -p {params.scratch}")
+        # Generate ref_db string
+        ref_string = ""
+        for f in input.idx:
+            ref_string+="{},{}:".format(f.replace(".idx.stats",""),f.replace(".stats",""))
+        ref_string = ref_string.rstrip(":")
+        # Run sortmerna
+        shell("sortmerna --ref {ref_string} --reads {input[0]} -a {threads} --{params.paired_strategy} --aligned {params.aligned_prefix} --other {params.other_prefix} {params.score_params} --log -v --fastx")
+        shell("mv {params.aligned_prefix}.fastq {output.aligned}")
+        shell("mv {params.aligned_prefix}.log {output.log}")
+        shell("mv {params.other_prefix}.fastq {output.other}")
+
+rule sortmerna_split_rRNA_fastq:
+    input:
+        aligned = opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.rRNA.fastq"),
+    output:
+        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1.rRNA.fastq.gz"),
+        R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2.rRNA.fastq.gz"),
+    params:
+        tmpdir=opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna"),
+        R1 = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna","{sample}_{run}_R1.rRNA.fastq"),
+        R2 = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna","{sample}_{run}_R2.rRNA.fastq")
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*6
+    shell:
+        """
+        mkdir -p {params.tmpdir}
+        unmerge-paired-reads.sh {input.aligned} {params.R1} {params.R2}
+        gzip {params.R1}
+        gzip {params.R2}
+        mv {params.R1}.gz {output.R1}
+        mv {params.R2}.gz {output.R2}
+        """
+
+rule sortmerna_split_other_fastq:
+    input:
+        other = opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.non_rRNA.fastq")
+    output:
+        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1.non_rRNA.fastq.gz"),
+        R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2.non_rRNA.fastq.gz")
+    params:
+        tmpdir=opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna"),
+        R1 = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna","{sample}_{run}_R1.non_rRNA.fastq"),
+        R2 = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna","{sample}_{run}_R2.non_rRNA.fastq")
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*6
+    shell:
+        """
+        mkdir -p {params.tmpdir}
+        unmerge-paired-reads.sh {input.other} {params.R1} {params.R2}
+        gzip {params.R1}
+        gzip {params.R2}
+        mv {params.R1}.gz {output.R1}
+        mv {params.R2}.gz {output.R2}
+        """
+
+rule sortmerna_unzip_fastq:
+    input:
+        opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.fastq.gz")
+    output:
+        temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.fastq"))
+    shell:
+        """
+        gunzip -c {input[0]} > {output[0]}
+        """
+
+rule sortmerna_fastq_se:
+    input:
+        opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.fastq"),
+        idx=expand(opj(config["resource_path"],"rRNA_databases","{file}.idx.stats"), file = config["sortmerna_dbs"])
+    output:
+        aligned = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.rRNA.fastq")),
+        other = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.non_rRNA.fastq")),
+    log:
+        opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.sortmerna.log")
+    params:
+        score_params = config["sortmerna_params"],
+        other_prefix = opj(config["scratch_path"],"{sample}_{run}_se.non_rRNA"),
+        aligned_prefix = opj(config["scratch_path"],"{sample}_{run}_se.rRNA"),
+        scratch = config["scratch_path"]
+    message: "rule sortmerna_fastq_se: Identifying rRNA sequences for {wildcards.sample}_{wildcards.run}"
+    threads: 10
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
+    run:
+        shell("mkdir -p {params.scratch}")
+        # Generate ref_db string
+        ref_string = ""
+        for f in input.idx:
+            ref_string+="{},{}:".format(f.replace(".idx.stats",""),f.replace(".stats",""))
+        ref_string = ref_string.rstrip(":")
+        # Run sortmerna
+        shell("sortmerna --ref {ref_string} --reads {input[0]} -a {threads} --aligned {params.aligned_prefix} --other {params.other_prefix} {params.score_params} --log -v --fastx")
+        shell("mv {params.aligned_prefix}.fastq {output.aligned}")
+        shell("mv {params.aligned_prefix}.log {output.log}")
+        shell("mv {params.other_prefix}.fastq {output.other}")
+
+rule sortmerna_zip_aligned_fastq:
+    input:
+        fastq = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.rRNA.fastq")
+    output:
+        fastq = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.rRNA.fastq.gz")
+    shell:
+        """
+        gzip {input.fastq}
+        """
+
+rule sortmerna_zip_other_fastq:
+    input:
+        fastq = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.non_rRNA.fastq")
+    output:
+        fastq = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.non_rRNA.fastq.gz")
+    shell:
+        """
+        gzip {input.fastq}
+        """
+
+rule sortmerna_link_pe:
+  input:
+    R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1."+config["sortmerna_keep"]+".fastq.gz"),
+    R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2."+config["sortmerna_keep"]+".fastq.gz")
+  output:
+    R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1.sortmerna.fastq.gz"),
+    R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2.sortmerna.fastq.gz")
+  run:
+    link(input.R1, output.R1)
+    link(input.R2, output.R2)
+
+rule sortmerna_link_se:
+    input:
+        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se."+config["sortmerna_keep"]+".fastq.gz")
+    output:
+        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.sortmerna.fastq.gz")
+    run:
+        link(input.se, output.se)
+
+rule trimmomatic_pe:
+    input:
+        R1=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["trimming"]+".fastq.gz"),
+        R2=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["trimming"]+".fastq.gz")
+    output:
+        R1P=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["trimming"]+".trimmomatic.fastq.gz"),
+        R1U=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["trimming"]+".trimmomatic.U.fastq.gz"),
+        R2P=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["trimming"]+".trimmomatic.fastq.gz"),
+        R2U=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["trimming"]+".trimmomatic.U.fastq.gz"),
+        R1log=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["trimming"]+".trimmomatic.log"),
+        R2log=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["trimming"]+".trimmomatic.log")
+    params:
+        jarpath=config["trimmomatic_home"]+"/trimmomatic.jar",
+        trim_adapters = config["trim_adapters"],
+        adapter="ILLUMINACLIP:"+config["trimmomatic_home"]+"/adapters/TruSeq3-PE-2.fa",
+        adapter_params = config["pe_adapter_params"],
+        pre_adapter_params = config["pe_pre_adapter_params"],
+        post_adapter_params = config["pe_post_adapter_params"]
+    threads: 10
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
+    message: "rule trimmomatic_pe: Trimming reads for {wildcards.sample}_{wildcards.run}"
+    run:
+        trimsettings = params.pre_adapter_params
+        if params.trim_adapters:
+            trimsettings+=" "+params.adapter+":"+params.adapter_params
+        trimsettings+=" "+params.post_adapter_params
+        shell("echo Running trimmomatic with settings: {trimsettings}")
+        shell("java -jar {params.jarpath} PE -threads {threads} {input.R1} {input.R2} {output.R1P} {output.R1U} {output.R2P} {output.R2U} {trimsettings} 2>{output.R1log}")
+        shell("sed 's/{wildcards.sample}_{wildcards.run}_R1/{wildcards.sample}_{wildcards.run}_R2/g' {output.R1log} > {output.R2log}")
+
+rule trimmomatic_se:
+    input:
+        opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["trimming"]+".fastq.gz")
+    output:
+        fastq=opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["trimming"]+".trimmomatic.fastq.gz"),
+    log:
+        opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["trimming"]+".trimmomatic.log")
+    params:
+        jarpath=config["trimmomatic_home"]+"/trimmomatic.jar",
+        trim_adapters = config["trim_adapters"],
+        adapter="ILLUMINACLIP:"+config["trimmomatic_home"]+"/adapters/TruSeq3-SE.fa",
+        adapter_params = config["se_adapter_params"],
+        pre_adapter_params = config["se_pre_adapter_params"],
+        post_adapter_params = config["se_post_adapter_params"]
+    threads: 10
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
+    message: "rule trimmomatic_se: Trimming reads for {wildcards.sample}_{wildcards.run}"
+    run:
+        trimsettings = params.pre_adapter_params
+        if params.trim_adapters:
+            trimsettings+=" "+params.adapter+":"+params.adapter_params
+        trimsettings+=" "+params.post_adapter_params
+        shell("echo Running trimmomatic with settings: {trimsettings}")
+        shell("java -jar {params.jarpath} SE -threads {threads} {input} {output.fastq} {trimsettings} 2>{log}")
+
+rule cutadapt_pe:
+    input:
+        R1=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["trimming"]+".fastq.gz"),
+        R2=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["trimming"]+".fastq.gz")
+    output:
+        fastq1=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["trimming"]+".cutadapt.fastq.gz"),
+        fastq2=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["trimming"]+".cutadapt.fastq.gz"),
+        R1log=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["trimming"]+".cutadapt.log"),
+        R2log=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["trimming"]+".cutadapt.log")
+    params:
+        adapter = config["adapter_sequence"],
+        rev_adapter = config["rev_adapter_sequence"]
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
+    shell:
+        """
+        cutadapt -a {params.adapter} -A {params.rev_adapter} -o {output.fastq1} -p {output.fastq2} \
+        {input.R1} {input.R2} > {output.R1log}
+        cp {output.R1log} {output.R2log}
+        """
+
+rule cutadapt_se:
+    input:
+        opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["trimming"]+".fastq.gz")
+    output:
+        fastq=opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["trimming"]+".cutadapt.fastq.gz"),
+    log:
+        opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["trimming"]+".cutadapt.log")
+    params:
+        adapter=config["adapter_sequence"]
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
+    shell:
+        """
+        cutadapt -a {params.adapter} -o {output.fastq} {input[0]} > {log}
+        """
+
+rule bowtie_build_phix:
+    input: opj(config["resource_path"],"phix","phix.fasta")
+    output:
+        expand(opj(config["resource_path"],"phix","phix.{index}.bt2"),index=range(1,5))
+    params: prefix = opj(config["resource_path"],"phix","phix")
+    threads: 1
+    message: "Building bowtie2 index for {input}"
+    shell:
+        """
+        bowtie2-build --threads {threads} {input} {params.prefix}
+        """
+
+rule filter_phix_pe:
+    input:
+        bt_index = expand(opj(config["resource_path"],"phix","phix.{index}.bt2"),index=range(1,5)),
+        R1=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["phixfilt"]+".fastq.gz"),
+        R2=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["phixfilt"]+".fastq.gz")
+    output:
+        R1=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["phixfilt"]+".phixfilt.fastq.gz"),
+        R2=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["phixfilt"]+".phixfilt.fastq.gz"),
+        log=opj(config["intermediate_path"],"preprocess","{sample}_{run}_PHIX_pe"+preprocess_suffices["phixfilt"]+".log")
+    params:
+        tmp_out = config["scratch_path"],
+        setting = "--very-sensitive-local",
+        prefix = opj(config["resource_path"],"phix","phix")
+    threads: config["bowtie2_threads"]
+    message: "Filtering Phix sequences from {wildcards.sample}_{wildcards.run}"
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
+    shell:
+        """
+        mkdir -p {params.tmp_out}
+        bowtie2 {params.setting} -p {threads} -x {params.prefix} -1 {input.R1} -2 {input.R2} \
+        --un-conc-gz {params.tmp_out}/{wildcards.sample}_{wildcards.run}_R%.filtered.fastq.gz > /dev/null 2>{output.log}
+        mv {params.tmp_out}/{wildcards.sample}_{wildcards.run}_R1.filtered.fastq.gz {output.R1}
+        mv {params.tmp_out}/{wildcards.sample}_{wildcards.run}_R2.filtered.fastq.gz {output.R2}
+        """
+
+rule filter_phix_se:
+    input:
+        bt_index = expand(opj(config["resource_path"],"phix","phix.{index}.bt2"),index=range(1,5)),
+        se=opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["phixfilt"]+".fastq.gz")
+    output:
+        se=opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["phixfilt"]+".phixfilt.fastq.gz"),
+    log:
+        opj(config["intermediate_path"],"preprocess","{sample}_{run}_PHIX_se"+preprocess_suffices["phixfilt"]+".log")
+    params:
+        tmp_out = config["scratch_path"],
+        setting = "--very-sensitive-local",
+        prefix = opj(config["resource_path"],"phix","phix")
+    threads: config["bowtie2_threads"]
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
+    message: "Filtering Phix sequences from {wildcards.sample}_{wildcards.run}"
+    shell:
+        """
+        mkdir -p {params.tmp_out}
+        bowtie2 {params.setting} -p {threads} -x {params.prefix} --un-gz \
+        {params.tmp_out}/{wildcards.sample}_{wildcards.run}_se.filtered.fastq.gz {input.se} > /dev/null 2>{log}
+        mv {params.tmp_out}/{wildcards.sample}_{wildcards.run}_se.filtered.fastq.gz {output.se}
+        """
+
+rule fastuniq:
+    input:
+        R1=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["fastuniq"]+".fastq.gz"),
+        R2=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["fastuniq"]+".fastq.gz")
+    output:
+        R1=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["fastuniq"]+".fastuniq.fastq.gz"),
+        R2=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["fastuniq"]+".fastuniq.fastq.gz"),
+    params:
+        R1_intmp = opj(config["scratch_path"],"{sample}_{run}_R1"+preprocess_suffices["fastuniq"]+".fastq"),
+        R2_intmp = opj(config["scratch_path"],"{sample}_{run}_R2"+preprocess_suffices["fastuniq"]+".fastq"),
+        R1_outtmp = opj(config["scratch_path"],"{sample}_{run}_R1"+preprocess_suffices["fastuniq"]+".fastuniq.fastq"),
+        R2_outtmp = opj(config["scratch_path"],"{sample}_{run}_R2"+preprocess_suffices["fastuniq"]+".fastuniq.fastq"),
+        file_list = opj(config["scratch_path"],"{sample}_{run}.filelist")
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
+    shell:
+        """
+        gunzip -c {input.R1} > {params.R1_intmp}
+        gunzip -c {input.R2} > {params.R2_intmp}
+        echo {params.R1_intmp} > {params.file_list}
+        echo {params.R2_intmp} >> {params.file_list}
+        fastuniq -i {params.file_list} -t q -o {params.R1_outtmp} -p {params.R2_outtmp}
+        gzip -c {params.R1_outtmp} > {output.R1}
+        gzip -c {params.R2_outtmp} > {output.R2}
+        """
+
+rule fastuniq_se:
+    """Dummy rule for fastuniq on single-end input"""
+    input:
+        se=opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["fastuniq"]+".fastq.gz")
+    output:
+        se=opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["fastuniq"]+".fastuniq.fastq.gz")
+    shell:
+        """
+        mv {input.se} {output.se}
+        """
+
+def all_preprocessed(wildcards):
+    files = []
+    for sample in samples.keys():
+        for run in samples[sample].keys():
+            if "R2" not in samples[sample][run].keys():
+                files.append(opj(config["intermediate_path"],"preprocess","{}_{}_se{}.fastq.gz".format(sample,run,PREPROCESS)))
+            else:
+                files.append(opj(config["intermediate_path"],"preprocess","{}_{}_R1{}.fastq.gz".format(sample,run,PREPROCESS)))
+    return files
+
+rule avg_seq_length:
+    input:
+        # Use function to set all preprocessed files as input target
+        all_preprocessed
+    output:
+        opj(config["intermediate_path"],"preprocess","read_lengths.tab")
+    message: "Calculating average read length for samples. Output stored in {output}."
+    run:
+        import numpy as np
+        sample_lengths = {}
+        lengths = {}
+        for f in input:
+            basename = os.path.basename(f)
+            sample_run = basename.replace("_se{}.fastq.gz".format(PREPROCESS), "")
+            sample_run = sample_run.replace("_R1{}.fastq.gz".format(PREPROCESS), "")
+            for line in shell("seqtk seq -f 0.01 {f} | seqtk comp | cut -f2 | sort | uniq -c", iterable = True):
+                  line = (line.rstrip()).lstrip()
+                  items = line.split(" ")
+                  l = [int(items[1])]*int(items[0])
+                  try:
+                      lengths[sample_run] += l
+                  except KeyError:
+                      lengths[sample_run] = l
+            sample_lengths[sample_run] = np.round(np.mean(lengths[sample_run]),2)
+        df = pd.DataFrame(sample_lengths,index=["avg_len"]).T
+        df.to_csv(output[0], sep="\t")

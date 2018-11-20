@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="googlebot" content="noindex, nofollow">
+  <script type="text/javascript" src="/js/lib/dummy.js"></script>
+    <link rel="stylesheet" type="text/css" href="/css/result-light.css">
+  <style type="text/css">
+    #container {
+	width: 800px;
+	height: 600px;
+	margin: 0 auto
+  </style>
+</head>
+<body>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/series-label.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<div id="container"></div>
+
+<script type='text/javascript'>//<![CDATA[
+
+Highcharts.chart('container', {
+    title: {
+        text: 'Size distribution of assemblies'
+    },
+    yAxis: {
+        title: {
+            text: '% of assembly'
+        }
+    },
+    legend: {
+        layout: 'vertical',
+        align: 'right',
+        verticalAlign: 'middle'
+    },
+    plotOptions: {
+        series: {
+            label: {
+                connectorAllowed: false
+            },
+        }
+    },
+#ADD_SERIES
+    responsive: {
+        rules: [{
+            condition: {
+                maxWidth: 500
+            },
+            chartOptions: {
+                legend: {
+                    layout: 'horizontal',
+                    align: 'center',
+                    verticalAlign: 'bottom'
+                }
+            }
+        }]
+    }
+
+});
+//]]> 
+
+</script>
+</body>
+</html>
+

@@ -1,0 +1,240 @@
+import gffutils
+localrules:
+    gff_to_gtf,
+    gff_to_bed,
+    aggregate_normalized,
+    pca_plot_samples
+
+def parse_gff_to_gtf(in_file,fh_out):
+    counts = {"CDS": 0, "gene": 0}
+    with open(in_file, 'r') as fh:
+        for line in fh:
+            if line[0] == "#":
+                continue
+            line = line.rstrip()
+            feat = gffutils.feature.feature_from_line(line, strict=False, dialect=gffutils.constants.dialect,keep_order=False)
+            attributes = []
+            if feat.featuretype == "CDS":
+                counts[feat.featuretype]+=1
+                attributes = ["gene_id {}_{}".format(feat.seqid,counts[feat.featuretype])]
+            else:
+                continue
+            attribute_keys = {"protein_id": 0,"gene": 0,"product": 0,"Name": 0, "locus_tag": 0}
+            for a in feat.attributes:
+                if a in attribute_keys.keys():
+                    attributes.append(a+" "+(",".join(feat.attributes[a])).replace(";",""))
+                    attribute_keys[a]+=1
+            attributes = "; ".join(attributes)
+            if attribute_keys["protein_id"] > 0:
+                fh_out.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(feat.seqid,feat.source,feat.featuretype,feat.start,feat.end,feat.score,feat.strand,feat.frame,attributes))
+
+rule gff_to_gtf:
+    input:
+        opj(config["results_path"],"refmap","downloads","genome_list.tab")
+    output:
+        opj(config["results_path"],"refmap","genomes.gtf"),
+        opj(config["results_path"],"refmap","genomes.gff")
+    params:
+        dldir = opj(config["results_path"],"refmap","downloads")
+    run:
+        # Create gff file
+        shell("cat {params.dldir}/*/*genomic.gff > {output[1]}")
+        # Create gtf file of CDS features
+        with open(output[0], 'w') as fh:
+            parse_gff_to_gtf(output[1], fh)
+
+rule gff_to_bed:
+    input:
+        opj(config["results_path"],"refmap","genomes.gff")
+    output:
+        opj(config["results_path"],"refmap","genomes.bed")
+    run:
+        df = pd.read_table(input[0], comment="#", usecols=[0,1,2,3,4], header=None)
+        df = df.loc[df[2]=="region",[0,3,4]]
+        df[3] = df[3]-1
+        df.to_csv(output[0], sep="\t", index=False, header=False)
+
+rule count_pe:
+    input:
+        gtf = opj(config["results_path"],"refmap","genomes.gtf"),
+        bam = opj(config["results_path"],"refmap","bowtie2","{sample}_{run}_pe","{sample}_{run}_pe.sorted.bam")
+    output:
+        opj(config["results_path"],"refmap","featureCount","{sample}_{run}_pe.fc.tab"),
+        opj(config["results_path"],"refmap","featureCount","{sample}_{run}_pe.fc.tab.summary")
+    threads: 4
+    params:
+        tmpdir = config["scratch_path"]
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*30
+    shell:
+        """
+        featureCounts -a {input.gtf} -o {output[0]} --fraction -M -t CDS -g protein_id -p -B -T \
+        {threads} --tmpDir {params.tmpdir} {input.bam}
+        """
+
+rule count_se:
+    input:
+        gtf = opj(config["results_path"],"refmap","genomes.gtf"),
+        bam = opj(config["results_path"],"refmap","bowtie2","{sample}_{run}_se","{sample}_{run}_se.sorted.bam")
+    output:
+        opj(config["results_path"],"refmap","featureCount","{sample}_{run}_se.fc.tab"),
+        opj(config["results_path"],"refmap","featureCount","{sample}_{run}_se.fc.tab.summary")
+    threads: 4
+    params:
+        tmpdir = config["scratch_path"]
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*30
+    shell:
+        """
+        featureCounts -a {input.gtf} -o {output[0]} --fraction -M -t CDS -g protein_id -T \
+        {threads} --tmpDir {params.tmpdir} {input.bam}
+        """
+
+rule normalize:
+    input:
+        counts = opj(config["results_path"],"refmap","featureCount","{sample}_{run}_{seq_type}.fc.tab"),
+        readlengths_file = opj(config["intermediate_path"],"preprocess","read_lengths.tab")
+    output:
+        raw = opj(config["results_path"],"refmap","featureCount","{sample}_{run}_{seq_type}.fc.raw.tab"),
+        tpm = opj(config["results_path"],"refmap","featureCount","{sample}_{run}_{seq_type}.fc.tpm.tab")
+    message: "Normalizing counts for {wildcards.sample}_{wildcards.run}"
+    params:
+        script = "source/utils/featureCountsTPM.py"
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*30
+    shell:
+        """
+        read_length=$(cat {input.readlengths_file} | grep {wildcards.sample}_{wildcards.run} | cut -f2)
+        python {params.script} --rl $read_length -i {input.counts} --sampleName {wildcards.sample}_{wildcards.run} --rc {output.raw} -o {output.tpm}
+        """
+
+def get_bai_files(samples):
+    files = []
+    for sample in samples.keys():
+        for run in samples[sample].keys():
+            if is_pe(samples[sample][run]):
+                seq_type = "pe"
+            else:
+                seq_type = "se"
+            files.append(opj(config["results_path"],"refmap","bowtie2","{}_{}_{}".format(sample, run, seq_type),"{}_{}_{}.sorted.bam.bai".format(sample, run, seq_type)))
+    return files
+
+rule bedtools_multicov:
+    input:
+        baifiles = get_bai_files(samples),
+        bedfile = opj(config["results_path"],"refmap","genomes.bed"),
+        name_file = opj(config["results_path"],"refmap","downloads","genome_names.tab")
+    output:
+        opj(config["results_path"],"refmap","genomes_coverage.tab")
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*2
+    run:
+        bamfiles = []
+        samples = []
+        for f in input.baifiles:
+            base = os.path.basename(f)
+            bamfile = f.rstrip(".bai")
+            bamfiles.append(bamfile)
+            sample = base.replace(".sorted.bam.bai","").rstrip("_[ps]e")
+            samples.append(sample)
+        bamfilestring = " ".join(bamfiles)
+        shell("bedtools multicov -bams {bamfilestring} -bed {input.bedfile} | cut -f1,4- > {output[0]}")
+        # Add genome_names
+        genome_names = pd.read_table(input.name_file, header=None, names=["seq_id","name"])
+        # Add header
+        df = pd.read_table(output[0], header=None, names=["seq_id"]+samples)
+        df = pd.merge(genome_names, df, left_on="seq_id", right_on="seq_id")
+        df.drop("seq_id", axis=1, inplace=True)
+        df.to_csv(output[0], sep="\t", index=False)
+
+def get_fc_files(ft="tpm"):
+  files = []
+  for sample in samples.keys():
+      for run in samples[sample].keys():
+          seq_type = "se"
+          if is_pe(samples[sample][run]):
+              seq_type = "pe"
+          files.append(opj(config["results_path"],"refmap","featureCount","{}_{}_{}.fc.{}.tab".format(sample, run, seq_type,ft)))
+  return files
+
+def paste_files(files, dirname, out, ft="tpm"):
+    temp_files = []
+    for file_num, f in enumerate(files, start=1):
+        name = os.path.basename(f)
+        sample_run = name.rstrip("_[ps]e.fc.{}.tab".format(ft))
+        temp_file = opj(dirname,"refmap-{}-fc".format(sample_run))
+        if file_num == 1:
+            shell("cut -f1,2 {f} > {temp_file}")
+        else:
+            shell("cut -f2 {f} > {temp_file}")
+        temp_files.append(temp_file)
+    files = " ".join(temp_files)
+    shell("paste -d '\t' {files} > {out}")
+    shell("rm -rf {files}")
+
+rule aggregate_normalized:
+    """Aggregates feature count files and performs TPM normalization"""
+    input:
+        tpm_files = get_fc_files("tpm"),
+        raw_files = get_fc_files("raw")
+    output:
+        raw = opj(config["results_path"],"refmap","featureCount","fc.raw.tab"),
+        tpm = opj(config["results_path"],"refmap","featureCount","fc.tpm.tab")
+    run:
+        dirname = os.path.expandvars(config["tmpdir"])
+        paste_files(input.tpm_files, dirname=dirname, out=output.tpm, ft="tpm")
+        paste_files(input.raw_files, dirname=dirname, out=output.raw, ft="raw")
+
+
+def calc_pca(f):
+    import pandas as pd
+    from sklearn.decomposition import PCA
+    df = pd.read_table(f, header=0, index_col=0)
+    df = df.loc[df.sum(axis=1)>0]
+    df = df.T
+    pca = PCA(n_components=2)
+    fit = pca.fit(df)
+    pos = pca.fit_transform(df)
+    return fit, pos, df
+
+def plot_pca(fit, pos, df, out):
+    import matplotlib as mpl
+    mpl.use('agg')
+    import numpy as np
+    from matplotlib import pyplot as plt
+    plt.style.use('ggplot')
+
+    x = [item[0] for item in pos]
+    y = [item[1] for item in pos]
+    labels = [df.index[i] for i in range(len(pos))]
+    ax = plt.scatter(x=x,y=y,s=0)
+    x_var,y_var = fit.explained_variance_ratio_
+    for i in range(len(pos)):
+        ax = plt.text(x[i],y[i],s=labels[i])
+    ax.axes.set_xlabel("PC 1 ({}%)".format(np.round(x_var*100)))
+    ax.axes.set_ylabel("PC 2 ({}%)".format(np.round(y_var*100)))
+    plt.savefig(out, bbox_inches="tight", dpi=300)
+    plt.close("all")
+
+rule pca_plot_samples:
+    input:
+        raw = opj(config["results_path"],"refmap","featureCount","fc.raw.tab"),
+        tpm = opj(config["results_path"],"refmap","featureCount","fc.tpm.tab"),
+        cov = opj(config["results_path"],"refmap","genomes_coverage.tab")
+    output:
+        raw_plot = opj(config["report_path"],"refmap","figures","pca_raw.pdf"),
+        tpm_plot = opj(config["report_path"],"refmap","figures","pca_tpm.pdf"),
+        cov_plot = opj(config["report_path"],"refmap","figures","pca_cov.pdf"),
+    run:
+        # Plot pca of raw
+        fit, pos, df = calc_pca(input.raw)
+        plot_pca(fit, pos, df, output.raw_plot)
+
+        # Plot pca of tpms
+        fit, pos, df = calc_pca(input.tpm)
+        plot_pca(fit, pos, df, output.tpm_plot)
+
+        # Plot pca of genome coverage
+        fit, pos, df = calc_pca(input.cov)
+        plot_pca(fit, pos, df, output.cov_plot)
+

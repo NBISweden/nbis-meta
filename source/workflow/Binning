@@ -1,0 +1,40 @@
+binningfiles = []
+link_files = {}
+if config["checkm"]:
+    include: "../rules/Binning/checkm.rules"
+    binningfiles.append(opj(config["results_path"],"checkm","bin_qa_plot.png"))
+    if system == "Linux":
+        binningfiles.append(opj(config["results_path"],"checkm","phylogeny.tab"))
+
+for group in assemblyGroups.keys():
+    for sample in samples.keys():
+        for run in samples[sample].keys():
+            if is_pe(samples[sample][run]):
+                seq_type = "pe"
+            else:
+                seq_type = "se"
+            # Check if file exists already in an assembly mapping folder
+            f = opj(config["results_path"],"assembly",group,"mapping","{}_{}_{}{}.bam".format(sample,run,seq_type,POSTPROCESS))
+            out = opj(config["results_path"], "binning", "map",group,"{}_{}_{}{}.bam".format(sample,run,seq_type,POSTPROCESS))
+            out_dir = os.path.dirname(out)
+            # If bam file exists from an assembly run, link it rather than create it
+            if os.path.isfile(f) and not os.path.isfile(out):
+                abs_target = os.path.abspath(f)
+                abs_link = os.path.abspath(out)
+                if group not in link_files.keys():
+                    link_files[group] = {sample: {run: {seq_type:abs_target}}}
+                else:
+                    if sample not in link_files[group].keys():
+                        link_files[group][sample] = {run: {seq_type: abs_target}}
+                    else:
+                        link_files[group][sample][run] = {seq_type: abs_target}
+    binningfiles.append(opj(config["results_path"], "binning", "bin",group,"{}.summary".format(group)))
+
+include: "../rules/Binning/map.rules"
+include: "../rules/Binning/binning.rules"
+
+rule binning_done:
+    input:
+        binningfiles
+    output:
+        temp(touch(opj(config["results_path"],"progress","binning.done")))

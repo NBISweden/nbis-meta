@@ -1,0 +1,44 @@
+localrules: assemblies_qc_report
+
+def get_map_files(sp):
+    files = []
+    if sp=="markdup.metrics" and not config["markduplicates"]:
+        return files
+    for group in assemblyGroups.keys():
+        for sample in assemblyGroups[group].keys():
+            for run in assemblyGroups[group][sample].keys():
+                pair = "se"
+                if "R2" in assemblyGroups[group][sample][run].keys():
+                    pair = "pe"
+                f = opj(config["results_path"],"assembly",group,"mapping","{}_{}_{}.{}".format(sample,run,pair,sp))
+                files.append(f)
+    return files
+
+rule assemblies_qc_report:
+    """ Summarize assembly statistics in a report """
+    input:
+        bowtie=get_map_files(sp="bam.log"),
+        fc=get_map_files(sp="fc.tab.summary"),
+        markdups=get_map_files(sp="markdup.metrics")
+    output:
+        opj(config["report_path"],"assemblies_report.html")
+    shadow: "shallow"
+    params: config="config/multiqc_assembly_config.yaml"
+    run:
+        shell("mkdir -p assemblies_report_temp")
+        for file in input.bowtie:
+            g = file.split("/")[-3]
+            shell("mkdir -p assemblies_report_temp/{g}")
+            shell("cp {file} assemblies_report_temp/{g}")
+        for file in input.fc:
+            g = file.split("/")[-3]
+            shell("mkdir -p assemblies_report_temp/{g}")
+            shell("cp {file} assemblies_report_temp/{g}")
+        for file in input.markdups:
+            g = file.split("/")[-3]
+            f = os.path.basename(file)
+            shell("mkdir -p assemblies_report_temp/{g}")
+            shell("cat {file} | sed 's/# MarkDuplicates/# picard.sam.markduplicates/g' > assemblies_report_temp/{g}/{f}")
+        output_dir=os.path.dirname(output[0])
+        shell("cd assemblies_report_temp ; multiqc -f -d -c ../{params.config} -n assemblies_report.html -o ../{output_dir} .")
+        shell("rm -rf assemblies_report_temp")
