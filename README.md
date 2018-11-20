@@ -21,7 +21,7 @@ Potential analyses include:
 Checkout the latest version of this repository (to your current directory):
 
 ```
-git clone https://bitbucket.org/scilifelab-lts/nbis-meta
+git clone https://bitbucket.org/scilifelab-lts/nbis-metagenomics
 ```
 
 ### Install the required software
