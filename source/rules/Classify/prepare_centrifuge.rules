@@ -189,10 +189,17 @@ rule add_libraries:
     message: "Adding genomes from {}".format(", ".join(config["centrifuge_domains"]))
     run:
         for mapfile in input.maps:
-            shell("cat {mapfile} >> {output.conversion_table}")
+            shell("cat {mapfile} >> {output.conversion_table}.tmp")
             dir = os.path.dirname(mapfile)
             shell("cat {dir}/input-sequences.fasta >> {output.fna}")
             shell("cat {dir}/seqid2file.map >> {output.filemap}")
+        with open("{}.tmp".format(output.conversion_table), 'r') as fhin, open(output.conversion_table, 'w') as fhout:
+            for line in fhin:
+                items = line.rsplit()
+                fhout.write("{}\t{}\n".format(items[0],items[1]))
+        shell("rm {output.conversion_table}.tmp")
+
+
 
 rule centrifuge_build:
     """Build centrifuge database using downloaded sequences"""
