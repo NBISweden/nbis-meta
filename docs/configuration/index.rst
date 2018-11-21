@@ -1,9 +1,9 @@
 Installation
 ============
 **1. Clone the repository**
-Checkout the latest version of this repository (to your current directory)::
+Checkout the latest version of this repository::
 
-    git clone https://bitbucket.org/scilifelab-lts/nbis-metagenomics
+    git clone https://bitbucket.org/scilifelab-lts/nbis-meta
 
 **2. Install the required software**
 All the software needed to run this workflow is included as a

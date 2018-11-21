@@ -34,7 +34,7 @@ This is a snakemake workflow for rocessing and analysis of metagenomic
 datasets. It can handle single- and paired-end data and can run on a
 local laptop with either Linux or OSX, or in a cluster environment.
 
-The source code is available at `BitBucket <https://bitbucket.org/scilifelab-lts/nbis-metagenomics>`_ and
+The source code is available at `BitBucket <https://bitbucket.org/scilifelab-lts/nbis-meta>`_ and
 is being developed as part of the `NBIS <http://nbis.se>`_ bioinformatics infrastructure.
 
 Installation
@@ -42,7 +42,7 @@ Installation
 **1. Clone the repository**
 Checkout the latest version of this repository (to your current directory)::
 
-    git clone https://bitbucket.org/scilifelab-lts/nbis-metagenomics
+    git clone https://bitbucket.org/scilifelab-lts/nbis-meta
 
 **2. Install the required software**
 All the software needed to run this workflow is included as a
