@@ -6,10 +6,16 @@
 image: continuumio/miniconda3:latest
 
 pipelines:
+  default:
+    - step:
+        name: Test
+        script:
+          - echo "Testing!"
   tags:
     v*:
     - step:
         name: Build and dry-run
+        image: continuumio/miniconda3:latest
         script: # Modify the commands below to build your repository.
           - mkdir -p envs/nbis-meta && conda env create -f envs/environment.yaml -p envs/nbis-meta
           - conda activate envs/nbis-meta
