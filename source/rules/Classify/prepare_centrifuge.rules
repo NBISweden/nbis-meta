@@ -64,6 +64,7 @@ rule centrifuge_download_taxonomy:
     params:
         outdir = opj(config["classifier_db_path"],"centrifuge","taxonomy")
     message: "Downloading taxonomy dump file for centrifuge"
+    shadow: "minimal"
     shell:
         """
         mkdir -p {params.outdir}
@@ -73,8 +74,10 @@ rule centrifuge_download_taxonomy:
 rule centrifuge_sqlite_taxdb:
     """Creates a sqlite database for ete3 in the centrifuge path"""
     output:
-        opj(config["classifier_db_path"],"centrifuge","taxonomy","taxdb.sqlite")
+        opj(config["classifier_db_path"],"centrifuge","taxonomy","taxdb.sqlite"),
+        opj(config["classifier_db_path"],"centrifuge","taxonomy","taxdb.sqlite.traverse.pkl")
     message: "Creating ete3 sqlite taxonomy database in {output[0]}"
+    shadow: "minimal"
     run:
         from ete3 import NCBITaxa
         shell("touch {output[0]}")
@@ -117,7 +120,8 @@ rule centrifuge_download_domain:
         dldir = opj(config["classifier_db_path"],"centrifuge","downloads"),
         assembly_level = config["centrifuge_assembly_level"],
         tmp_map = opj(config["classifier_db_path"],"centrifuge","downloads","{domain}","seqid2taxid"),
-        ftp_summary = "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/{domain}/assembly_summary.txt"
+        ftp_summary = "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/{domain}/assembly_summary.txt",
+        dlscript = "source/utils/centrifuge-download"
     threads: 4
     message: "Downloading genomes for {wildcards.domain}"
     resources:
@@ -147,7 +151,7 @@ rule centrifuge_download_domain:
             mapfile = "{}.{}.map".format(params.tmp_map, a.replace(" ","_"))
             idfile = "{}.{}.ids".format(params.tmp_map, a.replace(" ","_"))
             # Download sequence files for this assembly level and store seqid2taxid mappings
-            shell("centrifuge-download {taxidstring} -P {threads} -o {params.dldir} -m -d {wildcards.domain} -a '{a}' refseq > {mapfile}")
+            shell("{params.dlscript} {taxidstring} -P {threads} -o {params.dldir} -m -d {wildcards.domain} -a '{a}' refseq > {mapfile}")
             # Read the mapping file and filter out taxa that have already been added
             mapdf = pd.read_table(mapfile, header=None, names=["seq","taxid"])
             mapdf = mapdf.loc[~mapdf.taxid.isin(stored_taxids)]
