@@ -18,10 +18,10 @@ Potential analyses include:
 ## Installation
 
 ### Clone the repository
-Checkout the latest version of this repository (to your current directory):
+Checkout the latest version of this repository:
 
 ```
-git clone https://bitbucket.org/scilifelab-lts/nbis-metagenomics
+git clone https://bitbucket.org/scilifelab-lts/nbis-meta
 ```
 
 ### Install the required software
