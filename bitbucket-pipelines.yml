@@ -8,14 +8,6 @@ pipelines:
   tags:
     v*:
       - step:
-          name: Install
-          image: continuumio/miniconda3:latest
-          caches:
-            - condacache
-          script: # Modify the commands below to build your repository.
-            - mkdir -p envs/nbis-meta && conda env create -f envs/environment.yaml -p envs/nbis-meta
-            - conda activate envs/nbis-meta
-      - step:
           name: Dry-run
           image: continuumio/miniconda3:latest
           caches:
@@ -26,6 +18,15 @@ pipelines:
             - snakemake --configfile examples/centrifuge/config.yaml -n
             - snakemake --configfile examples/refmap/config.yaml -n
             - snakemake -n
+      - step:
+              name: Install
+              trigger: manual
+              image: continuumio/miniconda3:latest
+              caches:
+                - condacache
+              script: # Modify the commands below to build your repository.
+                - mkdir -p envs/nbis-meta && conda env create -f envs/environment.yaml -p envs/nbis-meta
+                - conda activate envs/nbis-meta
 
 definitions:
   caches:
