@@ -30,7 +30,7 @@ All the software needed to run this workflow is included as a
 [install conda](https://conda.io/docs/user-guide/install/index.html)
 before installing the required software for this workflow.
 
-To create the environment `sm-meta` use the supplied
+To create the environment `nbis-meta` use the supplied
 [environment.yaml](envs/environment.yaml) file found in the *envs/*
 folder.
 
