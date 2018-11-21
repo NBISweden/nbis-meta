@@ -3,20 +3,22 @@
 # Only use spaces to indent your .yml configuration.
 # -----
 # You can specify a custom docker image from Docker Hub as your build environment.
-image: continuumio/miniconda3:latest
 
 pipelines:
-  default:
-    - step:
-        name: Test
-        script:
-          - echo "Testing!"
   tags:
     v*:
     - step:
-        name: Build and dry-run
+        name: Install and dry-run
         image: continuumio/miniconda3:latest
+        caches:
+          - condacache
         script: # Modify the commands below to build your repository.
           - mkdir -p envs/nbis-meta && conda env create -f envs/environment.yaml -p envs/nbis-meta
           - conda activate envs/nbis-meta
-          - snakemake -np
+          - snakemake --configfile examples/binning/config.yaml -np
+          - snakemake --configfile examples/centrifuge/config.yaml -np
+          - snakemake --configfile examples/refmap/config.yaml -np
+
+definitions:
+  caches:
+    condacache: envs/nbis-meta
