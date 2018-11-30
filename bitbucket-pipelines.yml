@@ -6,8 +6,7 @@
 
 pipelines:
   branches:
-    env:
-    # Run install of conda environment for every commit to branch env, i.e. for changes to the environment
+    master:
       - step:
           name: Install
           image: continuumio/miniconda3:latest
@@ -16,7 +15,6 @@ pipelines:
           script:
             - mkdir -p envs/nbis-meta && conda env create --force -f envs/environment.yaml -p envs/nbis-meta
             - conda activate envs/nbis-meta
-    master:
       - step:
           name: Dry-run
           image: continuumio/miniconda3:latest
