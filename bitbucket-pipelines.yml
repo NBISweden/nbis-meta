@@ -5,8 +5,8 @@
 # You can specify a custom docker image from Docker Hub as your build environment.
 
 pipelines:
-  branches:
-    master:
+  pull-requests:
+    feature/*:
       - step:
           name: Install
           image: continuumio/miniconda3:latest
