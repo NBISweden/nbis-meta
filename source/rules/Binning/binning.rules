@@ -1,3 +1,6 @@
+localrules:
+    concoct_cutup
+
 rule run_maxbin:
     input:
         fa = opj(config["results_path"],"assembly","{group}","final_contigs.fa"),
@@ -23,3 +26,18 @@ rule run_maxbin:
          -min_contig_length {params.min_contig_length} -thread {threads} -out {params.tmp_dir}/{wildcards.group}
          mv {params.tmp_dir}/* {params.dir}
         """
+
+## CONCOCT ##
+
+rule concoct_cutup:
+    input:
+        fa = opj(config["results_path"],"assembly","{group}","final_contigs.fa")
+    output:
+        fa = opj(config["results_path"],"assembly","{group}","final_contigs_c10K.fa")
+    conda:
+        "../../../envs/concoct/concoct.yaml"
+    shell:
+        """
+        cut_up_fasta.py -c 10000 -o 0 -m {input.fa} > {output.fa}
+        """
+

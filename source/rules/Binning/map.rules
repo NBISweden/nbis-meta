@@ -5,6 +5,70 @@ localrules:
 ruleorder: link_bam > binning_markduplicates
 ruleorder: link_bam > map_pe_for_binning > map_se_for_binning
 
+## MAPPING FOR CONCOCT ##
+rule concoct_bt_build:
+    input:
+        fa = opj(config["results_path"],"assembly","{group}","final_contigs_c10K.fa")
+    output:
+        expand(opj(config["results_path"],"assembly","{{group}}","final_contigs_c10K.fa.{index}.bt2l"),index=range(1,5))
+        params: prefix = opj(config["results_path"],"assembly","{group}","final_contigs_c10K.fa")
+    threads: config["bowtie2_threads"]
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
+    shell:
+        """
+        bowtie2-build --large-index --threads {threads} {params.prefix} {params.prefix}
+        """
+
+rule concoct_map_pe:
+    input:
+        index = expand(opj(config["results_path"],"assembly","{{group}}","final_contigs_c10K.fa.{index}.bt2l"),index=range(1,5)),
+        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
+        R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+PREPROCESS+".fastq.gz"),
+    output:
+        bam = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}.markdup.bam"),
+        bai = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}.markdup.bai"),
+        btlog = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}.log"),
+        metric = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}.metric")
+    params:
+        prefix = opj(config["results_path"],"assembly","{{group}}","final_contigs_c10K.fa"),
+        temp_sam = opj(os.path.expandvars("$TMPDIR"),"{sample}_{run}.sam"),
+        temp_bam = opj(os.path.expandvars("$TMPDIR"),"{sample}_{run}.bam"),
+        temp_bam_markdup = opj(os.path.expandvars("$TMPDIR"),"{sample}_{run}.markdup.bam"),
+        temp_bam_resort = opj(os.path.expandvars("$TMPDIR"),"{sample}_{run}.markdup.resort.bam"),
+        temp_dir = os.path.expandvars("$TMPDIR"),
+        jarfile=config["picard_jar"],
+        picard_path=config["picard_path"],
+        java_opt="-Xms2g -Xmx64g"
+    threads: 10
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
+    shell:
+        """
+        mkdir -p {params.temp_dir}
+        bowtie2 --very-sensitive-local -p {threads} -x {params.prefix} -1 {input.R1} \
+        -2 {input.R2} > {params.temp_sam} 2>{output.btlog}
+        samtools view -bh {params.temp_sam} | samtools sort -@ 9 -o {params.temp_bam}
+        java {params.java_opt} -XX:ParallelGCThreads={threads} -cp params.picard_path -jar {params.jarfile} \
+         MarkDuplicates I={params.temp_bam} O={params.temp_bam_markdup} M={output.metric} ASO=coordinate REMOVE_DUPLICATES=TRUE
+        samtools sort -@ 9 -o {params.temp_bam_resort} {params.temp_bam_markdup}
+        samtools index -@ 9 {params.temp_bam_markdup}
+        mv {params.temp_bam_markdup} {output.bam}
+        mv {params.temp_bam_markdup}.bai {output.bai}
+        """
+
+rule concoct_genomecoverage:
+    input:
+        bam = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}.markdup.bam")
+    output:
+        cov = opj(config["results_path"], "concoct", "map", "{group}", "{sample}_{run}.cov")
+        per = opj(config["results_path"], "concoct", "map", "{group}", "{sample}_{run}.cov.percontig")
+    run:
+        for line in shell("genomeCoverageBed -ibam {input.bam}", iterable = True):
+
+
+## MAPPING FOR MAXBIN2 ##
+
 # Generate SAF file for contigs
 rule generate_contig_SAF:
     input: 
@@ -104,7 +168,7 @@ rule binning_markduplicates:
         """
         java {params.java_opt} -XX:ParallelGCThreads={threads} -cp params.picard_path -jar {params.jarfile} MarkDuplicates \
             I={input} O={params.temp_bam} M={output.metric} ASO=coordinate REMOVE_DUPLICATES=TRUE 2> {log}
-        samtools sort -@ 11 -o {params.temp_sort_bam} {params.temp_bam}
+        samtools sort -@ 9 -o {params.temp_sort_bam} {params.temp_bam}
         mv {params.temp_sort_bam} {output.bam}
         """
 
