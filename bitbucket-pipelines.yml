@@ -16,7 +16,7 @@ pipelines:
           script:
             - mkdir -p envs/nbis-meta && conda env create --force -f envs/environment.yaml -p envs/nbis-meta
             - conda activate envs/nbis-meta
-    stable:
+    master:
       - step:
           name: Dry-run
           image: continuumio/miniconda3:latest
