@@ -1,7 +1,9 @@
 localrules:
     binning_generate_abund_list,
     generate_contig_SAF,
-    link_bam
+    link_bam,
+    concoct_genomecoverage
+
 ruleorder: link_bam > binning_markduplicates
 ruleorder: link_bam > map_pe_for_binning > map_se_for_binning
 
@@ -11,7 +13,8 @@ rule concoct_bt_build:
         fa = opj(config["results_path"],"assembly","{group}","final_contigs_c10K.fa")
     output:
         expand(opj(config["results_path"],"assembly","{{group}}","final_contigs_c10K.fa.{index}.bt2l"),index=range(1,5))
-        params: prefix = opj(config["results_path"],"assembly","{group}","final_contigs_c10K.fa")
+    params:
+        prefix = opj(config["results_path"],"assembly","{group}","final_contigs_c10K.fa")
     threads: config["bowtie2_threads"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60
@@ -26,10 +29,10 @@ rule concoct_map_pe:
         R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
         R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+PREPROCESS+".fastq.gz"),
     output:
-        bam = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}.markdup.bam"),
-        bai = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}.markdup.bai"),
-        btlog = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}.log"),
-        metric = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}.metric")
+        bam = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}_pe.markdup.bam"),
+        bai = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}_pe.markdup.bai"),
+        btlog = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}_pe.log"),
+        metric = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}_pe.metric")
     params:
         prefix = opj(config["results_path"],"assembly","{{group}}","final_contigs_c10K.fa"),
         temp_sam = opj(os.path.expandvars("$TMPDIR"),"{sample}_{run}.sam"),
@@ -57,15 +60,80 @@ rule concoct_map_pe:
         mv {params.temp_bam_markdup}.bai {output.bai}
         """
 
+rule concoct_map_se:
+    input:
+        index = expand(opj(config["results_path"],"assembly","{{group}}","final_contigs_c10K.fa.{index}.bt2l"),index=range(1,5)),
+        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+PREPROCESS+".fastq.gz")
+    output:
+        bam = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}_se.markdup.bam"),
+        bai = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}_se.markdup.bai"),
+        btlog = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}_se.log"),
+        metric = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}_se.metric")
+    params:
+        prefix = opj(config["results_path"],"assembly","{{group}}","final_contigs_c10K.fa"),
+        temp_sam = opj(os.path.expandvars("$TMPDIR"),"{sample}_{run}.sam"),
+        temp_bam = opj(os.path.expandvars("$TMPDIR"),"{sample}_{run}.bam"),
+        temp_bam_markdup = opj(os.path.expandvars("$TMPDIR"),"{sample}_{run}.markdup.bam"),
+        temp_bam_resort = opj(os.path.expandvars("$TMPDIR"),"{sample}_{run}.markdup.resort.bam"),
+        temp_dir = os.path.expandvars("$TMPDIR"),
+        jarfile=config["picard_jar"],
+        picard_path=config["picard_path"],
+        java_opt="-Xms2g -Xmx64g"
+    threads: 10
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
+    shell:
+        """
+        mkdir -p {params.temp_dir}
+        bowtie2 --very-sensitive-local -p {threads} -x {params.prefix} -U {input.se} > {params.temp_sam} 2>{output.btlog}
+        samtools view -bh {params.temp_sam} | samtools sort -@ 9 -o {params.temp_bam}
+        java {params.java_opt} -XX:ParallelGCThreads={threads} -cp params.picard_path -jar {params.jarfile} \
+         MarkDuplicates I={params.temp_bam} O={params.temp_bam_markdup} M={output.metric} ASO=coordinate REMOVE_DUPLICATES=TRUE
+        samtools sort -@ 9 -o {params.temp_bam_resort} {params.temp_bam_markdup}
+        samtools index -@ 9 {params.temp_bam_markdup}
+        mv {params.temp_bam_markdup} {output.bam}
+        mv {params.temp_bam_markdup}.bai {output.bai}
+        """
+
 rule concoct_genomecoverage:
     input:
-        bam = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}.markdup.bam")
+        bam = opj(config["results_path"], "concoct", "map", "{group}","{sample}_{run}_{seq}.markdup.bam")
     output:
-        cov = opj(config["results_path"], "concoct", "map", "{group}", "{sample}_{run}.cov")
-        per = opj(config["results_path"], "concoct", "map", "{group}", "{sample}_{run}.cov.percontig")
+        cov = opj(config["results_path"], "concoct", "map", "{group}", "{sample}_{run}_{seq}.cov")
+    shell:
+        """
+        genomeCoverageBed -ibam {input.bam} > {output.cov}
+        """
+
+
+def get_covfiles(samples, group):
+    files = []
+    for sample in samples.keys():
+        for run in samples[sample].keys():
+            if is_pe(samples[sample][run]):
+                files.append(opj(config["results_path"], "concoct", "map", group, "{}_{}_pe.cov".format(sample, run)))
+            else:
+                files.append(opj(config["results_path"], "concoct", "map", group, "{}_{}_se.cov".format(sample, run)))
+    return files
+
+
+rule concoct_generate_covtable:
+    input:
+        covfiles = lambda wildcards: get_covfiles(samples, wildcards.group),
+        fa = opj(config["results_path"],"assembly","{group}","final_contigs_c10K.fa")
+    output:
+        cov = opj(config["results_path"], "concoct", "map", "{group}", "concoct_inputtable.tsv")
+    params:
+        src = "gen_input_table.py"
+    conda:
+        "../../../envs/concoct.yaml"
     run:
-        for line in shell("genomeCoverageBed -ibam {input.bam}", iterable = True):
-            # Calculate coverage here
+        samplenames = []
+        for f in input.covfiles:
+            sample_run = (os.path.basename(f)).replace("_se.cov", "").replace("_pe.cov", "")
+            samplenames.append(sample_run)
+        samplenames = " ".join(samplenames)
+        shell("{params.src} --isbedfiles --samplenames {samplenames} {input.fa} {input.covfiles} > {output.cov}")
 
 ## MAPPING FOR MAXBIN2 ##
 
