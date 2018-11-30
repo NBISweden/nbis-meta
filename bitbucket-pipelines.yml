@@ -16,11 +16,14 @@ pipelines:
           script:
             - mkdir -p envs/nbis-meta && conda env create --force -f envs/environment.yaml -p envs/nbis-meta
             - conda activate envs/nbis-meta
-    master:
+    stable:
       - step:
           name: Dry-run
-          image: johanneskoester/snakemake:latest
+          image: continuumio/miniconda3:latest
+          caches:
+            - condacache
           script:
+            - conda activate envs/nbis-meta
             - snakemake --configfile examples/binning/config.yaml -n
             - snakemake --configfile examples/centrifuge/config.yaml -n
             - snakemake --configfile examples/refmap/config.yaml -n
