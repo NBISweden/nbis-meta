@@ -5,28 +5,26 @@
 # You can specify a custom docker image from Docker Hub as your build environment.
 
 pipelines:
-  tags:
-    v*:
+  branches:
+    env:
+    # Run install of conda environment for every commit to branch env, i.e. for changes to the environment
       - step:
-          name: Dry-run
+          name: Install
           image: continuumio/miniconda3:latest
           caches:
             - condacache
           script:
+            - mkdir -p envs/nbis-meta && conda env create --force -f envs/environment.yaml -p envs/nbis-meta
             - conda activate envs/nbis-meta
+    master:
+      - step:
+          name: Dry-run
+          image: johanneskoester/snakemake:latest
+          script:
             - snakemake --configfile examples/binning/config.yaml -n
             - snakemake --configfile examples/centrifuge/config.yaml -n
             - snakemake --configfile examples/refmap/config.yaml -n
             - snakemake -n
-      - step:
-              name: Install
-              trigger: manual
-              image: continuumio/miniconda3:latest
-              caches:
-                - condacache
-              script: # Modify the commands below to build your repository.
-                - mkdir -p envs/nbis-meta && conda env create -f envs/environment.yaml -p envs/nbis-meta
-                - conda activate envs/nbis-meta
 
 definitions:
   caches:
