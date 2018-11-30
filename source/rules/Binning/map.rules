@@ -65,7 +65,7 @@ rule concoct_genomecoverage:
         per = opj(config["results_path"], "concoct", "map", "{group}", "{sample}_{run}.cov.percontig")
     run:
         for line in shell("genomeCoverageBed -ibam {input.bam}", iterable = True):
-
+            # Calculate coverage here
 
 ## MAPPING FOR MAXBIN2 ##
 
