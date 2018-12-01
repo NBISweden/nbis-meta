@@ -169,11 +169,11 @@ if(os.path.isfile(config["sample_list"])):
         config_params.append(("   - Keep intermediate contigs", config["megahit_keep_intermediate"]))
         config_params.append(("   - Assembly additional params", config["megahit_additional_settings"]))
         # Add information on binning
-        if config["binning"]:
-            config_params.append((" - Genome binning","MaxBin2"))
+        if config["maxbin"]:
+            config_params.append((" - Genome binning", "MaxBin2"))
+        if config["concoct"]:
+            config_params.append((" - Genome binning", "CONCOCT"))
             config_params.append(("   - Min contig length",config["min_contig_length"]))
-            config_params.append(("   - Map dir",os.path.abspath(opj(config["results_path"], "binning", "map"))))
-            config_params.append(("   - Bin dir",os.path.abspath(opj(config["results_path"], "binning", "bin"))))
             if config["checkm"]:
                 config_params.append(("   - QC Bins (CheckM)", "Yes"))
                 config_params.append(("   - Checkm marker_taxon", "Prokaryote"))

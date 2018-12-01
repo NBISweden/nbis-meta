@@ -67,7 +67,7 @@ if config["assembly"]:
         include: "source/workflow/Annotation"
         inputs.append(annotation_done)
     # Binning
-    if config["binning"]:
+    if config["maxbin"] or config["concoct"]:
         inputs.append(binning_done)
         include: "source/workflow/Binning"
       # Checkm

@@ -92,9 +92,11 @@ infernal_dbpath: resources/infernal
 ###############
 ### BINNING ###
 ###############
-binning: False
 min_contig_length: 1000
-binning_threads: 10
+maxbin: False
+maxbin_threads: 10
+concoct: False
+concoct_threads: 20
 # Do QA on produced bins using Checkm?
 checkm: False
 

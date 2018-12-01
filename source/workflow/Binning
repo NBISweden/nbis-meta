@@ -28,7 +28,10 @@ for group in assemblyGroups.keys():
                         link_files[group][sample] = {run: {seq_type: abs_target}}
                     else:
                         link_files[group][sample][run] = {seq_type: abs_target}
-    binningfiles.append(opj(config["results_path"], "binning", "bin",group,"{}.summary".format(group)))
+    if config["maxbin"]:
+        binningfiles.append(opj(config["results_path"], "binning", "maxbin", "bin", group, "{}.summary".format(group)))
+    if config["concoct"]:
+        binningfiles.append(opj(config["results_path"], "binning", "concoct", "bin", group, "clustering_gt{l}.tsv".format(l=config["min_contig_length"])))
 
 include: "../rules/Binning/map.rules"
 include: "../rules/Binning/binning.rules"

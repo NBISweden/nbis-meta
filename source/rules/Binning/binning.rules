@@ -5,15 +5,14 @@ rule run_maxbin:
     input:
         fa = opj(config["results_path"],"assembly","{group}","final_contigs.fa"),
         faa = opj(config["results_path"],"annotation","{group}","final_contigs.faa"),
-        abund_list = opj(config["results_path"], "binning", "map", "{group}","abund_list")
+        abund_list = opj(config["results_path"], "binning", "maxbin", "map", "{group}","abund_list")
     output:
-        summary_file = touch(opj(config["results_path"],"binning","bin","{group}","{group}.summary")),
-        flag = temp(touch(opj(config["results_path"],"progress","{group}.binning.done")))
+        summary_file = touch(opj(config["results_path"],"binning", "maxbin", "bin", "{group}", "{group}.summary"))
     params:
-        dir = opj(config["results_path"], "binning", "bin", "{group}"),
+        dir = opj(config["results_path"], "binning", "maxbin", "bin", "{group}"),
         min_contig_length = config["min_contig_length"],
         tmp_dir = opj(config["scratch_path"],"{group}-binning")
-    threads: config["binning_threads"]
+    threads: config["maxbin_threads"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*5
     message: "Running MaxBin2 on {wildcards.group}"
@@ -40,4 +39,24 @@ rule concoct_cutup:
         """
         cut_up_fasta.py -c 10000 -o 0 -m {input.fa} > {output.fa}
         """
+
+rule run_concoct:
+    input:
+        cov = opj(config["results_path"], "binning", "concoct", "map", "{group}", "concoct_inputtableR.tsv"),
+        fa = opj(config["results_path"],"assembly", "{group}", "final_contigs_c10K.fa")
+    output:
+        out = opj(config["results_path"], "binning", "concoct", "bin", "{group}", "clustering_gt{l}.tsv".format(l=config["min_contig_length"]))
+    params:
+        basename = opj(config["results_path"], "binning", "concoct", "bin", "{group}"),
+        length = config["min_contig_length"]
+    threads: config["concoct_threads"]
+    conda:
+        "../../../envs/concoct/concoct.yaml"
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*2
+    shell:
+        """
+        concoct -t {threads} --coverage_file {input.cov} --composition_file {input.fa} -b {params.basename}/ -l {params.length}
+        """
+
 
