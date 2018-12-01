@@ -1,0 +1,9 @@
+###############
+### BINNING ###
+###############
+maxbin: True
+min_contig_length: 1000
+maxbin_threads: 10
+# Do QA on produced bins using Checkm?
+checkm: False
+pipeline_config_file: results/pipeline_config_binning.txt

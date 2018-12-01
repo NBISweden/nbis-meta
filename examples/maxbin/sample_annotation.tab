@@ -1,0 +1,5 @@
+sampleID	runID	assemblyGroup	fileName	pair	interleaved
+anterior_nares	1	anterior_nares,all	examples/data/anterior_nares_100000_R1.fastq.gz	examples/data/anterior_nares_100000_R2.fastq.gz
+buccal_mucosa	1	buccal_mucosa,all	examples/data/buccal_mucosa_100000_R1.fastq.gz	examples/data/buccal_mucosa_100000_R2.fastq.gz
+retr_crease	1	retr_crease,all	examples/data/retr_crease_100000_R1.fastq.gz	examples/data/retr_crease_100000_R2.fastq.gz
+stool	1	stool,all	examples/data/stool_100000_R1.fastq.gz	examples/data/stool_100000_R2.fastq.gz
