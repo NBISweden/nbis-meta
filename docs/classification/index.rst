@@ -73,29 +73,17 @@ examples. To see the rules that would be run enter::
 
     snakemake --configfile examples/centrifuge/config.yaml -np
 
-The figure below shows how the rules fit together. First genomes are downloaded
-and the database is built (this example uses a highly reduced set of genomes
-in order to speed up computations). Reads are trimmed using Trimmomatic
-and then classified using centrifuge. Finally, report files are generated.
-
-.. image:: ../img/centrifuge_rulegraph.png
-    :width: 400
-    :alt: Centrifuge graph
 
 Now perform the actual run with 4 cores::
 
     snakemake --configfile examples/centrifuge/config.yaml -p -j 4
 
-Check the results under :code:`results/examples/centrifuge_classify`.
-The :code:`report` directory contains a :code:`centrifuge`
-sub-folder with interactive krona plots for each sample (open the HTML
-file in your browser to view the plots).
+Check the results under :code:`results/examples/centrifuge_classify`. The :code:`report` directory contains a
+:code:`centrifuge` sub-folder with interactive krona plots for each sample (open the HTML file in your browser to view
+the plots). There are also several :code:`*.kraken_report` files which can be loaded into the
+tool `pavian`_. Either install the pavian R package or run it using Docker (see instructions at the GitHub repo).
 
-There are also several :code:`*.kraken_report` files which can be loaded into the
- tool `pavian`_. Either install the
- pavian R package or run it using Docker (see instructions at the GitHub repo).
- The image below shows the output from the anterior_nares sample loaded into
- pavian.
+The image below shows the output from the anterior_nares sample loaded into pavian.
 
 .. image:: ../img/pavian.png
     :width: 400
