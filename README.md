@@ -1,9 +1,10 @@
 # NBIS-Metagenomics
 A workflow for metagenomic projects
 
+[![Build status](https://img.shields.io/bitbucket/pipelines/scilifelab-lts/nbis-meta.svg)](https://img.shields.io/bitbucket/pipelines/scilifelab-lts/nbis-meta.svg)
 [![Documentation Status](https://readthedocs.org/projects/nbis-metagenomic-workflow/badge/?version=latest)](http://nbis-metagenomic-workflow.readthedocs.io/en/latest/?badge=latest)
-
-[TOC]
+[![Python 3.5](https://img.shields.io/badge/python-3.5-blue.svg)](https://www.python.org/downloads/release/python-350/)
+[![Snakemake 4.4](https://img.shields.io/badge/snakemake-%E2%89%A54.4.0-brightgreen.svg?style=flat-square)](https://img.shields.io/badge/snakemake-%E2%89%A54.4.0-brightgreen.svg?style=flat-square)
 
 ## Overview
 This is a [snakemake](http://snakemake.readthedocs.io/en/stable/) workflow that processes paired-end and/or single-end metagenomic samples.
@@ -30,7 +31,7 @@ All the software needed to run this workflow is included as a
 [install conda](https://conda.io/docs/user-guide/install/index.html)
 before installing the required software for this workflow.
 
-To create the environment `sm-meta` use the supplied
+To create the environment `nbis-meta` use the supplied
 [environment.yaml](envs/environment.yaml) file found in the *envs/*
 folder.
 
