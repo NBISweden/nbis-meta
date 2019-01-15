@@ -261,35 +261,19 @@ properties:
     type: boolean
     description: Indicates whether to run centrifuge classification
     default: false
-  mask_low_complexity:
-    type: boolean
-    description: Whether to mask low-complexity regions for genomes
-    default: true
-  centrifuge_domains:
-    type: array
-    description: What domains to use for centrifuge
-    uniqueItems: true
-    items:
-      type: string
-      enum: ["bacteria", "viral", "archaea", "fungi", "protozoa", "invertebrate", "plant",
-             "vertebrate_mammalian", "vertebrate_other"]
-    default: ["viral", "bacteria", "archaea"]
-  centrifuge_taxidlist:
+  centrifuge_prebuilt:
     type: string
-    description: List of taxonomic ids to download for centrifuge database
+    description: Pre-built centrifuge index
+    default: "p+h+v"
+    enum: ["p+h+v", "nt_2018_2_12", "nt_2018_3_3", "p_compressed+h+v", "p_compressed_2018_4_15"]
+  centrifuge_custom:
+    type: string
+    description: Path to custom built centrifuge index (excluding *.cf suffix)
     default: ""
-  centrifuge_assembly_level:
-    type: array
-    description: Assembly level(s) to use for centrifuge database
-    uniqueItems: true
-    items:
-      type: string
-      enum: ["Complete Genome","Contig","Chromosome","Scaffold"]
-    default: ["Complete Genome"]
   centrifuge_summarize_rank:
     type: string
-    description: Summarize centrifuge database at what rank
     default: "superkingdom"
+    enum: ["superkingdom", "kingdom", "phylum", "class", "order", "family", "genus", "species"]
   centrifuge_map_filtered:
     type: boolean
     description: Do an additional map of filtered reads back against reference genomes

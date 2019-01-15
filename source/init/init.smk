@@ -195,14 +195,23 @@ if config["taxonomic_annotation"]:
 
 # Add read-based config info
 if config["centrifuge"]:
+    # Check if custom database exists
+    custom = expand("{b}.{i}.cf", b=config["centrifuge_custom"], i=[1,2,3])
+    if list(set([os.path.exists(x) for x in custom]))[0]:
+        config["centrifuge_index_path"] = config["centrifuge_custom"]
+    # If not, use prebuilt default
+    else:
+        config["centrifuge_index_path"] = "resources/classify_db/centrifuge/{}".format(config["centrifuge_prebuilt"])
     config_params.append((" - Read classifier","Centrifuge"))
+    # Set centrifuge index config variables
+    config['centrifuge_dir'] = os.path.dirname(config['centrifuge_index_path'])
+    config['centrifuge_base'] = os.path.basename(config['centrifuge_index_path'])
 if config["kaiju"]:
     config_params.append((" - Read classifier","Kaiju"))
 if config["kraken"]:
     config_params.append((" - Read classifier","Kraken"))
 if config["reference_map"]:
     config_params.append((" - Reference based mapping","True"))
-    config_params.append(("   - Taxa",", ".join(config["centrifuge_domains"])))
 
 
 config_params.append((" - Configfiles", "{}".format(",".join(workflow.configfiles))))

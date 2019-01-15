@@ -8,36 +8,35 @@ popular programs for this purpose are
 Building a database
 ===================
 
-First of all you will have to construct a database for use with the
-read classifiers. Kraken typically requires **a lot** of disk space
-for its database (for pre-built 'mini-versions' see `here <http://ccb.jhu.edu/software/kraken/>`_).
-Centrifuge uses a different way of indexing genomes and requires considerably
-less disk space.
+Database construction for kraken and centrifuge is not part of this workflow. Please refer to the respective
+documentation for these tools (`Kraken manual <http://ccb.jhu.edu/software/kraken>`_,
+`Centrifuge manual <https://ccb.jhu.edu/software/centrifuge/manual.shtml>`_).
 
-:code:`classifier_db_path:` This is a path where classification databases are stored in sub-directories named according
-to the classifier (e.g. :code:`centrifuge/`).
+However, both tools have pre-built indices which saves you the trouble of downloading and building these on your own.
+By default, the workflow will attempt to download the pre-built index for centrifuge consisting of all prokaryotic and
+viral genomes as well as the human genome (:code:`p+h+v`).
+
 
 Centrifuge
 ----------
 
-:code:`centrifuge_assembly_level:` This is a list which may contain one or more of 'Complete Genome', 'Contig',
-'Chromosome', 'Scaffold'. Only genome assemblies matching one of the specified levels will be downloaded and added to
-the Centrifuge database.
+:code:`centrifuge_prebuilt:` By default, the workflow uses the prebuilt :code:`p+h+v` index containing
+prokaryotic, viral and human sequences which it will download from the
+`centrifuge FTP <ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data>`_. Other valid choices are:
+:code:`p_compressed+h+v`, :code:`p_compressed_2018_4_15`, :code:`nt_2018_2_12` and :code:`nt_2018_3_3`. The index will
+be downloaded to :code:`resources/classify_db/centrifuge/`.
 
-:code:`mask_low_complexity:` Whether regions of low complexity in genomes should be masked using dustmasker.
+:code:`centrifuge_custom:` If you have created your own custom centrifuge index, specify the its path here, excluding
+the .*.cf suffix.
 
-:code:`centrifuge_domains:` This is a list which should contain one or more of bacteria, viral,archaea, fungi,
-protozoa, invertebrate, plant, vertebrate_mammalian, vertebrate_other.
+:code:`centrifuge_summarize_rank`: The centrifuge index can be summarized to see number of sequences and total size in
+bp for each taxa at a certain rank specified by this config parameter (superkingdom by default). To generate the
+summary file run::
 
-Genomes matching the :code:`centrifuge_assembly_level` will be downloaded from refseq
-for each domain.
+    snakemake --config centrifuge=True centrifuge_summary
 
-:code:`centrifuge_taxidlist:` Optionally, you can specify a file containing a list of taxonomy ids (one per line).
-Only sequences matching these ids will be downloaded. **Note that this is
-in addition to the *domains:* setting above.
-
-:code:`centrifuge_summarize_rank:` To get a summary of how sequences and total bp are in the created database
-per taxa use this setting. By default the database is summarized at the superkingdom level.
+The summary output will be placed in the same directory as the centrifuge index (resources/classify_db/centrifuge if
+using the prebuilt index) in a file with the suffix '.summary.tab'.
 
 Kraken
 ------

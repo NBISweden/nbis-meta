@@ -1,24 +1,25 @@
 localrules:
     centrifuge_to_kronainput,
     centrifuge_to_krona_html,
+    centrifuge2kraken_report,
     all_centrifuge_to_krona
 
 rule centrifuge_pe:
     input:
         R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
         R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+PREPROCESS+".fastq.gz"),
-        db = expand(opj(config["classifier_db_path"],"centrifuge","centrifuge_db.{index}.cf"), index = [1,2,3])
+        db = expand(opj(config["centrifuge_dir"],"{base}.{i}.cf"), i=[1,2,3], base=config["centrifuge_base"])
     output:
         opj(config["results_path"],"centrifuge","{sample}_{run}_pe.out"),
         opj(config["results_path"],"centrifuge","{sample}_{run}_pe.report")
     params:
-        prefix = opj(config["classifier_db_path"],"centrifuge","centrifuge_db"),
+        prefix = opj(config["centrifuge_dir"], "{base}".format(base=config["centrifuge_base"])),
         tmp_out = opj(config["scratch_path"],"{sample}_{run}_pe.out"),
         tmp_report = opj(config["scratch_path"],"{sample}_{run}_pe.report")
     message: "Running centrifuge on {wildcards.sample}_{wildcards.run}"
     threads: 20
     resources:
-        runtime = lambda wildcards, attempt: attempt**60*2
+        runtime = lambda wildcards, attempt: attempt**2*60
     shell:
         """
         centrifuge -k {config[centrifuge_max_assignments]} -1 {input.R1} -2 {input.R2} -x {params.prefix} \
@@ -30,21 +31,21 @@ rule centrifuge_pe:
 rule centrifuge_se:
     input:
         se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+PREPROCESS+".fastq.gz"),
-        db = expand(opj(config["classifier_db_path"],"centrifuge","centrifuge_db.{index}.cf"), index = [1,2,3])
+        db = expand(opj(config["centrifuge_dir"],"{base}.{i}.cf"), i=[1,2,3], base=config["centrifuge_base"])
     output:
         opj(config["results_path"],"centrifuge","{sample}_{run}_se.out"),
         opj(config["results_path"],"centrifuge","{sample}_{run}_se.report")
     params:
-        prefix = opj(config["classifier_db_path"],"centrifuge","centrifuge_db"),
+        prefix = opj(config["centrifuge_dir"], "{base}".format(base=config["centrifuge_base"])),
         tmp_out = opj(config["scratch_path"],"{sample}_{run}_se.out"),
         tmp_report = opj(config["scratch_path"],"{sample}_{run}_se.report")
     threads: 20
     resources:
-        runtime = lambda wildcards, attempt: attempt**60*2
+        runtime = lambda wildcards, attempt: attempt**2*60
     message: "Running centrifuge on {wildcards.sample}_{wildcards.run}"
     shell:
         """
-        centrifuge -k {config[centrifuge][max_assignments]} -U {input.se} -x {params.prefix} -S {params.tmp_out} --report-file {params.tmp_report} -p {threads}
+        centrifuge -k {config[centrifuge_max_assignments]} -U {input.se} -x {params.prefix} -S {params.tmp_out} --report-file {params.tmp_report} -p {threads}
         mv {params.tmp_out} {output[0]}
         mv {params.tmp_report} {output[1]}
         """
@@ -52,7 +53,7 @@ rule centrifuge_se:
 rule centrifuge2kraken_report:
     input:
         opj(config["results_path"],"centrifuge","{sample}_{run}_{seq_type}.out"),
-        expand(opj(config["classifier_db_path"],"centrifuge","centrifuge_db.{index}.cf"), index = [1,2,3])
+        expand(opj(config["centrifuge_dir"],"{base}.{i}.cf"), i=[1,2,3], base=config["centrifuge_base"])
     output:
         opj(config["report_path"],"centrifuge","{sample}_{run}_{seq_type}.kraken_report")
     params:

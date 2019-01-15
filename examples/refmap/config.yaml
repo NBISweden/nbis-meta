@@ -8,5 +8,5 @@ assembly: False
 reference_map: True
 centrifuge: True
 centrifuge_min_read_count: 5000
-centrifuge_domains: ['viral', 'bacteria', 'fungi']
-centrifuge_taxidlist: examples/refmap/taxids
+centrifuge_map_filtered: False
+centrifuge_prebuilt: 'p+h+v'

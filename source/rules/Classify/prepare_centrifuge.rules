@@ -1,275 +1,92 @@
-def parse_assembly_summary(assembly_summary, reduced, taxidlist):
-    '''Parses the NCBI genome assembly summary and returns one genome assembly per taxonomy id'''
-    taxids = []
-    if taxidlist:
-        with open(taxidlist, 'r') as fh:
-            for line in fh:
-                taxids.append(line.rstrip())
-    downloads = {}
-    df = pd.read_table(assembly_summary, header = 0, skiprows = 1, dtype = str)
-    # Filter out only complete genomes
-    if "vertebrate_other" in assembly_summary or "vertebrate_mammalian" in assembly_summary:
-        assembly_level = "Chromosome"
-    else:
-        assembly_level = "Complete Genome"
-    df = df.loc[df.assembly_level==assembly_level]
-    # Filter out to only those in taxidlist if specified
-    if len(taxids) > 0:
-        df = df.loc[df.species_taxid.isin(taxids)]
-    # Sort by assembly date
-    df.sort_values("seq_rel_date", ascending = False, inplace = True)
-    # Select the first of each unique taxid
-    df = df.groupby("taxid").first().reset_index()
-    # If reduced, select up to 10 genomes per species
-    if reduced:
-        df = df.groupby("species_taxid").head(10).reset_index()
-    for i, taxid in enumerate(df.taxid, start = 1):
-        if reduced and i > 10:
-            break
-        r = df.loc[df.taxid == taxid]
-        #bioproject = r["bioproject"].values[0]
-        ftp_path = r["ftp_path"].values[0]
-        rsync_base = ftp_path.replace("ftp:","rsync:")
-        ftp_fna = "{}_genomic.fna.gz".format(ftp_path.split("/")[-1])
-        ftp_gff = "{}_genomic.gff.gz".format(ftp_path.split("/")[-1])
-        downloads[taxid] = {"gff": "{}/{}".format(rsync_base,ftp_gff), "fna": "{}/{}".format(rsync_base,ftp_fna)}
-    return downloads
-
 localrules:
-    download_assembly_summary,
-    add_libraries,
-    centrifuge_download_taxonomy,
+    download_centrifuge_build,
+    extract_centrifuge_sequences,
+    extract_centrifuge_seqidmap,
     centrifuge_sqlite_taxdb,
-    centrifuge_genome_sizes,
-    centrifuge_summary,
-    centrifuge_taxtree
+    centrifuge_summary
 
-rule download_assembly_summary:
-    """Downloads assembly summary files for a certain domain from NCBI"""
-    output:
-        opj(config["resource_path"],"ncbi","assembly_lists","assembly_summary_{domain}.txt")
-    message: "Downloading assembly summary for {wildcards.domain}"
-    shell:
-        """
-        dir=$(dirname {output[0]})
-        mkdir -p $dir
-        curl -o {output[0]} ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/{wildcards.domain}/assembly_summary.txt
-        """
+def get_centrifuge_index_url(config):
+    d = {'nt_2018_2_12': 'ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data/nt_2018_2_12.tar.gz',
+         'nt_2018_3_3': 'ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data/nt_2018_3_3.tar.gz',
+         'p+h+v': 'ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data/p+h+v.tar.gz',
+         'p_compressed+h+v': 'ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data/p_compressed+h+v.tar.gz',
+         'p_compressed_2018_4_15': 'ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data/p_compressed_2018_4_15.tar.gz'}
+    try:
+        url = d[config["centrifuge_base"]]
+    except KeyError:
+        url = ""
+    return url
 
-rule centrifuge_download_taxonomy:
-    """Downloads taxonomy files using centrifuge"""
+rule download_centrifuge_build:
+    """Downloads pre-built centrifuge index"""
     output:
-        names = opj(config["classifier_db_path"],"centrifuge","taxonomy","names.dmp"),
-        nodes = opj(config["classifier_db_path"],"centrifuge","taxonomy","nodes.dmp")
+        db = expand(opj(config["centrifuge_dir"], "{base}.{i}.cf"), i=[1,2,3], base=config['centrifuge_base'])
     params:
-        outdir = opj(config["classifier_db_path"],"centrifuge","taxonomy")
-    message: "Downloading taxonomy dump file for centrifuge"
-    shadow: "minimal"
+        dir = config["centrifuge_dir"],
+        tar = opj(config["centrifuge_dir"], "{base}.tar.gz".format(base=config["centrifuge_base"]))
+    run:
+        url = get_centrifuge_index_url(config)
+        shell("curl -o {params.tar} {url}")
+        shell("tar -C {params.dir} xvf {params.tar}")
+        shell("rm {params.tar}")
+
+
+rule extract_centrifuge_sequences:
+    """Extracts input sequences from centrifuge database"""
+    input:
+        db = expand(opj(config["centrifuge_dir"], "{base}.{i}.cf"),
+            i=[1,2,3], base=config['centrifuge_base'])
+    output:
+        fna = opj(config["centrifuge_dir"], "input-sequences.fna.gz")
+    params:
+        prefix = opj(config["centrifuge_dir"], "{base}".format(base=config["centrifuge_base"]))
+    run:
+        unzipped = (output.fna).replace(".gz", "")
+        if os.path.exists(unzipped):
+            shell("gzip -c {unzipped} > {output.fna}")
+        else:
+            shell("centrifuge-inspect {params.prefix} | gzip -c > {output.fna}")
+
+rule extract_centrifuge_seqidmap:
+    """Extracts sequence id to taxonomy idmapping from centrifuge database"""
+    input:
+        db = expand(opj(config["centrifuge_dir"], "{base}.{i}.cf"), i=[1,2,3], base=config["centrifuge_base"])
+    output:
+        map = opj(config["centrifuge_dir"], "seqid2taxid.map")
+    params:
+        prefix = opj(config["centrifuge_dir"], "{base}".format(base=config["centrifuge_base"]))
     shell:
         """
-        mkdir -p {params.outdir}
-        centrifuge-download -o {params.outdir} taxonomy
+        centrifuge-inspect --conversion-table {params.prefix} > {output.map}
+        """
+
+rule centrifuge_summary:
+    """Create a summary of sequences and total size at a certain rank"""
+    input:
+        dbfiles = expand(opj(config["centrifuge_dir"],"{base}.{i}.cf"), i=[1,2,3], base=config["centrifuge_base"]),
+        mapfile = opj(config["centrifuge_dir"],"seqid2taxid.map")
+    output:
+        rank_summary = expand(opj(config["centrifuge_dir"],"{base}.{rank}.summary.tab"),
+            base=config["centrifuge_base"], rank = config["centrifuge_summarize_rank"])
+
+    params:
+        prefix = opj(config["centrifuge_dir"], "{base}".format(base=config["centrifuge_base"])),
+        script = opj("source","utils","summarize_centrifuge_db.py")
+    shell:
+        """
+        centrifuge-inspect --summary {params.prefix} > {params.prefix}.summary
+        python {params.script} --summary {params.prefix}.summary --seqid2taxidmap {input.mapfile} \
+        --rank {config[centrifuge_summarize_rank]} > {output.rank_summary}
         """
 
 rule centrifuge_sqlite_taxdb:
     """Creates a sqlite database for ete3 in the centrifuge path"""
     output:
-        opj(config["classifier_db_path"],"centrifuge","taxonomy","taxdb.sqlite"),
-        opj(config["classifier_db_path"],"centrifuge","taxonomy","taxdb.sqlite.traverse.pkl")
+        opj(config["centrifuge_dir"],"taxonomy","taxdb.sqlite"),
+        opj(config["centrifuge_dir"],"taxonomy","taxdb.sqlite.traverse.pkl")
     message: "Creating ete3 sqlite taxonomy database in {output[0]}"
     shadow: "minimal"
     run:
         from ete3 import NCBITaxa
         shell("touch {output[0]}")
         ncbi_taxa = NCBITaxa(output[0])
-
-def make_taxidstring():
-    taxidstring = ""
-    taxids = []
-    if config["centrifuge_taxidlist"]:
-        taxids = []
-        with open(config["centrifuge_taxidlist"], 'r') as fh:
-            for line in fh:
-                taxids.append(line.rstrip())
-        taxidstring = "-t {}".format(",".join(taxids))
-    return taxidstring,taxids
-
-def filter_assembly_summary(ftp):
-    df = pd.read_table(ftp, dtype=str, header=1, skiprows=0)
-    cols = df.columns
-    df_f = pd.DataFrame()
-    taxids = []
-    for a in ["Complete Genome", "Chromosome", "Scaffold", "Contig"]:
-        # Filter results to assembly level
-        r = df.loc[(df.assembly_level==a)]
-        # Filter out taxids that have been seen at another assembly level
-        r = r.loc[~r.taxid.isin(taxids)]
-        taxids += list(r.taxid.unique())
-        df_f = pd.concat([df_f,r])
-    return df_f[cols]
-
-rule centrifuge_download_domain:
-    """Download all genomes from a specified domain using centrifuge-download"""
-    output:
-        summary_filtered = opj(config["classifier_db_path"],"centrifuge","downloads","{domain}","assembly_summary_filtered.txt"),
-        summary = opj(config["classifier_db_path"],"centrifuge","downloads","{domain}","assembly_summary.txt"),
-        map = opj(config["classifier_db_path"],"centrifuge","downloads","{domain}","seqid2taxid.map"),
-        filemap = opj(config["classifier_db_path"],"centrifuge","downloads","{domain}","seqid2file.map"),
-        fna = opj(config["classifier_db_path"],"centrifuge","downloads","{domain}","input-sequences.fasta")
-    params:
-        dldir = opj(config["classifier_db_path"],"centrifuge","downloads"),
-        assembly_level = config["centrifuge_assembly_level"],
-        tmp_map = opj(config["classifier_db_path"],"centrifuge","downloads","{domain}","seqid2taxid"),
-        ftp_summary = "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/{domain}/assembly_summary.txt",
-        dlscript = "source/utils/centrifuge-download"
-    threads: 4
-    message: "Downloading genomes for {wildcards.domain}"
-    resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*24
-    run:
-        from glob import glob
-        # Create taxonomy string and taxids
-        taxidstring,taxids = make_taxidstring()
-        # Download assembly summary to make sure there are genomes matching filters
-        df = filter_assembly_summary(params.ftp_summary)
-        assembly_level = params.assembly_level
-        stored_taxids = []
-        if type(assembly_level) == str:
-            assembly_level = [assembly_level]
-        for a in sorted(assembly_level):
-            if wildcards.domain in ["vertebrate_mammalian","vertebrate_other"] and a == "Complete Genome":
-                if "Chromosome" not in assembly_level:
-                    a = "Chromosome"
-            df_f = df.copy(deep=True)
-            if len(taxids)>0:
-                df_f = df_f.loc[df_f["taxid"].isin(taxids)]
-                if len(df_f)==0:
-                    continue
-            df_f = df_f.loc[df_f["assembly_level"]==a]
-            if len(df_f) == 0:
-                continue
-            mapfile = "{}.{}.map".format(params.tmp_map, a.replace(" ","_"))
-            idfile = "{}.{}.ids".format(params.tmp_map, a.replace(" ","_"))
-            # Download sequence files for this assembly level and store seqid2taxid mappings
-            shell("{params.dlscript} {taxidstring} -P {threads} -o {params.dldir} -m -d {wildcards.domain} -a '{a}' refseq > {mapfile}")
-            # Read the mapping file and filter out taxa that have already been added
-            mapdf = pd.read_table(mapfile, header=None, names=["seq","taxid"])
-            mapdf = mapdf.loc[~mapdf.taxid.isin(stored_taxids)]
-            # Append mappings to output
-            if len(mapdf)>0:
-                mapdf.to_csv(output.map, mode='a', sep="\t", index=False, header=False)
-            stored_taxids += list(mapdf.taxid.unique())
-            with open(idfile, 'w') as fh_ids:
-                for seq in mapdf.seq.unique():
-                    fh_ids.write("{}\n".format(seq))
-            shell("rm {mapfile}")
-        # Concatenate all fasta files
-        shell("cat {params.dldir}/{wildcards.domain}/*.fna > {output.fna}.tmp")
-        # Concatenate all id files
-        shell("cat {params.dldir}/{wildcards.domain}/*.ids > {output.fna}.ids")
-        # Extract sequences using seqtk
-        shell("seqtk subseq {output.fna}.tmp {output.fna}.ids > {output.fna}")
-        # Remove temporary files
-        shell("rm {output.fna}.tmp {output.fna}.ids")
-        # Make a map of seqid to file
-        seqfiles = glob(opj(params.dldir,wildcards.domain,"*.fna"))
-        for line in shell("grep '>' {params.dldir}/{wildcards.domain}/*.fna", iterable = True):
-            if len(seqfiles) == 1:
-                id = line.split(" ")[0]
-                file = seqfiles[0]
-            else:
-                file,id = line.split(" ")[0].split(":")
-            id = id.lstrip(">")
-            shell("echo -e '{id}\t{file}' >> {output.filemap}")
-
-
-rule add_libraries:
-    input:
-        maps = expand(opj(config["classifier_db_path"],"centrifuge","downloads","{domain}","seqid2taxid.map"), domain=config["centrifuge_domains"])
-    output:
-        fna = opj(config["classifier_db_path"],"centrifuge","input-sequences.fna"),
-        conversion_table = opj(config["classifier_db_path"],"centrifuge","seqid2taxid.map"),
-        filemap = opj(config["classifier_db_path"],"centrifuge","seqid2file.map")
-    message: "Adding genomes from {}".format(", ".join(config["centrifuge_domains"]))
-    run:
-        for mapfile in input.maps:
-            shell("cat {mapfile} >> {output.conversion_table}.tmp")
-            dir = os.path.dirname(mapfile)
-            shell("cat {dir}/input-sequences.fasta >> {output.fna}")
-            shell("cat {dir}/seqid2file.map >> {output.filemap}")
-        with open("{}.tmp".format(output.conversion_table), 'r') as fhin, open(output.conversion_table, 'w') as fhout:
-            for line in fhin:
-                items = line.rsplit()
-                fhout.write("{}\t{}\n".format(items[0],items[1]))
-        shell("rm {output.conversion_table}.tmp")
-
-
-
-rule centrifuge_build:
-    """Build centrifuge database using downloaded sequences"""
-    input:
-        fna = opj(config["classifier_db_path"],"centrifuge","input-sequences.fna"),
-        conversion_table = opj(config["classifier_db_path"],"centrifuge","seqid2taxid.map"),
-        taxonomy_tree = opj(config["classifier_db_path"],"centrifuge","taxonomy","nodes.dmp"),
-        name_table = opj(config["classifier_db_path"],"centrifuge","taxonomy","names.dmp"),
-        sqlite_db = opj(config["classifier_db_path"],"centrifuge","taxonomy","taxdb.sqlite")
-    output:
-        expand(opj(config["classifier_db_path"],"centrifuge","centrifuge_db.{index}.cf"), index = [1,2,3])
-    threads: 20
-    resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*48
-    params:
-        prefix = opj(config["classifier_db_path"],"centrifuge","centrifuge_db")
-    message: "Building centrifuge database as {params.prefix}.<1,2,3>.cf"
-    shell:
-        """
-        centrifuge-build -p {threads} --conversion-table {input.conversion_table} \
-        --taxonomy-tree {input.taxonomy_tree} --name-table {input.name_table} {input.fna} {params.prefix}
-        """
-
-#### Rules for summarizing information about the database
-rule centrifuge_genome_sizes:
-    """Create a table of genome sizes for each taxonomy id"""
-    input:
-        expand(opj(config["classifier_db_path"],"centrifuge","centrifuge_db.{index}.cf"), index = [1,2,3])
-    output:
-        genome_sizes = opj(config["classifier_db_path"],"centrifuge","genome_sizes.tab")
-    params:
-        prefix = opj(config["classifier_db_path"],"centrifuge","centrifuge_db")
-    message: "Creating table of genome sizes in {output.genome_sizes}"
-    shell:
-        """
-        centrifuge-inspect --size-table {params.prefix} > {output.genome_sizes}
-        """
-
-rule centrifuge_summary:
-    """Create a summary of sequences and total size at a certain rank"""
-    input:
-        dbfiles = expand(opj(config["classifier_db_path"],"centrifuge","centrifuge_db.{index}.cf"), index = [1,2,3]),
-        mapfile = opj(config["classifier_db_path"],"centrifuge","seqid2taxid.map")
-    output:
-        rank_summary = opj(config["classifier_db_path"],"centrifuge","centrifuge_db.{rank}.summary.tab")
-    params:
-        prefix = opj(config["classifier_db_path"],"centrifuge","centrifuge_db"),
-        script = opj("source","utils","summarize_centrifuge_db.py")
-    message: "Summarizing centrifuge database at rank {wildcards.rank}"
-    shell:
-        """
-        centrifuge-inspect --summary {params.prefix} > {params.prefix}.summary
-        python {params.script} --summary {params.prefix}.summary --seqid2taxidmap {input.mapfile} --rank {wildcards.rank} > {output.rank_summary}
-        """
-
-rule centrifuge_taxtree:
-    input:
-        dbfiles = expand(opj(config["classifier_db_path"],"centrifuge","centrifuge_db.{index}.cf"), index = [1,2,3])
-    output:
-        opj(config["classifier_db_path"],"centrifuge","centrifuge_db.taxtree.tab")
-    params:
-        prefix = opj(config["classifier_db_path"],"centrifuge","centrifuge_db")
-    message: "Generating taxonomy tree file for centrifuge database"
-    run:
-        with open(output[0], 'w') as fh:
-            fh.write("{}\t{}\t{}\n".format("taxid","parent","taxrank"))
-            for line in shell("centrifuge-inspect --taxonomy-tree {params.prefix}", iterable = True):
-                taxid,parent,taxrank = line.split("\t|\t")
-                fh.write("{}\t{}\t{}\n".format(taxid,parent,taxrank))
