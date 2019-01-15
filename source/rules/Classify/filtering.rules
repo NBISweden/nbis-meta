@@ -43,44 +43,28 @@ rule get_filtered_genome_seqs:
     """Extracts nucleotide fasta files for the filtered genomes"""
     input:
         genome_files = get_filtered_genome_files(samples),
-        filemap = opj(config["classifier_db_path"],"centrifuge","seqid2file.map")
+        fna = opj(config["centrifuge_dir"],"input-sequences.fna.gz")
     output:
-       opj(config["results_path"],"centrifuge","filtered","genomes.tab")
+       tab = opj(config["results_path"],"centrifuge","filtered","genomes.tab"),
+       fna = opj(config["results_path"],"centrifuge","filtered","genomes.fna"),
+       seqids = temp(opj(config["results_path"],"centrifuge","filtered","seqids"))
     params:
         out_dir = opj(config["results_path"],"centrifuge","filtered")
     run:
-        from Bio import SeqIO
         shell("mkdir -p {params.out_dir}")
         df = pd.DataFrame()
         for f in input.genome_files:
             _df = pd.read_table(f)
-            df = pd.concat([df,_df])
+            df = pd.concat([df,_df], sort=True)
         # Make unique by seqid
         df = df.groupby("seq").first().reset_index()
-        # A taxonomy ID may have multiple genomes which in turn may have multiple contigs
-        # In the end we want to place each genome in its own file
-        filemap = pd.read_table(input.filemap, header=None, names=["seq","file"])
-        merged = pd.merge(df, filemap, left_on="seq", right_on="seq")
-        # Sort by sequence id
-        merged.sort_values("seq",inplace=True)
-        # Select the first row for each file
-        merged = merged.groupby("file").first().reset_index()
-        # Iterate the unique rows and copy the original file
-        for i in merged.index:
-            r = merged.loc[i]
-            # Original fasta file is f
-            f = r["file"]
-            # seq is sequence id
-            seq = r["seq"]
-            # fasta_file is new file to use for mapping
-            fasta_file = opj(params.out_dir,"{}.fna".format(seq))
-            # Open the fasta file and re-sort by ids
-            seq_dict = SeqIO.to_dict(SeqIO.parse(f, 'fasta'))
-            with open("{}".format(fasta_file), 'w') as fasta_out:
-                for key in sorted(seq_dict.keys()):
-                    r = seq_dict[key]
-                    fasta_out.write(">{}\n{}\n".format(r.description,str(r.seq)))
-        df.to_csv(output[0], sep="\t", index=False, header=True)
+        # Write seqids to file
+        with open(output.seqids, 'w') as fhout:
+            for seqid in df.seq:
+                fhout.write("{}\n".format(seqid))
+        # Extract sequences
+        shell("seqtk subseq {input.fna} {output.seqids} > {output.fna}")
+        df.to_csv(output.tab, sep="\t", index=False, header=True)
 
 ###########################################
 ## Filter genomes further using sourmash ##
@@ -88,7 +72,7 @@ rule get_filtered_genome_seqs:
 rule sourmash_hash_genomes:
     """Compute k-mer signatures for filtered genomes"""
     input:
-        opj(config["results_path"],"centrifuge","filtered","genomes.tab")
+        opj(config["results_path"],"centrifuge","filtered","genomes.fna")
     output:
         opj(config["results_path"],"centrifuge","filtered","genomes.sig")
     params:
@@ -98,7 +82,7 @@ rule sourmash_hash_genomes:
         runtime = lambda wildcards, attempt: attempt**2*60*2
     shell:
         """
-        sourmash compute -k 31 --name-from-first --scaled {params.hash_fraction} -o {output[0]} -f {params.in_dir}/*.fna
+        sourmash compute --singleton -k 31 --scaled {params.hash_fraction} -o {output[0]} -f {input[0]}
         """
 
 rule sourmash_hash_sample_pe:
@@ -178,31 +162,21 @@ rule collate_sourmash:
 rule sourmash_filter:
     """Reads results from sourmash and outputs a fasta file with genomes reaching a certain coverage threshold"""
     input:
-        opj(config["results_path"],"centrifuge","filtered","sourmash.csv")
+        opj(config["results_path"],"centrifuge","filtered","sourmash.csv"),
+        opj(config["results_path"],"centrifuge","filtered","genomes.fna")
     output:
-        opj(config["results_path"],"centrifuge","filtered","genomes.filtered.fna")
+        opj(config["results_path"],"centrifuge","filtered","genomes.filtered.fna"),
+        temp(opj(config["results_path"],"centrifuge","filtered","genomes.filtered.ids"))
     params:
         min_cov = config["sourmash_min_cov"]
     run:
-        from Bio.SeqIO import parse
         df = pd.read_csv(input[0])
         df = df.loc[df.f_match>=params.min_cov]
         genome_ids = list(set([x.split(" ")[0] for x in df.name]))
-        with open(output[0], 'w') as fh_out:
-            for id in genome_ids:
-                fasta_file = opj(config["results_path"],"centrifuge","filtered","{id}.fna".format(id=id))
-                for i, record in enumerate(parse(fasta_file, 'fasta')):
-                    if i>0:
-                        # Write a 500 long stretch of 'N' between contigs
-                        fh_out.write("{}\n".format("".join(["N"]*500)))
-                    else:
-                        # Try to format the header to be readable with enough info
-                        desc = record.description
-                        desc = desc.replace(", complete genome","")
-                        id,g,s = desc.split(" ")[0:3]
-                        new_desc = "{}_{}._{}".format(id,g[0],s)
-                        fh_out.write(">{}\n".format(new_desc))
-                    fh_out.write("{}\n".format(str(record.seq)))
+        with open(output[1], 'w') as fhout:
+            for genome_id in genome_ids:
+                fhout.write("{}\n".format(genome_id))
+        shell("seqtk subseq {input[1]} {output[1]} > {output[0]}")
 
 ##########################################
 ## Map samples against filtered genomes ##
@@ -238,7 +212,7 @@ rule bowtie2_map_against_filtered_pe:
         runtime = lambda wildcards, attempt: attempt**2*60*4
     shell:
         """
-        bowtie2 -x {params.prefix} -1 {input.R1} -2 {input.R2} --no-unal -p {threads} > {params.tmp_out}
+        bowtie2 --very-sensitive-local -x {params.prefix} -1 {input.R1} -2 {input.R2} --no-unal -p {threads} > {params.tmp_out}
         mv {params.tmp_out} {output[0]}
         """
 
@@ -257,7 +231,7 @@ rule bowtie2_map_against_filtered_se:
         runtime = lambda wildcards, attempt: attempt**2*60*4
     shell:
         """
-        bowtie2 -x {params.prefix} -U {input.R1} --no-unal -p {threads} > {params.tmp_out}
+        bowtie2 --very-sensitive-local -x {params.prefix} -U {input.R1} --no-unal -p {threads} > {params.tmp_out}
         mv {params.tmp_out} {output[0]}
         """
 

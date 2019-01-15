@@ -136,20 +136,13 @@ kraken_build_params: ''
 ###################
 centrifuge: False
 
-# Mask low complexity regions using dustmasker
-mask_low_complexity: True
+# Prebuilt index to download from ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data
+# Choose from "p+h+v", "nt_2018_2_12", "nt_2018_3_3", "p_compressed+h+v", "p_compressed_2018_4_15"
+centrifuge_prebuilt: 'p+h+v'
 
-# What domain libraries to download?
-# This list may contain 'bacteria', 'viral', 'archaea', 'fungi', 'protozoa', 'invertebrate', 'plant', 'vertebrate_mammalian', 'vertebrate_other'
-centrifuge_domains: ["archaea","bacteria","viral"]
-
-# List of taxonomic ids to download. If using this option, be sure to set the list of domains (above) to match
-# the domains contained in your taxid list
-centrifuge_taxidlist: ""
-
-# What assembly level to include libraries for?
-# This list may contain "Complete Genome","Contig","Chromosome","Scaffold"
-centrifuge_assembly_level: ["Complete Genome"]
+# Specify a custom built centrifuge index to use instead of the prebuilt
+# Exclude the '.*.cf' suffix
+centrifuge_custom: ""
 
 # Summarize at rank
 # Specify a taxonomic rank to summarize the database at (total sequences and total size).
