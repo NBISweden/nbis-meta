@@ -1,71 +1,24 @@
 localrules:
-    kraken_download_taxonomy,
-    kraken_download_library,
-    kraken_clean_db
+    download_kraken_build
 
-rule kraken_download_taxonomy:
-    """Download the NCBI taxonomy"""
-    output:
-        opj(config["classifier_db_path"],"kraken","taxonomy","accmap.dlflag"),
-        opj(config["classifier_db_path"],"kraken","taxonomy","taxdump.dlflag"),
-        opj(config["classifier_db_path"],"kraken","taxonomy","nodes.dmp"),
-        opj(config["classifier_db_path"],"kraken","taxonomy","names.dmp"),
-        #opj(config["classifier_db_path"],"kraken","taxonomy"),
-        expand(opj(config["classifier_db_path"],"kraken","taxonomy","{f}.accession2taxid"),f=["nucl_est","nucl_gb","nucl_gss","nucl_wgs"])
-    params:
-        db_name=opj(config["classifier_db_path"],"kraken")
-    shell:
-        """
-        kraken-build --download-taxonomy --db {params.db_name}
-        tar xf {params.db_name}/taxonomy/taxdump.tar.gz -C {params.db_name}/taxonomy/
-        """
+def get_kraken_index_url(config):
+    d = {'minikraken2_v1_8GB': 'http://ccb.jhu.edu/software/kraken2/dl/minikraken2_v1_8GB.tgz',
+         'minikraken2_v2_8GB': 'http://ccb.jhu.edu/software/kraken2/dl/minikraken2_v2_8GB.tgz'}
+    try:
+        url = d[config["kraken_prebuilt"]]
+    except KeyError:
+        url = ""
+    return url
 
-rule kraken_download_library:
-    """Download pre-compiled libraries from Kraken"""
+rule download_kraken_build:
+    """Downloads pre-built kraken2 index"""
     output:
-        opj(config["classifier_db_path"],"kraken","library","{domain}","library.fna")
+        expand(opj(config["kraken_index_path"], "{n}.k2d"), n = ["hash", "opts", "taxo"])
     params:
-        db_name=opj(config["classifier_db_path"],"kraken")
-    shell:
-        """
-        kraken-build --download-library {wildcards.domain} --db {params.db_name}
-        """
-
-rule kraken_build_db:
-    """ Build the Kraken database """
-    input:
-        opj(config["classifier_db_path"],"kraken","taxonomy","nodes.dmp"),
-        opj(config["classifier_db_path"],"kraken","taxonomy","names.dmp"),
-        expand(opj(config["classifier_db_path"],"kraken","library","{domain}","library.fna"),domain=config["kraken_domains"]),
-    output:
-        expand(opj(config["classifier_db_path"],"kraken","database.{suffix}"), suffix = ["idx","jdb","kdb"])
-    params:
-        db_name=opj(config["classifier_db_path"],"kraken"),
-        kmer_length=config["kraken_kmer_length"],
-        hash_script=opj("source","utils","get_kraken_hash_size.sh"),
-        extra=config["kraken_build_params"]
-    threads: 20
-    resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*48
-    shell:
-        """
-        #KRAKEN_HASH_SIZE=`bash {params.hash_script} {params.db_name}/library`
-        kraken-build --build --db {params.db_name} --threads {threads} --kmer-len {params.kmer_length} {params.extra}
-        """
-
-rule kraken_clean_db:
-    """Clean up the Kraken database to reduce size on disk"""
-    input:
-        expand(opj(config["classifier_db_path"],"kraken","database.{suffix}"), suffix = ["idx","jdb","kdb"]),
-        opj(config["classifier_db_path"],"kraken","taxonomy","nodes.dmp"),
-        opj(config["classifier_db_path"],"kraken","taxonomy","names.dmp")
-    output:
-        fna = opj(config["classifier_db_path"],"kraken","input-sequences.fna")
-    params:
-        db_name=opj(config["classifier_db_path"],"kraken")
-    shell:
-        """
-        # Concatenate the library
-        find {params.db_name}/library -name '*.fna' -print0 | xargs -0 cat > {output.fna}
-        kraken-build --db {params.db_name} --clean
-        """
+        dir = config["kraken_index_path"],
+        tar = opj(config["kraken_index_path"], "{base}.tgz".format(base=config["kraken_prebuilt"]))
+    run:
+        url = get_kraken_index_url(config)
+        shell("curl -o {params.tar} {url}")
+        shell("tar -C {params.dir} -xvf {params.tar}")
+        shell("rm {params.tar}")

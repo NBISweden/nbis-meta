@@ -1,106 +1,79 @@
 localrules:
-    kraken_report,
     kraken2krona,
-    kraken_krona_html,
-    all_kraken_to_krona,
-    collate_kraken_reports
+    all_kraken_to_krona
 
 ################
 ## Run Kraken ##
 ################
-
 rule kraken_pe:
     input:
         R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
         R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+PREPROCESS+".fastq.gz"),
-        fna = opj(config["classifier_db_path"],"kraken","input-sequences.fna")
+        db = expand(opj(config["kraken_index_path"], "{n}.k2d"), n=["hash","opts","taxo"])
     output:
-        opj(config["results_path"],"kraken","{sample}_{run}_pe.out")
+        opj(config["results_path"],"kraken","{sample}_{run}_pe.out"),
+        opj(config["results_path"],"kraken","{sample}_{run}_pe.kreport")
     threads: 10
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*10
     params:
-        db_name=opj(config["classifier_db_path"],"kraken")
-    conda: "../../../envs/kraken.yaml"
+        db = opj(config["kraken_index_path"]),
+        mem = config["kraken_params"]
     shell:
         """
-        kraken --fastq-input --db {params.db_name} --gzip-compressed --threads {threads} \
-        --paired {input.R1} {input.R2} > {output}
+        kraken2 {params.mem} --db {params.db} --output {output[0]} --report {output[1]} --gzip-compressed \
+        --threads {threads} --paired {input.R1} {input.R2}
         """
 
 rule kraken_se:
     input:
         se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+PREPROCESS+".fastq.gz"),
-        fna = opj(config["classifier_db_path"],"kraken","input-sequences.fna")
+        db = expand(opj(config["kraken_index_path"], "{n}.k2d"), n=["hash","opts","taxo"])
     output:
-        opj(config["results_path"],"kraken","{sample}_{run}_se.out")
+        opj(config["results_path"],"kraken","{sample}_{run}_se.out"),
+        opj(config["results_path"],"kraken","{sample}_{run}_se.kreport")
     threads: 10
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*10
     params:
-        db_name=opj(config["classifier_db_path"],"kraken")
-    conda: "../../../envs/kraken.yaml"
+        db = opj(config["kraken_index_path"]),
+        mem = config["kraken_params"]
     shell:
         """
-        kraken --fastq-input --db {params.db_name} --gzip-compressed --threads {threads} {input.se} > {output}
+        kraken2 {params.mem} --db {params.db} --output {output[0]} --report {output[1]} --gzip-compressed \
+        --threads {threads} {input.se}
         """
 
 ######################
 ## Generate reports ##
 ######################
-rule kraken_report:
-    input:
-        opj(config["results_path"],"kraken","{sample}_{run}_{seq_type}.out")
-    output:
-        opj(config["report_path"],"kraken","{sample}_{run}_{seq_type}.report")
-    params:
-        db_name = opj(config["classifier_db_path"],"kraken")
-    shadow: "shallow"
-    conda: "../../../envs/kraken.yaml"
-    shell:
-        """
-        kraken-report --db {params.db_name} {input} > {output}
-        """
-
 rule kraken2krona:
     input:
-        nodes=opj(config["classifier_db_path"],"kraken","taxonomy","nodes.dmp"),
-        names=opj(config["classifier_db_path"],"kraken","taxonomy","names.dmp"),
-        s=opj(config["results_path"],"kraken","{sample}_{run}_{seq_type}.out")
-    output:
-        temp(opj(config["results_path"],"kraken","{sample}_{run}_{seq_type}.krona.txt"))
-    conda: "../../../envs/kraken.yaml"
-    shell:
-        """
-        kaiju2krona -t {input.nodes} -n {input.names} -i {input.s} -o {output}
-        """
-
-rule kraken_krona_html:
-    """Generate a Krona HTML report for a sample"""
-    input:
-        opj(config["results_path"],"kraken","{sample}_{run}_{seq_type}.krona.txt")
+        opj(config["results_path"],"kraken","{sample}_{run}_{seq_type}.kreport"),
+        opj("resources","krona","taxonomy.tab")
     output:
         opj(config["results_path"],"kraken","{sample}_{run}_{seq_type}.html")
+    params:
+        tax = "resources/krona"
     shell:
         """
-        ktImportText -o {output} {input}
+        ktImportTaxonomy -m 3 -t 5 -tax {params.tax} -o {output[0]} {input[0]},{wildcards.sample}_{wildcards.run}
         """
 
 rule all_kraken_to_krona:
+    """Combined krona plot for all samples"""
     input:
-        get_all_files(samples, opj(config["results_path"],"kraken"), ".krona.txt")
+        f = get_all_files(samples, opj(config["results_path"],"kraken"), ".kreport"),
+        h = get_all_files(samples, opj(config["results_path"],"kraken"), ".html"),
+        t = opj("resources","krona","taxonomy.tab")
     output:
         opj(config["report_path"],"kraken","kraken.krona.html")
+    params:
+        tax = "resources/krona"
     run:
         input_string = ""
-        for f in input:
-            sample_run = os.path.basename(f).replace("_pe.krona.txt","").replace("_se.krona.txt","")
+        for f in input.f:
+            sample_run = os.path.basename(f).replace("_pe.kreport","").replace("_se.kreport","")
             print(sample_run,f)
             input_string+=" {},{}".format(f,sample_run)
-        shell("ktImportText {input_string} -o {output[0]}")
-
-rule collate_kraken_reports:
-    input:
-        get_all_files(samples, opj(config["report_path"],"kraken"), ".report")
-    output:
-        temp(touch(opj(config["report_path"],"kraken","all_reports")))
+        shell("ktImportTaxonomy -m 3 -t 5 -tax {params.tax} {input_string} -o {output[0]}")

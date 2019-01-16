@@ -1,5 +1,5 @@
 kaiju_dbfiles = []
-kaiju_dbfiles.append(opj(config["classifier_db_path"],"kaiju","kaiju_{}.fmi".format(config["diamond_dbtype"])))
+kaiju_dbfiles.append(opj("resources","classify_db","kaiju","kaiju_{}.fmi".format(config["diamond_dbtype"])))
 kaiju_dbfiles.append(opj(config["taxdb"],"nodes.dmp"))
 kaiju_dbfiles.append(opj(config["taxdb"],"names.dmp"))
 

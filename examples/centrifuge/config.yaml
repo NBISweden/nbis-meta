@@ -1,6 +1,8 @@
 pipeline_config_file: results/pipeline_config_centrifuge.txt
 assembly: False
 sample_list: examples/centrifuge/sample_annotation.tab
+results_path: results/examples/centrifuge_classify
+report_path: results/examples/centrifuge_classify/report
 trimmomatic: False
 phix_filter: False
 centrifuge: True

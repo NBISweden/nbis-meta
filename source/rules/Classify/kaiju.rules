@@ -9,7 +9,7 @@ rule kaiju_pe:
         R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
         R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+PREPROCESS+".fastq.gz"),
         nodes = opj(config["taxdb"],"nodes.dmp"),
-        db = opj(config["classifier_db_path"],"kaiju","kaiju_{}.fmi".format(config["diamond_dbtype"]))
+        db = opj("resources","classifier_db","kaiju","kaiju_{}.fmi".format(config["diamond_dbtype"]))
     output:
         opj(config["results_path"],"kaiju","{sample}_{run}_pe.kaiju.out")
     threads: 10
@@ -33,7 +33,7 @@ rule kaiju_se:
     input:
         se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+PREPROCESS+".fastq.gz"),
         nodes = opj(config["taxdb"],"nodes.dmp"),
-        db = opj(config["classifier_db_path"],"kaiju","kaiju_{}.fmi".format(config["diamond_dbtype"]))
+        db = opj("resources","classifier_db","kaiju","kaiju_{}.fmi".format(config["diamond_dbtype"]))
     output:
         opj(config["results_path"],"kaiju","{sample}_{run}_se.kaiju.out")
     threads: 10
