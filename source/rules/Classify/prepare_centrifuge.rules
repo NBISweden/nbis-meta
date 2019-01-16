@@ -27,7 +27,7 @@ rule download_centrifuge_build:
     run:
         url = get_centrifuge_index_url(config)
         shell("curl -o {params.tar} {url}")
-        shell("tar -C {params.dir} xvf {params.tar}")
+        shell("tar -C {params.dir} -xvf {params.tar}")
         shell("rm {params.tar}")
 
 

@@ -3,7 +3,7 @@ Overview
 Reads can be classified taxonomically using k-mer based methods. Two
 popular programs for this purpose are
 `Centrifuge <https://github.com/infphilo/centrifuge>`_ and
-`Kraken <https://github.com/DerrickWood/kraken>`_.
+`Kraken2 <https://github.com/DerrickWood/kraken2>`_.
 
 Building a database
 ===================
@@ -15,7 +15,6 @@ documentation for these tools (`Kraken manual <http://ccb.jhu.edu/software/krake
 However, both tools have pre-built indices which saves you the trouble of downloading and building these on your own.
 By default, the workflow will attempt to download the pre-built index for centrifuge consisting of all prokaryotic and
 viral genomes as well as the human genome (:code:`p+h+v`).
-
 
 Centrifuge
 ----------
@@ -38,32 +37,36 @@ summary file run::
 The summary output will be placed in the same directory as the centrifuge index (resources/classify_db/centrifuge if
 using the prebuilt index) in a file with the suffix '.summary.tab'.
 
-Kraken
-------
+Kraken2
+-------
 
-:code:`kraken_kmer_length:` length of kmers used in Kraken. Impacts the memory requirements for
-building the database, but also the specificity. 31 bp is the default.
+:code:`kraken_prebuilt`: By default, the workflow uses the prebuilt :code:`MiniKraken2_v2_8GB` database built from the
+Refseq bacteria, archaea, and viral libraries and the GRCh38 human genome. Alternatively you can use
+:code:`MiniKraken2_v1_8GB` which will download the database excluding the human genome. These minikraken databases
+are downsampled versions of the standard database which could influence sensitivity. However,
+`evaluations <http://ccb.jhu.edu/software/kraken2/images/Kraken1v2_BuildDBAccuracy_Table.png>`_ suggest that with
+kraken2 the drop in sensitivity is minimal.
 
-:code:`kraken_domains:` As for Centrifuge this is a list of domains for which genomes will
-be downloaded. However, the kraken domains only include **bacteria**,
-**archaea**, **viral**, **plasmid** and **human**.
+:code:`kraken_custom`: If you have created your own custom centrifuge index, specify the path to the directory
+containing the hash.k2d, opts.k2d and taxo.k2d files.
 
-:code:`kraken_build_params:` Extra build_params to pass to kraken-build. For instance, if you set this
-to *--work-on-disk* the build process will use less RAM (but will
-take considerably longer).
+Classify reads
+==============
+The workflow will run centrifuge and/or kraken2 (depending on your configuration) on all samples specified in your
+`sample annotation file`_ and produce **interactive krona-plots** and **kraken-style reports**.
+
+Individual krona plots are created in results/centrifuge/ and results/kraken/. Combined krona plots are created in
+results/report/centrifuge and results/report/kraken. The kraken-style :code:`*.kreport` files created within these
+directories can be loaded into the tool `pavian`_. Either install the pavian R package or run it using Docker
+(see instructions at the GitHub repo).
 
 Centrifuge
-==========
-The workflow will run centrifuge on all samples specified in your
-`sample annotation file`_ and produce **interactive krona-plots**
-and **kraken-style reports** which can be further explored using the
-tool `pavian`_.
+----------
+Relevant settings for Centrifuge are:
 
-Relevant settings are:
-
-:code:`centrifuge_max_assignments:` This determines how many assignments are made per read. Instead of allowing
-several assignments per read you can run centrifuge in a 'LCA' mode similar to kraken where only the lowest common
-ancestor of all hits is assigned for a read. To use this mode set :code:`centrifuge_max_assignments:1`.
+:code:`centrifuge_max_assignments:` This determines how many assignments are made per read. By default this parameter
+is set to 1 in this workflow which means centrifuge runs in 'LCA' mode similar to kraken where only the lowest common
+ancestor of all hits is assigned for a read. The default setting for centrifuge is 5.
 
 :code:`centrifuge_min_score:` This is used to filter out classifications when creating the kraken-style report. Note
 that this also influences the numbers in the Krona plots.
@@ -78,16 +81,15 @@ Now perform the actual run with 4 cores::
 
     snakemake --configfile examples/centrifuge/config.yaml -p -j 4
 
-Check the results under :code:`results/examples/centrifuge_classify`. The :code:`report` directory contains a
-:code:`centrifuge` sub-folder with interactive krona plots for each sample (open the HTML file in your browser to view
-the plots). There are also several :code:`*.kraken_report` files which can be loaded into the
-tool `pavian`_. Either install the pavian R package or run it using Docker (see instructions at the GitHub repo).
+Kraken2
+-------
+Relevant settings for Kraken2 are:
 
-The image below shows the output from the anterior_nares sample loaded into pavian.
+:code:`kraken_reduce_memory:` Set to True to run kraken2 with :code:`--memory-mapping` which reduces RAM usage.
 
-.. image:: ../img/pavian.png
-    :width: 400
-    :alt: Pavian
+Try out the Kraken2 read classifier using the supplied example::
+
+    snakemake --configfile examples/kraken/config.yaml -np
 
 Filtering results
 -----------------
@@ -178,15 +180,6 @@ to load most bam files. If you installed pavian via R you can run the app as::
 
     pavian::runApp(port=5000, maxUploadSize=500*1024^2)
 
-
-Kraken
-======
-
-The Kraken part of the workflow is very similar to Centrifuge. Krona
-plots and report files compatible with Pavian are produced in the
-:code:`report/` sub-folder.
-
-.. note:: Kraken must be run with the '--use-conda' flag
 
 .. _pavian: https://github.com/fbreitwieser/pavian
 .. _sample annotation file: http://nbis-metagenomic-workflow.readthedocs.io/en/latest/configuration/sample_list.html

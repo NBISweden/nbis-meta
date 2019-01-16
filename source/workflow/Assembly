@@ -1,5 +1,6 @@
 include: "../rules/Assembly/assembly.rules"
 include: "../rules/Assembly/assembly_report.rules"
+
 if not config["annotation"]:
     include: "../rules/Annotation/orfcalling.rules"
     include: "../rules/Annotation/markduplicates.rules"

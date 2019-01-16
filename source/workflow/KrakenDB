@@ -1,15 +1,7 @@
-kraken_dbfiles = []
-
-domains = ['bacteria', 'viral', 'archaea', 'plasmid', 'human']
-
-# Add db files if there is at least one domain specified
-if len(set(config["kraken_domains"]).intersection(domains)) > 0:
-    kraken_dbfiles = opj(config["classifier_db_path"],"kraken","input-sequences.fna")
-
 include: "../rules/Classify/prepare_kraken.rules"
 
 rule kraken_db_done:
     input:
-        kraken_dbfiles
+        expand(opj(config["kraken_index_path"], "{n}.k2d"), n = ["hash", "opts", "taxo"])
     output:
         temp(touch(opj(config["results_path"],"progress","kraken_db.done")))

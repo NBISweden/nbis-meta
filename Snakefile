@@ -83,7 +83,6 @@ if config["kraken"]:
     # Kraken classify samples
     include: "source/workflow/KrakenClassify"
     inputs += [kraken_db_done, kraken_classify_done]
-
 # Kaiju
 if config["kaiju"]:
     # Process the Kaiju database
@@ -105,7 +104,6 @@ if config["reference_map"]:
     config["centrifuge"] = True
     include: "source/workflow/Map"
     inputs.append(refmap_done)
-
 
 # master target rule
 rule all:
@@ -137,7 +135,7 @@ rule centrifuge_classify:
 rule kraken_db:
     input: kraken_db_done
 rule kraken_classify:
-    input: preprocess_done, kraken_db_done, kraken_classify_done
+    input: pipeline_report, preprocess_done, kraken_classify_done
 
 # kaiju
 rule kaiju_db:

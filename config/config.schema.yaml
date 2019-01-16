@@ -232,31 +232,23 @@ properties:
     description: Minimum read count for first-step filtering using centrifuge
     default: 50
   ## Classification ##
-  classifier_db_path:
-    type: string
-    description: Parent directory for classifier databases
-    default: resources/classify_db
   kraken:
     type: boolean
     description: Indicates whether to run kraken
     default: false
-  kraken_kmer_length:
-    type: integer
-    description: Kmer length to use for kraken database
-    default: 31
-    minimum: 3
-  kraken_domains:
-    type: array
-    description: Domains to download for kraken database
-    uniqueItems: true
-    items:
-      type: string
-      enum: ["archaea", "bacteria", "plasmid", "viral", "human"]
-    default: ["archaea", "bacteria", "viral"]
-  kraken_build_params:
+  kraken_prebuilt:
     type: string
-    description: Additional build parameters for kraken-build
+    description: Pre-built kraken index
+    default: "minikraken2_v2_8GB"
+    enum: ["minikraken2_v2_8GB", "minikraken2_v1_8GB"]
+  kraken_custom:
+    type: string
+    description: Path to directory containing a custom built kraken2 index (must contain 'hash.k2d', 'opts.k2d', 'taxo.k2d')
     default: ""
+  kraken_reduce_memory:
+    type: boolean
+    description: Run kraken2 in '--memory-mapping' mode which avoids loading database into RAM and uses less memory
+    default: False
   centrifuge:
     type: boolean
     description: Indicates whether to run centrifuge classification
@@ -297,7 +289,7 @@ properties:
   centrifuge_max_assignments:
     type: integer
     description: How many maximum number of assignments from centrifuge (set to 1 to implement LCA-classification)
-    default: 10
+    default: 1
   kaiju:
     type: boolean
     description: Indicates whether to run kaiju

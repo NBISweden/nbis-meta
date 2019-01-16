@@ -1,7 +1,16 @@
 localrules:
+    krona_taxonomy,
     download_taxdump,
     download_nr,
     download_uniref
+
+rule krona_taxonomy:
+    output:
+        "resources/krona/taxonomy.tab"
+    shell:
+        """
+        ktUpdateTaxonomy.sh resources/krona
+        """
 
 rule prepare_taxfiles_nr:
     """Downloads the nr protein accession -> taxonomy ID mapping and creates the lineage file for parsing"""

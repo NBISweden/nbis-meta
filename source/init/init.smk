@@ -209,6 +209,17 @@ if config["centrifuge"]:
 if config["kaiju"]:
     config_params.append((" - Read classifier","Kaiju"))
 if config["kraken"]:
+    # Check if custom database exists
+    custom = expand(opj(config["kraken_custom"], "{n}.k2d"), n=["hash","opts","taxo"])
+    if list(set(os.path.exists(x) for x in custom))[0]:
+        config["kraken_index_path"] = config["kraken_custom"]
+    # If not, use prebuilt default
+    else:
+        config["kraken_index_path"] = "resources/classify_db/{}".format(config["kraken_prebuilt"])
+    if config["kraken_reduce_memory"]:
+        config["kraken_params"] = "--memory-mapping"
+    else:
+        config["kraken_params"] = ""
     config_params.append((" - Read classifier","Kraken"))
 if config["reference_map"]:
     config_params.append((" - Reference based mapping","True"))
