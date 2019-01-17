@@ -92,7 +92,7 @@ Try out the Kraken2 read classifier using the supplied example::
     snakemake --configfile examples/kraken/config.yaml -np
 
 Filtering results
------------------
+=================
 Sometimes you may see taxa pop up in your classification output that you
 are not sure are really there. The k-mer based methods such as Centrifuge
 and Kraken do not provide information on e.g. genome coverage that
@@ -108,11 +108,6 @@ To try this out on the example above enter::
 
     snakemake --configfile examples/centrifuge/config.yaml --config centrifuge_map_filtered=True -np -j 4
 
-As you can see from the rulegraph below, this analysis includes a few more steps.
-
-.. image:: ../img/centrifuge_filter_rulegraph.png
-    :width: 400
-    :alt: Centrifuge graph
 
 Because we set :code:`centrifuge_map_filtered=True` the output from Centrifuge is now filtered in a two-step setup.
 
@@ -123,13 +118,13 @@ To perform the actual runs (again with 4 cores) do::
 Below are explanations of the different filtering steps and the output produced.
 
 Centrifuge filtering
-^^^^^^^^^^^^^^^^^^^^
+--------------------
 First taxids with at least :code:`centrifuge_min_read_count` assigned reads are identified
 and the corresponding genome sequences are extracted from the Centrifuge
 database. By default :code:`centrifuge_min_read_count` is set to :code:`5000`.
 
 Sourmash filtering
-^^^^^^^^^^^^^^^^^^
+------------------
 Next, genomes passing the first filter are passed to [sourmash](https://github.com/dib-lab/sourmash)
 which builds 'MinHash' signatures of the genomes. These signatures are essentially highly
 compressed representations of the DNA sequences. Signatures are also computed
@@ -149,13 +144,13 @@ this is set to :code:`0.1` meaning that a genome must be covered by at least 10%
  in at least one of the samples.
 
 Bowtie2 alignments
-^^^^^^^^^^^^^^^^^^
+------------------
 Finally, genomes that pass both filters are indexed using bowtie2 and
 the (preprocessed) reads are mapped to this set of genomes. The resulting
 bam-files are used to calculate coverage of genomes across samples.
 
 Output
-^^^^^^
+------
 Under the :code:`results/examples/centrifuge_classify/report/` directory you will
 find a :code:`bowtie2` sub-folder with indexed alignment files in bam format
 as well as plots of:
