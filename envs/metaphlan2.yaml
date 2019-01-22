@@ -1,0 +1,8 @@
+name: metaphlan2
+channels:
+  - bioconda
+dependencies:
+  - python=2.7
+  - metaphlan2
+  - graphlan
+  - export2graphlan

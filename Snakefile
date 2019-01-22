@@ -33,7 +33,6 @@ pipeline_report = config["pipeline_config_file"]
 ###########
 # Targets #
 ###########
-
 inputs = [pipeline_report]
 db_done = opj(config["results_path"],"progress","db.done")
 preprocess_done = opj(config["results_path"],"progress","preprocess.done")
@@ -43,6 +42,8 @@ checkm_db_done = opj(config["results_path"],"progress","checkm_db.done")
 annotation_done = opj(config["results_path"],"progress","annotation.done")
 kraken_db_done = opj(config["results_path"],"progress","kraken_db.done")
 kraken_classify_done = opj(config["results_path"],"progress","kraken_classify.done")
+metaphlan2_db_done = opj(config["results_path"],"progress","metaphlan2_db.done")
+metaphlan2_classify_done = opj(config["results_path"],"progress","metaphlan2_classify.done")
 kaiju_db_done = opj(config["results_path"],"progress","kaiju_db.done")
 kaiju_classify_done = opj(config["results_path"],"progress","kaiju_classify.done")
 centrifuge_db_done = opj(config["results_path"],"progress","centrifuge_db.done")
@@ -90,7 +91,11 @@ if config["kaiju"]:
     # Kaiju classify samples
     include: "source/workflow/KaijuClassify"
     inputs += [kaiju_db_done, kaiju_classify_done]
-
+# Metaphlan2
+if config["metaphlan2"]:
+    include: "source/workflow/Metaphlan2DB"
+    include: "source/workflow/Metaphlan2Classify"
+    inputs += [metaphlan2_db_done, metaphlan2_classify_done]
 # Centrifuge
 if config["centrifuge"]:
     include: "source/workflow/CentrifugeDB"
@@ -142,6 +147,12 @@ rule kaiju_db:
     input: kaiju_db_done
 rule kaiju_classify:
     input: pipeline_report, preprocess_done, kaiju_db_done, kaiju_classify_done
+
+# metaphlan2
+rule metaphlan2_db:
+    input: metaphlan2_db_done
+rule metaphlan2_classify:
+    input: pipeline_report, preprocess_done, metaphlan2_db_done, metaphlan2_classify_done
 
 # binning
 rule binning:
