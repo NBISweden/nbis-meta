@@ -38,3 +38,4 @@ dependencies:
   - infernal
   - subread
   - blast
+  - kraken2
