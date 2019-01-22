@@ -18,7 +18,6 @@ NBIS Metagenomics Workflow
     :caption: Read-based
 
     classification/index
-    profiling/index
     refmap/index
 
 .. toctree::
@@ -45,12 +44,16 @@ Checkout the latest version of this repository (to your current directory)::
 
     git clone https://bitbucket.org/scilifelab-lts/nbis-meta
 
+Change directory::
+
+    cd nbis-meta
+
 **2. Install the required software**
 All the software needed to run this workflow is included as a
-`Conda <http://anaconda.org>`_ environment file. To create the
-environment :code:`nbis-meta` use the supplied :code:`envs/environment.yaml` file.
+`Conda <https://www.anaconda.com/>`_ environment file. See the conda `installation instructions <https://www.anaconda.com/download/>`_
+for how to install conda on your system.
 
-First create the environment using the supplied file::
+To create the environment :code:`nbis-meta` use the supplied :code:`envs/environment.yaml` file::
 
     mkdir envs/nbis-meta
     conda env create -f envs/environment.yaml -p envs/nbis-meta
