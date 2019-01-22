@@ -18,6 +18,7 @@ NBIS Metagenomics Workflow
     :caption: Read-based
 
     classification/index
+    profiling/index
     refmap/index
 
 .. toctree::

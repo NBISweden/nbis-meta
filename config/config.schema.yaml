@@ -294,5 +294,9 @@ properties:
     type: boolean
     description: Indicates whether to run kaiju
     default: false
+  metaphlan2:
+    type: boolean
+    description: Indicates whether to run metaphlan2 profiler
+    default: false
 type: object
 required: [sample_list]

@@ -1,0 +1,7 @@
+mp2dbfiles = expand(opj(config["resource_path"],"metaphlan2","mpa_v20_m200.{index}.bt2"), index = range(1,5))
+include: "../rules/Classify/prepare_metaphlan.rules"
+rule metaphlan2_db_done:
+    input:
+        mp2dbfiles
+    output:
+        temp(touch(opj(config["results_path"],"progress","metaphlan2_db.done")))
