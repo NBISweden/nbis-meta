@@ -25,6 +25,12 @@ Checkout the latest version of this repository:
 git clone https://bitbucket.org/scilifelab-lts/nbis-meta
 ```
 
+Change directory:
+
+```
+cd nbis-meta
+```
+
 ### Install the required software
 All the software needed to run this workflow is included as a
 [conda](http://anaconda.org) environment file. You will need to
