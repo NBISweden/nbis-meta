@@ -89,8 +89,7 @@ rule sortmerna_fastq_pe:
         idx=expand(opj(config["resource_path"],"rRNA_databases","{file}.idx.stats"), file = config["sortmerna_dbs"])
     output:
         aligned = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.rRNA.fastq")),
-        other = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.non_rRNA.fastq")),
-        blast = opj(config["results_path"], "sortmerna", "{sample}_{run}_pe.rRNA.blast.gz")
+        other = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.non_rRNA.fastq"))
     log:
         opj(config["intermediate_path"],"preprocess","{sample}_{run}_pe.sortmerna.log")
     params:
@@ -115,8 +114,6 @@ rule sortmerna_fastq_pe:
         shell("mv {params.aligned_prefix}.fastq {output.aligned}")
         shell("mv {params.aligned_prefix}.log {output.log}")
         shell("mv {params.other_prefix}.fastq {output.other}")
-        shell("gzip -c {params.scratch}/*.blast > {params.scratch}/blast.gz")
-        shell("mv {params.scratch/blast.gz {output.blast}")
 
 rule sortmerna_split_rRNA_fastq:
     input:
@@ -179,8 +176,7 @@ rule sortmerna_fastq_se:
         idx=expand(opj(config["resource_path"],"rRNA_databases","{file}.idx.stats"), file = config["sortmerna_dbs"])
     output:
         aligned = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.rRNA.fastq")),
-        other = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.non_rRNA.fastq")),
-        blast = opj(config["results_path"], "sortmerna", "{sample}_{run}_se.rRNA.blast.gz")
+        other = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.non_rRNA.fastq"))
     log:
         opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.sortmerna.log")
     params:
@@ -204,8 +200,6 @@ rule sortmerna_fastq_se:
         shell("mv {params.aligned_prefix}.fastq {output.aligned}")
         shell("mv {params.aligned_prefix}.log {output.log}")
         shell("mv {params.other_prefix}.fastq {output.other}")
-        shell("gzip -c {params.scratch}/*.blast > {params.scratch}/blast.gz")
-        shell("mv {params.scratch}/blast.gz {output.blast}")
 
 rule sortmerna_zip_aligned_fastq:
     input:
