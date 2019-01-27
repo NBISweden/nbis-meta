@@ -90,6 +90,7 @@ rule sortmerna_fastq_pe:
     output:
         aligned = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.rRNA.fastq")),
         other = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.non_rRNA.fastq")),
+        blast = opj(config["results_path"], "sortmerna", "{sample}_{run}_pe.rRNA.blast.gz")
     log:
         opj(config["intermediate_path"],"preprocess","{sample}_{run}_pe.sortmerna.log")
     params:
@@ -110,10 +111,12 @@ rule sortmerna_fastq_pe:
             ref_string+="{},{}:".format(f.replace(".idx.stats",""),f.replace(".stats",""))
         ref_string = ref_string.rstrip(":")
         # Run sortmerna
-        shell("sortmerna --ref {ref_string} --reads {input[0]} -a {threads} --{params.paired_strategy} --aligned {params.aligned_prefix} --other {params.other_prefix} {params.score_params} --log -v --fastx")
+        shell("sortmerna --ref {ref_string} --reads {input[0]} -a {threads} --{params.paired_strategy} --blast 3 --aligned {params.aligned_prefix} --other {params.other_prefix} {params.score_params} --log -v --fastx")
         shell("mv {params.aligned_prefix}.fastq {output.aligned}")
         shell("mv {params.aligned_prefix}.log {output.log}")
         shell("mv {params.other_prefix}.fastq {output.other}")
+        shell("gzip -c {params.scratch}/*.blast > {params.scratch}/blast.gz")
+        shell("mv {params.scratch/blast.gz {output.blast}")
 
 rule sortmerna_split_rRNA_fastq:
     input:
@@ -177,6 +180,7 @@ rule sortmerna_fastq_se:
     output:
         aligned = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.rRNA.fastq")),
         other = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.non_rRNA.fastq")),
+        blast = opj(config["results_path"], "sortmerna", "{sample}_{run}_se.rRNA.blast.gz")
     log:
         opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.sortmerna.log")
     params:
@@ -196,10 +200,12 @@ rule sortmerna_fastq_se:
             ref_string+="{},{}:".format(f.replace(".idx.stats",""),f.replace(".stats",""))
         ref_string = ref_string.rstrip(":")
         # Run sortmerna
-        shell("sortmerna --ref {ref_string} --reads {input[0]} -a {threads} --aligned {params.aligned_prefix} --other {params.other_prefix} {params.score_params} --log -v --fastx")
+        shell("sortmerna --ref {ref_string} --reads {input[0]} -a {threads} --blast 3 --aligned {params.aligned_prefix} --other {params.other_prefix} {params.score_params} --log -v --fastx")
         shell("mv {params.aligned_prefix}.fastq {output.aligned}")
         shell("mv {params.aligned_prefix}.log {output.log}")
         shell("mv {params.other_prefix}.fastq {output.other}")
+        shell("gzip -c {params.scratch}/*.blast > {params.scratch}/blast.gz")
+        shell("mv {params.scratch}/blast.gz {output.blast}")
 
 rule sortmerna_zip_aligned_fastq:
     input:
