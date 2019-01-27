@@ -69,7 +69,8 @@ rule sortmerna_merge_fastq:
         scratch = os.path.expandvars(config["scratch_path"]),
         R1_unzipped = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_R1.fastq"),
         R2_unzipped = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_R2.fastq"),
-        merged = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_merged.fastq")
+        merged = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_merged.fastq"),
+        src = "source/utils/merge-paired-reads.sh"
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*6
     run:
@@ -78,7 +79,7 @@ rule sortmerna_merge_fastq:
         # Unzip to scratch dir
         shell("gunzip -c {input.R1} > {params.R1_unzipped}")
         shell("gunzip -c {input.R2} > {params.R2_unzipped}")
-        shell("merge-paired-reads.sh {params.R1_unzipped} {params.R2_unzipped} {params.merged}")
+        shell("bash {params.src} {params.R1_unzipped} {params.R2_unzipped} {params.merged}")
         shell("mv {params.merged} {output[0]}")
         shell("rm {params.R1_unzipped} {params.R2_unzipped}")
 
@@ -123,13 +124,14 @@ rule sortmerna_split_rRNA_fastq:
     params:
         tmpdir=opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna"),
         R1 = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna","{sample}_{run}_R1.rRNA.fastq"),
-        R2 = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna","{sample}_{run}_R2.rRNA.fastq")
+        R2 = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna","{sample}_{run}_R2.rRNA.fastq"),
+        src = "source/utils/unmerge-paired-reads.sh"
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*6
     shell:
         """
         mkdir -p {params.tmpdir}
-        unmerge-paired-reads.sh {input.aligned} {params.R1} {params.R2}
+        bash {params.src} {input.aligned} {params.R1} {params.R2}
         gzip {params.R1}
         gzip {params.R2}
         mv {params.R1}.gz {output.R1}
