@@ -9,8 +9,8 @@ rule concoct_coverage_table:
         bam = get_all_files(samples, opj(config["results_path"], "assembly", "{group}", "mapping"), ".markdup.bam"),
         bed = opj(config["results_path"],"assembly","{group}","final_contigs_cutup.bed")
     output:
-        cov = opj(config["results_path"], "binning", "concoct", "map", "{group}", "concoct_inputtable.tsv"),
-        covR = opj(config["results_path"], "binning", "concoct", "map", "{group}", "concoct_inputtableR.tsv")
+        cov = opj(config["results_path"], "concoct", "cov", "{group}", "concoct_inputtable.tsv"),
+        covR = opj(config["results_path"], "concoct", "cov", "{group}", "concoct_inputtableR.tsv")
     params:
         src = "concoct_coverage_table.py"
     conda:
@@ -22,16 +22,14 @@ rule concoct_coverage_table:
         cut -f1,3- {output.cov} > {output.covR}
         """
 
-## MAPPING FOR MAXBIN2 ##
+## COVERAGE FOR MAXBIN2 ##
 
 # Generate SAF file for contigs
 rule generate_contig_SAF:
     input: 
         opj(config["results_path"],"assembly","{group}","final_contigs.fa")
     output: 
-        opj(config["results_path"], "binning", "maxbin", "map","{group}","{group}.SAF")
-    message: 
-        "Generate simplified annotation format (SAF) file for {wildcards.group}"
+        opj(config["results_path"],"maxbin","cov","{group}","{group}.SAF")
     shell:
         """
         python source/utils/fasta2bed.py --saf -i {input[0]} -o {output[0]}
@@ -40,17 +38,16 @@ rule generate_contig_SAF:
 # Normalize counts
 rule contig_featurecount:
     input:
-        saf = opj(config["results_path"], "binning", "maxbin", "map","{group}","{group}.SAF"),
+        saf = opj(config["results_path"],"maxbin","cov","{group}","{group}.SAF"),
         bam=opj(config["results_path"], "assembly", "{group}", "mapping","{sample}_{run}_{seq_type}.markdup.bam")
     output:
-        opj(config["results_path"], "binning", "maxbin", "map","{group}","{sample}_{run}_{seq_type}.fc.tab"),
-        opj(config["results_path"], "binning", "maxbin", "map","{group}","{sample}_{run}_{seq_type}.fc.tab.summary")
+        opj(config["results_path"],"maxbin","cov","{group}","{sample}_{run}_{seq_type}.fc.tab"),
+        opj(config["results_path"],"maxbin","cov","{group}","{sample}_{run}_{seq_type}.fc.tab.summary")
     threads: 4
     resources:
         runtime = lambda wildcards, attempt: attempt**2*30
     params:
         tmpdir = opj(config["scratch_path"],"{group}-{sample}_{run}")
-    message: "Quantifying {wildcards.group} contigs in {wildcards.sample}_{wildcards.run}"
     run:
         shell("mkdir -p {params.tmpdir}")
         if wildcards.seq_type == "pe":
@@ -61,11 +58,10 @@ rule contig_featurecount:
 
 rule binning_normalize_contigs:
     input:
-        fc = opj(config["results_path"], "binning", "maxbin", "map","{group}","{sample}_{run}_{seq_type}.fc.tab"),
+        fc = opj(config["results_path"],"maxbin", "cov","{group}","{sample}_{run}_{seq_type}.fc.tab"),
         sample_info = opj(config["intermediate_path"],"preprocess","read_lengths.tab")
     output:
-        tpm = opj(config["results_path"], "binning", "maxbin", "map","{group}","{sample}_{run}_{seq_type}.tpm.tab")
-    message: "Normalizing abundance values for {wildcards.group} contigs in {wildcards.sample}_{wildcards.run}"
+        tpm = opj(config["results_path"],"maxbin","cov","{group}","{sample}_{run}_{seq_type}.tpm.tab")
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60
     shell:
@@ -77,10 +73,9 @@ rule binning_normalize_contigs:
 
 rule binning_generate_abund_list:
     input:
-        tpms = get_all_files(samples, opj(config["results_path"], "binning", "maxbin", "map","{group}"), ".tpm.tab")
+        tpms = get_all_files(samples, opj(config["results_path"],"maxbin","cov","{group}"), ".tpm.tab")
     output:
-        abund_list = opj(config["results_path"], "binning", "maxbin", "map","{group}","abund_list")
-    message: "Generating abundance list for assembly {wildcards.group} ({output.abund_list})"
+        abund_list = opj(config["results_path"],"maxbin","cov","{group}","abund_list")
     run:
         with open(output.abund_list, 'w') as fh:
             for f in input.tpms:

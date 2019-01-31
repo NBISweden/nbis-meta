@@ -1,19 +1,13 @@
 binningfiles = []
-link_files = {}
-if config["checkm"]:
-    include: "../rules/Binning/checkm.rules"
-    binningfiles.append(opj(config["results_path"],"checkm","bin_qa_plot.png"))
-    if system == "Linux":
-        binningfiles.append(opj(config["results_path"],"checkm","phylogeny.tab"))
 
 if config["maxbin"]:
-    binningfiles+=expand(opj(config["results_path"], "binning", "maxbin", "bin", "{assembly}", "{assembly}.summary"),
+    binningfiles+=expand(opj(config["results_path"],"maxbin","bin","{assembly}","{assembly}.summary"),
         assembly = assemblyGroups.keys())
 if config["concoct"]:
-    binningfiles+=expand(opj(config["results_path"], "binning", "concoct", "bin", "{assembly}", "fasta", "done"),
+    binningfiles+=expand(opj(config["results_path"],"concoct","bin","{assembly}","fasta","done"),
         assembly = assemblyGroups.keys())
 
-include: "../rules/Binning/map.rules"
+include: "../rules/Binning/coverage.rules"
 include: "../rules/Binning/binning.rules"
 
 rule binning_done:

@@ -39,12 +39,6 @@ system = platform.system()
 config["system"] = system
 config_params.append((" - System",system))
 
-# Copy appropriate checkm conda environment to envs/checkm.yaml
-if system == "Linux" and config["checkm"]:
-    shell("cp envs/checkm-linux.yaml envs/checkm.yaml")
-elif system == "Darwin" and config["checkm"]:
-    shell("cp envs/checkm-osx.yaml envs/checkm.yaml")
-
 config["tmpdir"] = config["temp_path"]
 
 # Figure out trimmomatic home if configuration path not available
@@ -174,9 +168,6 @@ if(os.path.isfile(config["sample_list"])):
         if config["concoct"]:
             config_params.append((" - Genome binning", "CONCOCT"))
             config_params.append(("   - Min contig length",config["min_contig_length"]))
-            if config["checkm"]:
-                config_params.append(("   - QC Bins (CheckM)", "Yes"))
-                config_params.append(("   - Checkm marker_taxon", "Prokaryote"))
 else:
     print("Could not read the sample list file, wont be able to run the pipeline, tried "+config["sample_list"])
     samples = {}
