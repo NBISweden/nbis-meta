@@ -8,13 +8,13 @@ nucleotide composition and will show up in similar abundances across
 samples.
 
 There are several programs that perform unsupervised clustering of contigs
-based on composition and coverage. Currently, this workflow only uses
-`MaxBin2 <https://downloads.jbei.org/data/microbial_communities/MaxBin/MaxBin.html>`_
-but other popular similar tools are `CONCOCT <https://github.com/BinPro/CONCOCT/>`_
-and `MetaWatt <https://sourceforge.net/projects/metawatt/>`_.
-
-The quality and phylogeny of bins can also be estimated as part of the workflow, using
+based on composition and coverage. Currently, this workflow uses
+`MaxBin2 <https://downloads.jbei.org/data/microbial_communities/MaxBin/MaxBin.html>`_ and/or
+`CONCOCT <https://github.com/BinPro/CONCOCT/>`_. The quality and phylogeny of bins can be estimated using
 `CheckM <https://github.com/Ecogenomics/CheckM>`_.
+
+.. Note:: The minimum required version of CONCOCT is 1.0.0 which only works on Linux so far. However, if you manage to compile CONCOCT on OSX you can use it with the workflow by installing it into the nbis-meta environment path and then omit the :code:`--use-conda` flag to snakemake.
+
 
 To perform the binning step of the workflow run the following::
 
@@ -24,26 +24,17 @@ To perform the binning step of the workflow run the following::
 
 Settings
 --------
-:code:`binning:` Set to True to perform binning on all assembly groups in the sample annotation file
+:code:`maxbin:` Set to True to use MaxBin2.
 
-Output from cross-mapping reads to contigs are saved in <results_path>/binning/map. Bam files are marked as
-temporary in the workflow and thus the map_dir will not take up a huge amount of space once
-the abundance files are prepared.
+:code:`concoct:` Set to True to use CONCOCT.
 
-Output from the actual binning is placed in <results_path>/binning/bin. Each binned assembly will have a sub-folder under
-the bin_dir directory. In each sub-folder a nucleotide fasta file will be generated for each genome
-bin with the filename pattern "{assemblyGroup}.nnn.fasta" where 'nnn' is a number starting
-at 001. The output folder will also contain a log file from the binning, a summary file
-with some stats on each bin, a list of contigs that could not be binned as well as a list
-of contigs that were too short (below the min_contig_length specified).
+:code:`min_contig_length:` Minimum contig length to include in binning. Shorter contigs will be ignored. By setting
+multiple values here you can make the workflow run the binning steps multiple times with different minimum lengths.
+Output is stored under :code:`results/maxbin/<min_contig_length>/` and :code:`results/concoct/<min_contig_length>/`.
 
-.. Note:: The completeness estimate in MaxBin2 does not work properly so don't believe the completeness values in the .summary file. Instead run the CheckM step of the workflow to get better estimates.
+:code:`maxbin_threads:` Number of threads to use for the MaxBin2 step.
 
-:code:`min_contig_length:` Minimum length of contigs to be binned. Shorter contigs will be filtered out.
-
-:code:`binning_threads:` Number of threads to use for the MaxBin2 step.
-
-:code:`checkm:` Set to True to analyze bins with Checkm.
+:code:`concoct_threads:` Number of threads to use for the CONCOCT step.
 
 Binning tutorial
 ----------------
@@ -68,18 +59,7 @@ Have a look at the jobs that will be run in this example by doing a dry-run::
 
     snakemake --use-conda --configfile examples/binning/config.yaml -np
 
-There are a total of 204 jobs to run here. Results will be placed under :code:`results/examples/binning`.
-
-To also analyze the quality of generated bins using CheckM you can either set :code:`checkm:True` in your config file
-or from the command line::
-
-    snakemake --use-conda -j 4 --configfile examples/binning/config.yaml --config checkm=True -np
-
-.. Important:: Notice the :code:`--use-conda` flag to snakemake. This is required when running checkm as that software uses a different conda environment.
-
-To run the binning example using 4 cores with bin QC using CheckM simply do::
-
-    snakemake --use-conda -j 4 --configfile examples/binning/config.yaml --config checkm=True -p
+Results will be placed under :code:`results/examples/`.
 
 Splitting up the example
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -87,14 +67,8 @@ Splitting up the example
 If you want, you can first generate the assemblies which will be used for
 binning. Simply run::
 
-    snakemake --use-conda -j 4 --configfile examples/binning/config.yaml -p assembly
+    snakemake -j 4 --configfile examples/binning/config.yaml -p assembly
 
-Then bin each assembly separately::
+Then run the binning steps::
 
-    snakemake --use-conda --configfile examples/binning/config.yaml -p results/examples/binning/bins/$ASSEMBLY/$ASSEMBLY.summary
-
-Here :code:`$ASSEMBLY` should be substituted for each of the assemblies generated.
-
-Produce CheckM quality plot::
-
-    snakemake --use-conda --configfile examples/binning/config.yaml -np results/examples/checkm/bin_qa_plot.png
+    snakemake --use-conda -j 4 --configfile examples/binning/config.yaml -p binning
