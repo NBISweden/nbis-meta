@@ -208,9 +208,12 @@ properties:
     description: Indicates whether to run Concoct to bin contigs
     default: false
   min_contig_length:
-    type: number
-    description: Minimum contig length for binning
-    default: 1000
+    type: array
+    description: Minimum contig lengths for binning
+    items:
+      type: integer
+      minimum: 500
+    default: [1000]
   maxbin_threads:
     type: integer
     description: Number of threads to use for MaxBin2

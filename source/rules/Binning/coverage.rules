@@ -1,5 +1,5 @@
 localrules:
-    binning_generate_abund_list,
+    maxbin_generate_abund_list,
     generate_contig_SAF
 
 ## COVERAGE FOR CONCOCT ##
@@ -8,10 +8,10 @@ rule concoct_coverage_table:
         bam = get_all_files(samples, opj(config["results_path"], "assembly", "{group}", "mapping"), ".markdup.bam"),
         bed = opj(config["results_path"],"assembly","{group}","final_contigs_cutup.bed")
     output:
-        cov = opj(config["results_path"], "concoct", "cov", "{group}", "concoct_inputtable.tsv")
+        cov = opj(config["results_path"],"concoct","{group}","cov","concoct_inputtable.tsv")
     params:
         src = "source/utils/concoct_coverage_table.py",
-        samplenames = opj(config["results_path"],"concoct","cov","{group}","samplenames")
+        samplenames = opj(config["results_path"],"concoct","{group}","cov","samplenames")
     shell:
         """
         for f in {input.bam} ; do n=$(basename $f); s=$(echo -e $n | sed 's/_[ps]e.markdup.bam//g'); echo $s; done > {params.samplenames}
@@ -26,7 +26,7 @@ rule generate_contig_SAF:
     input: 
         opj(config["results_path"],"assembly","{group}","final_contigs.fa")
     output: 
-        opj(config["results_path"],"maxbin","cov","{group}","{group}.SAF")
+        opj(config["results_path"],"maxbin","{group}","cov","{group}.SAF")
     shell:
         """
         python source/utils/fasta2bed.py --saf -i {input[0]} -o {output[0]}
@@ -35,11 +35,11 @@ rule generate_contig_SAF:
 # Normalize counts
 rule contig_featurecount:
     input:
-        saf = opj(config["results_path"],"maxbin","cov","{group}","{group}.SAF"),
-        bam=opj(config["results_path"], "assembly", "{group}", "mapping","{sample}_{run}_{seq_type}.markdup.bam")
+        saf=opj(config["results_path"],"maxbin","{group}","cov","{group}.SAF"),
+        bam=opj(config["results_path"], "assembly","{group}","mapping","{sample}_{run}_{seq_type}.markdup.bam")
     output:
-        opj(config["results_path"],"maxbin","cov","{group}","{sample}_{run}_{seq_type}.fc.tab"),
-        opj(config["results_path"],"maxbin","cov","{group}","{sample}_{run}_{seq_type}.fc.tab.summary")
+        opj(config["results_path"],"maxbin","{group}","cov","{sample}_{run}_{seq_type}.fc.tab"),
+        opj(config["results_path"],"maxbin","{group}","cov","{sample}_{run}_{seq_type}.fc.tab.summary")
     threads: 4
     resources:
         runtime = lambda wildcards, attempt: attempt**2*30
@@ -55,10 +55,10 @@ rule contig_featurecount:
 
 rule binning_normalize_contigs:
     input:
-        fc = opj(config["results_path"],"maxbin", "cov","{group}","{sample}_{run}_{seq_type}.fc.tab"),
+        fc = opj(config["results_path"],"maxbin","{group}","cov","{sample}_{run}_{seq_type}.fc.tab"),
         sample_info = opj(config["intermediate_path"],"preprocess","read_lengths.tab")
     output:
-        tpm = opj(config["results_path"],"maxbin","cov","{group}","{sample}_{run}_{seq_type}.tpm.tab")
+        tpm = opj(config["results_path"],"maxbin","{group}","cov","{sample}_{run}_{seq_type}.tpm.tab")
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60
     shell:
@@ -68,11 +68,11 @@ rule binning_normalize_contigs:
          {wildcards.sample} > {output.tpm}
         """
 
-rule binning_generate_abund_list:
+rule maxbin_generate_abund_list:
     input:
-        tpms = get_all_files(samples, opj(config["results_path"],"maxbin","cov","{group}"), ".tpm.tab")
+        tpms = get_all_files(samples, opj(config["results_path"],"maxbin","{group}","cov"), ".tpm.tab")
     output:
-        abund_list = opj(config["results_path"],"maxbin","cov","{group}","abund_list")
+        abund_list = opj(config["results_path"],"maxbin","{group}","cov","abund_list")
     run:
         with open(output.abund_list, 'w') as fh:
             for f in input.tpms:

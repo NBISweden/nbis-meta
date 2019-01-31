@@ -1,11 +1,11 @@
 binningfiles = []
 
 if config["maxbin"]:
-    binningfiles+=expand(opj(config["results_path"],"maxbin","bin","{assembly}","{assembly}.summary"),
-        assembly = assemblyGroups.keys())
+    binningfiles+=expand(opj(config["results_path"],"maxbin","{group}","{l}","{group}.summary"),
+        group = assemblyGroups.keys(), l=config["min_contig_length"])
 if config["concoct"]:
-    binningfiles+=expand(opj(config["results_path"],"concoct","bin","{assembly}","fasta","done"),
-        assembly = assemblyGroups.keys())
+    binningfiles+=expand(opj(config["results_path"],"concoct","{group}","{l}","fasta","done"),
+        group = assemblyGroups.keys(), l=config["min_contig_length"])
 
 include: "../rules/Binning/coverage.rules"
 include: "../rules/Binning/binning.rules"

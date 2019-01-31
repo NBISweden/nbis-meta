@@ -7,17 +7,16 @@ rule run_maxbin:
     input:
         fa = opj(config["results_path"],"assembly","{group}","final_contigs.fa"),
         faa = opj(config["results_path"],"annotation","{group}","final_contigs.faa"),
-        abund_list = opj(config["results_path"],"maxbin","cov","{group}","abund_list")
+        abund_list = opj(config["results_path"],"maxbin","{group}","cov","abund_list")
     output:
-        summary_file = touch(opj(config["results_path"],"maxbin","bin","{group}","{group}.summary"))
+        touch(opj(config["results_path"],"maxbin","{group}","{l}","{group}.summary"))
     params:
-        dir = opj(config["results_path"],"maxbin","bin","{group}"),
-        min_contig_length = config["min_contig_length"],
+        dir = opj(config["results_path"],"maxbin","{group}","{l}"),
+        min_contig_length = "{l}",
         tmp_dir = opj(config["scratch_path"],"{group}-binning")
     threads: config["maxbin_threads"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*5
-    message: "Running MaxBin2 on {wildcards.group}"
     conda: "../../../envs/maxbin.yaml"
     shell:
         """
@@ -45,13 +44,13 @@ rule concoct_cutup:
 
 rule run_concoct:
     input:
-        cov = opj(config["results_path"],"concoct","cov","{group}","concoct_inputtable.tsv"),
+        cov = opj(config["results_path"],"concoct","{group}","cov","concoct_inputtable.tsv"),
         fa = opj(config["results_path"],"assembly","{group}","final_contigs_cutup.fa")
     output:
-        out = opj(config["results_path"],"concoct","bin","{group}","clustering_gt{l}.csv".format(l=config["min_contig_length"]))
+        opj(config["results_path"],"concoct","{group}","{l}","clustering_gt{l}.csv")
     params:
-        basename = opj(config["results_path"],"concoct","bin","{group}"),
-        length = config["min_contig_length"]
+        basename = opj(config["results_path"],"concoct","{group}","{l}"),
+        length = "{l}"
     threads: config["concoct_threads"]
     conda:
         "../../../envs/concoct.yaml"
@@ -64,10 +63,10 @@ rule run_concoct:
 
 rule merge_cutup:
     input:
-        opj(config["results_path"],"concoct","bin","{group}","clustering_gt{l}.csv".format(l=config["min_contig_length"]))
+        opj(config["results_path"],"concoct","{group}","{l}","clustering_gt{l}.csv")
     output:
-        opj(config["results_path"],"concoct","bin","{group}","clustering_gt{l}_merged.csv".format(l=config["min_contig_length"])),
-        opj(config["results_path"],"concoct","bin","{group}","clustering_gt{l}_merged.log".format(l=config["min_contig_length"]))
+        opj(config["results_path"],"concoct","{group}","{l}","clustering_gt{l}_merged.csv"),
+        opj(config["results_path"],"concoct","{group}","{l}","clustering_gt{l}_merged.log")
     conda:
         "../../../envs/concoct.yaml"
     shell:
@@ -78,11 +77,11 @@ rule merge_cutup:
 rule extract_fasta:
     input:
         opj(config["results_path"],"assembly","{group}","final_contigs.fa"),
-        opj(config["results_path"],"concoct","bin","{group}","clustering_gt{l}_merged.csv".format(l=config["min_contig_length"]))
+        opj(config["results_path"],"concoct","{group}","{l}","clustering_gt{l}_merged.csv")
     output:
-        touch(opj(config["results_path"],"concoct","bin","{group}","fasta","done"))
+        touch(opj(config["results_path"],"concoct","{group}","{l}","fasta","done"))
     params:
-        dir = opj(config["results_path"],"concoct","bin","{group}","fasta")
+        dir = opj(config["results_path"],"concoct","{group}","{l}","fasta")
     conda:
         "../../../envs/concoct.yaml"
     shell:

@@ -167,7 +167,7 @@ if(os.path.isfile(config["sample_list"])):
             config_params.append((" - Genome binning", "MaxBin2"))
         if config["concoct"]:
             config_params.append((" - Genome binning", "CONCOCT"))
-            config_params.append(("   - Min contig length",config["min_contig_length"]))
+            config_params.append(("   - Min contig length",",".join(str(x) for x in config["min_contig_length"])))
 else:
     print("Could not read the sample list file, wont be able to run the pipeline, tried "+config["sample_list"])
     samples = {}
