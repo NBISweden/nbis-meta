@@ -65,8 +65,8 @@ rule prepare_taxfiles_uniref:
         sqlite_db=opj(config["taxdb"],"uniref{n}_taxa.sqlite")
     params:
         script="source/utils/make_lineage_file.py",
-        tmp_map = opj(config["scratch_path"],"uniref{n}.accession2taxid"),
-        tmp_out = opj(config["scratch_path"],"uniref{n}.lineage")
+        tmp_map = opj(os.path.expandvars(config["scratch_path"]),"uniref{n}.accession2taxid"),
+        tmp_out = opj(os.path.expandvars(config["scratch_path"]),"uniref{n}.lineage")
     log:
         opj(config["taxdb"],"uniref{n}.lineage.log")
     resources:
