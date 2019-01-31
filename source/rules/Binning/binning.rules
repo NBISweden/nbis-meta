@@ -1,5 +1,7 @@
 localrules:
-    concoct_cutup
+    concoct_cutup,
+    merge_cutup,
+    extract_fasta
 
 rule run_maxbin:
     input:
@@ -32,18 +34,19 @@ rule concoct_cutup:
     input:
         fa = opj(config["results_path"],"assembly","{group}","final_contigs.fa")
     output:
-        fa = opj(config["results_path"],"assembly","{group}","final_contigs_c10K.fa")
+        fa = opj(config["results_path"],"assembly","{group}","final_contigs_cutup.fa"),
+        bed = opj(config["results_path"],"assembly","{group}","final_contigs_cutup.bed")
     conda:
-        "../../../envs/concoct/concoct.yaml"
+        "../../../envs/concoct.yaml"
     shell:
         """
-        cut_up_fasta.py -c 10000 -o 0 -m {input.fa} > {output.fa}
+        cut_up_fasta.py -b {output.bed}  -c 10000 -o 0 -m {input.fa} > {output.fa}
         """
 
 rule run_concoct:
     input:
         cov = opj(config["results_path"], "binning", "concoct", "map", "{group}", "concoct_inputtableR.tsv"),
-        fa = opj(config["results_path"],"assembly", "{group}", "final_contigs_c10K.fa")
+        fa = opj(config["results_path"],"assembly", "{group}", "final_contigs_cutup.fa")
     output:
         out = opj(config["results_path"], "binning", "concoct", "bin", "{group}", "clustering_gt{l}.tsv".format(l=config["min_contig_length"]))
     params:
@@ -51,7 +54,7 @@ rule run_concoct:
         length = config["min_contig_length"]
     threads: config["concoct_threads"]
     conda:
-        "../../../envs/concoct/concoct.yaml"
+        "../../../envs/concoct.yaml"
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*2
     shell:
@@ -59,4 +62,30 @@ rule run_concoct:
         concoct -t {threads} --coverage_file {input.cov} --composition_file {input.fa} -b {params.basename}/ -l {params.length}
         """
 
+rule merge_cutup:
+    input:
+        opj(config["results_path"], "binning", "concoct", "bin", "{group}", "clustering_gt{l}.tsv".format(l=config["min_contig_length"]))
+    output:
+        opj(config["results_path"], "binning", "concoct", "bin", "{group}", "clustering_gt{l}_merged.tsv".format(l=config["min_contig_length"])),
+        opj(config["results_path"], "binning", "concoct", "bin", "{group}", "clustering_gt{l}_merged.log".format(l=config["min_contig_length"]))
+    conda:
+        "../../../envs/concoct.yaml"
+    shell:
+        """
+        merge_cutup_clustering.py {input[0]} > {output[0]} 2> {output[1]}
+        """
 
+rule extract_fasta:
+    input:
+        opj(config["results_path"],"assembly","{group}","final_contigs.fa"),
+        opj(config["results_path"], "binning", "concoct", "bin", "{group}", "clustering_gt{l}_merged.tsv".format(l=config["min_contig_length"]))
+    output:
+        touch(opj(config["results_path"], "binning", "concoct", "bin", "{group}", "fasta", "done"))
+    params:
+        dir = opj(config["results_path"], "binning", "concoct", "bin", "{group}", "fasta")
+    conda:
+        "../../../envs/concoct.yaml"
+    shell:
+        """
+        extract_fasta_bins.py {input[0]} {input[1]} --output_path {params.dir}
+        """

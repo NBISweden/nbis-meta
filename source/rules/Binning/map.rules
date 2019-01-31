@@ -1,141 +1,26 @@
 localrules:
     binning_generate_abund_list,
     generate_contig_SAF,
-    link_bam,
     concoct_genomecoverage
 
-ruleorder: link_bam > binning_markduplicates
-ruleorder: link_bam > maxbin_map_pe > maxbin_map_se
-
-## MAPPING FOR CONCOCT ##
-rule concoct_bt_build:
+## COVERAGE FOR CONCOCT ##
+rule concoct_coverage_table:
     input:
-        fa = opj(config["results_path"],"assembly","{group}","final_contigs_c10K.fa")
-    output:
-        expand(opj(config["results_path"],"assembly","{{group}}","final_contigs_c10K.fa.{index}.bt2l"),index=range(1,5))
-    params:
-        prefix = opj(config["results_path"],"assembly","{group}","final_contigs_c10K.fa")
-    threads: config["bowtie2_threads"]
-    resources:
-        runtime = lambda wildcards, attempt: attempt**2*60
-    shell:
-        """
-        bowtie2-build --large-index --threads {threads} {params.prefix} {params.prefix}
-        """
-
-rule concoct_map_pe:
-    input:
-        index = expand(opj(config["results_path"],"assembly","{{group}}","final_contigs_c10K.fa.{index}.bt2l"),index=range(1,5)),
-        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
-        R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+PREPROCESS+".fastq.gz"),
-    output:
-        bam = opj(config["results_path"], "binning", "concoct", "map", "{group}","{sample}_{run}_pe.markdup.bam"),
-        bai = opj(config["results_path"], "binning", "concoct", "map", "{group}","{sample}_{run}_pe.markdup.bai"),
-        btlog = opj(config["results_path"], "binning", "concoct", "map", "{group}","{sample}_{run}_pe.log"),
-        metric = opj(config["results_path"], "binning", "concoct", "map", "{group}","{sample}_{run}_pe.metric")
-    params:
-        prefix = opj(config["results_path"],"assembly","{{group}}","final_contigs_c10K.fa"),
-        temp_sam = opj(os.path.expandvars("$TMPDIR"),"{sample}_{run}.sam"),
-        temp_bam = opj(os.path.expandvars("$TMPDIR"),"{sample}_{run}.bam"),
-        temp_bam_markdup = opj(os.path.expandvars("$TMPDIR"),"{sample}_{run}.markdup.bam"),
-        temp_bam_resort = opj(os.path.expandvars("$TMPDIR"),"{sample}_{run}.markdup.resort.bam"),
-        temp_dir = os.path.expandvars("$TMPDIR"),
-        jarfile=config["picard_jar"],
-        picard_path=config["picard_path"],
-        java_opt="-Xms2g -Xmx64g"
-    threads: 10
-    resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*4
-    shell:
-        """
-        mkdir -p {params.temp_dir}
-        bowtie2 --very-sensitive-local -p {threads} -x {params.prefix} -1 {input.R1} \
-        -2 {input.R2} > {params.temp_sam} 2>{output.btlog}
-        samtools view -bh {params.temp_sam} | samtools sort -@ 9 -o {params.temp_bam}
-        java {params.java_opt} -XX:ParallelGCThreads={threads} -cp params.picard_path -jar {params.jarfile} \
-         MarkDuplicates I={params.temp_bam} O={params.temp_bam_markdup} M={output.metric} ASO=coordinate REMOVE_DUPLICATES=TRUE
-        samtools sort -@ 9 -o {params.temp_bam_resort} {params.temp_bam_markdup}
-        samtools index -@ 9 {params.temp_bam_markdup}
-        mv {params.temp_bam_markdup} {output.bam}
-        mv {params.temp_bam_markdup}.bai {output.bai}
-        """
-
-rule concoct_map_se:
-    input:
-        index = expand(opj(config["results_path"],"assembly","{{group}}","final_contigs_c10K.fa.{index}.bt2l"),index=range(1,5)),
-        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+PREPROCESS+".fastq.gz")
-    output:
-        bam = opj(config["results_path"], "binning", "concoct", "map", "{group}","{sample}_{run}_se.markdup.bam"),
-        bai = opj(config["results_path"], "binning", "concoct", "map", "{group}","{sample}_{run}_se.markdup.bai"),
-        btlog = opj(config["results_path"], "binning", "concoct", "map", "{group}","{sample}_{run}_se.log"),
-        metric = opj(config["results_path"], "binning", "concoct", "map", "{group}","{sample}_{run}_se.metric")
-    params:
-        prefix = opj(config["results_path"],"assembly","{{group}}","final_contigs_c10K.fa"),
-        temp_sam = opj(os.path.expandvars("$TMPDIR"),"{sample}_{run}.sam"),
-        temp_bam = opj(os.path.expandvars("$TMPDIR"),"{sample}_{run}.bam"),
-        temp_bam_markdup = opj(os.path.expandvars("$TMPDIR"),"{sample}_{run}.markdup.bam"),
-        temp_bam_resort = opj(os.path.expandvars("$TMPDIR"),"{sample}_{run}.markdup.resort.bam"),
-        temp_dir = os.path.expandvars("$TMPDIR"),
-        jarfile=config["picard_jar"],
-        picard_path=config["picard_path"],
-        java_opt="-Xms2g -Xmx64g"
-    threads: 10
-    resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*4
-    shell:
-        """
-        mkdir -p {params.temp_dir}
-        bowtie2 --very-sensitive-local -p {threads} -x {params.prefix} -U {input.se} > {params.temp_sam} 2>{output.btlog}
-        samtools view -bh {params.temp_sam} | samtools sort -@ 9 -o {params.temp_bam}
-        java {params.java_opt} -XX:ParallelGCThreads={threads} -cp params.picard_path -jar {params.jarfile} \
-         MarkDuplicates I={params.temp_bam} O={params.temp_bam_markdup} M={output.metric} ASO=coordinate REMOVE_DUPLICATES=TRUE
-        samtools sort -@ 9 -o {params.temp_bam_resort} {params.temp_bam_markdup}
-        samtools index -@ 9 {params.temp_bam_markdup}
-        mv {params.temp_bam_markdup} {output.bam}
-        mv {params.temp_bam_markdup}.bai {output.bai}
-        """
-
-rule concoct_genomecoverage:
-    input:
-        bam = opj(config["results_path"], "binning", "concoct", "map", "{group}","{sample}_{run}_{seq}.markdup.bam")
-    output:
-        cov = opj(config["results_path"], "binning", "concoct", "map", "{group}", "{sample}_{run}_{seq}.cov")
-    shell:
-        """
-        genomeCoverageBed -ibam {input.bam} > {output.cov}
-        """
-
-
-def get_covfiles(samples, group):
-    files = []
-    for sample in samples.keys():
-        for run in samples[sample].keys():
-            if is_pe(samples[sample][run]):
-                files.append(opj(config["results_path"], "binning", "concoct", "map", group, "{}_{}_pe.cov".format(sample, run)))
-            else:
-                files.append(opj(config["results_path"], "binning", "concoct", "map", group, "{}_{}_se.cov".format(sample, run)))
-    return files
-
-
-rule concoct_generate_covtable:
-    input:
-        covfiles = lambda wildcards: get_covfiles(samples, wildcards.group),
-        fa = opj(config["results_path"],"assembly","{group}","final_contigs_c10K.fa")
+        bam = get_all_files(samples, opj(config["results_path"], "assembly", "{group}", "mapping"), ".markdup.bam"),
+        bed = opj(config["results_path"],"assembly","{group}","final_contigs_cutup.bed")
     output:
         cov = opj(config["results_path"], "binning", "concoct", "map", "{group}", "concoct_inputtable.tsv"),
         covR = opj(config["results_path"], "binning", "concoct", "map", "{group}", "concoct_inputtableR.tsv")
     params:
-        src = "gen_input_table.py"
+        src = "concoct_coverage_table.py"
     conda:
         "../../../envs/concoct.yaml"
-    run:
-        samplenames = []
-        for f in input.covfiles:
-            sample_run = (os.path.basename(f)).replace("_se.cov", "").replace("_pe.cov", "")
-            samplenames.append(sample_run)
-        samplenames = " ".join(samplenames)
-        shell("{params.src} --isbedfiles --samplenames {samplenames} {input.fa} {input.covfiles} > {output.cov}")
-        shell("cut -f1,3- {output.cov} > {output.covR}")
+    shell:
+        """
+        samplenames=$(for f in {input.bam} ; do n=$(basename $f); s=$(echo -e $n | sed 's/_[ps]e.markdup.bam//g'); echo $s; done)
+        {params.src} --samplenames $samplenames {input.bed} {input.bam} > {output.cov}
+        cut -f1,3- {output.cov} > {output.covR}
+        """
 
 ## MAPPING FOR MAXBIN2 ##
 
@@ -152,100 +37,11 @@ rule generate_contig_SAF:
         python source/utils/fasta2bed.py --saf -i {input[0]} -o {output[0]}
         """
 
-rule link_bam:
-    input:
-        target = lambda wildcards: link_files[wildcards.group][wildcards.sample][wildcards.run][wildcards.seq_type]
-    output:
-        temp(opj(config["results_path"], "binning", "maxbin", "map","{group}","{sample}_{run}_{seq_type}"+POSTPROCESS+".bam"))
-    message: "Symlinking existing bam file for {wildcards.sample}_{wildcards.run} vs. {wildcards.group}"
-    run:
-        abs_out = os.path.abspath(output[0])
-        shell("ln -s {input.target} {abs_out}")
-
-# Map all samples against all assemblies
-rule maxbin_map_pe:
-    input:
-        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
-        R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+PREPROCESS+".fastq.gz"),
-        fa = expand(opj(config["results_path"],"assembly","{{group}}","final_contigs.fa.{index}.bt2l"),index=range(1,5))
-    output:
-        bam=temp(opj(config["results_path"], "binning", "maxbin", "map","{group}","{sample}_{run}_pe.bam")),
-    log:
-        opj(config["results_path"], "binning", "maxbin", "map", "{group}", "{sample}_{run}_pe.bam.log")
-    params:
-        temp_bam = opj(config["scratch_path"],"{group}-bin_map-{sample}_{run}_pe.bam"),
-        out_dir = opj(config["results_path"], "binning", "maxbin", "map","{group}"),
-        setting = "--very-sensitive-local",
-        prefix = opj(config["results_path"],"assembly","{group}","final_contigs.fa"),
-        temp_dir = config["scratch_path"]
-    message: "Mapping reads from {wildcards.sample}_{wildcards.run} against {wildcards.group} for binning"
-    threads: config["bowtie2_threads"]
-    resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*4
-    shell:
-        """
-        mkdir -p {params.temp_dir}
-        bowtie2 {params.setting} -p {threads} -x {params.prefix} -1 {input.R1} -2 {input.R2} 2>{log} | \
-        samtools view -bh - | samtools sort -o {params.temp_bam}
-        mv {params.temp_bam} {output.bam}
-        """
-
-rule maxbin_map_se:
-    input:
-        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+PREPROCESS+".fastq.gz"),
-        fa = expand(opj(config["results_path"],"assembly","{{group}}","final_contigs.fa.{index}.bt2l"),index=range(1,5))
-    output:
-        bam=temp(opj(config["results_path"], "binning", "maxbin", "map","{group}","{sample}_{run}_se.bam")),
-    log:
-        opj(config["results_path"], "binning", "maxbin", "map", "{group}","{sample}_{run}_se.bam.log")
-    params:
-        temp_bam=opj(config["scratch_path"],"{group}-bin_map-{sample}_{run}_se.bam"),
-        out_dir = opj(config["results_path"], "binning", "maxbin", "map","{group}"),
-        setting = "--very-sensitive-local",
-        prefix = opj(config["results_path"],"assembly","{group}","final_contigs.fa"),
-        temp_dir = config["scratch_path"]
-    message: "Mapping reads from {wildcards.sample}_{wildcards.run} against {wildcards.group} for binning"
-    threads: config["bowtie2_threads"]
-    resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*4
-    shell:
-        """
-        mkdir -p {params.temp_dir}
-        bowtie2 {params.setting} -p {threads} -x {params.prefix} -U {input.se} 2>{output.log} | samtools view -bh - | \
-         samtools sort -o {params.temp_bam}
-        mv {params.temp_sam} {output.bam}
-        """
-
-rule binning_markduplicates:
-    input:
-        opj(config["results_path"], "binning", "maxbin", "map","{group}","{sample}_{run}_{seq_type}.bam")
-    output:
-        bam = temp(opj(config["results_path"], "binning", "maxbin", "map","{group}","{sample}_{run}_{seq_type}.markdup.bam")),
-        metric = opj(config["results_path"], "binning", "maxbin", "map","{group}","{sample}_{run}_{seq_type}.markdup.metrics")
-    log:
-        opj(config["results_path"], "binning", "maxbin", "map","{group}","{sample}_{run}_{seq_type}.markdup.log")
-    message: "Removing duplicates for {wildcards.group} contigs in {wildcards.sample}_{wildcards.run}"
-    params:
-        temp_bam=opj(config["scratch_path"],"{group}-bin_map-{sample}_{run}_{seq_type}.markdup.bam"),
-        temp_sort_bam=opj(config["scratch_path"],"{group}-bin_map-{sample}_{run}_{seq_type}.markdup.re_sort.bam"),
-        jarfile=config["picard_jar"],
-        picard_path=config["picard_path"],
-        java_opt="-Xms2g -Xmx64g"
-    resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*5
-    threads: 10
-    shell:
-        """
-        java {params.java_opt} -XX:ParallelGCThreads={threads} -cp params.picard_path -jar {params.jarfile} MarkDuplicates \
-            I={input} O={params.temp_bam} M={output.metric} ASO=coordinate REMOVE_DUPLICATES=TRUE 2> {log}
-        samtools sort -@ 9 -o {params.temp_sort_bam} {params.temp_bam}
-        mv {params.temp_sort_bam} {output.bam}
-        """
-
+# Normalize counts
 rule contig_featurecount:
     input:
         saf = opj(config["results_path"], "binning", "maxbin", "map","{group}","{group}.SAF"),
-        bam=opj(config["results_path"], "binning", "maxbin", "map","{group}","{sample}_{run}_{seq_type}"+POSTPROCESS+".bam")
+        bam=opj(config["results_path"], "assembly", "{group}", "mapping","{sample}_{run}_{seq_type}.markdup.bam")
     output:
         opj(config["results_path"], "binning", "maxbin", "map","{group}","{sample}_{run}_{seq_type}.fc.tab"),
         opj(config["results_path"], "binning", "maxbin", "map","{group}","{sample}_{run}_{seq_type}.fc.tab.summary")

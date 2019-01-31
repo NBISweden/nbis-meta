@@ -1,0 +1,6 @@
+name: concoct
+channels:
+  - bioconda
+dependencies:
+  - python=3.6
+  - concoct=1.0.0
