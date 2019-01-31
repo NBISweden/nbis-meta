@@ -9,13 +9,15 @@ rule concoct_coverage_table:
         bed = opj(config["results_path"],"assembly","{group}","final_contigs_cutup.bed")
     output:
         cov = opj(config["results_path"],"concoct","{group}","cov","concoct_inputtable.tsv")
+    conda:
+        "../../../envs/concoct.yaml"
     params:
-        src = "source/utils/concoct_coverage_table.py",
+        src = "concoct_coverage_table.py",
         samplenames = opj(config["results_path"],"concoct","{group}","cov","samplenames")
     shell:
         """
         for f in {input.bam} ; do n=$(basename $f); s=$(echo -e $n | sed 's/_[ps]e.markdup.bam//g'); echo $s; done > {params.samplenames}
-        python {params.src} --samplenames {params.samplenames} {input.bed} {input.bam} > {output.cov}
+        {params.src} --samplenames {params.samplenames} {input.bed} {input.bam} > {output.cov}
         rm {params.samplenames}
         """
 
