@@ -9,17 +9,15 @@ rule concoct_coverage_table:
         bam = get_all_files(samples, opj(config["results_path"], "assembly", "{group}", "mapping"), ".markdup.bam"),
         bed = opj(config["results_path"],"assembly","{group}","final_contigs_cutup.bed")
     output:
-        cov = opj(config["results_path"], "concoct", "cov", "{group}", "concoct_inputtable.tsv"),
-        covR = opj(config["results_path"], "concoct", "cov", "{group}", "concoct_inputtableR.tsv")
+        cov = opj(config["results_path"], "concoct", "cov", "{group}", "concoct_inputtable.tsv")
     params:
-        src = "concoct_coverage_table.py"
-    conda:
-        "../../../envs/concoct.yaml"
+        src = "source/utils/concoct_coverage_table.py",
+        samplenames = opj(config["results_path"],"concoct","cov","{group}","samplenames")
     shell:
         """
-        samplenames=$(for f in {input.bam} ; do n=$(basename $f); s=$(echo -e $n | sed 's/_[ps]e.markdup.bam//g'); echo $s; done)
-        {params.src} --samplenames $samplenames {input.bed} {input.bam} > {output.cov}
-        cut -f1,3- {output.cov} > {output.covR}
+        for f in {input.bam} ; do n=$(basename $f); s=$(echo -e $n | sed 's/_[ps]e.markdup.bam//g'); echo $s; done > {params.samplenames}
+        python {params.src} --samplenames {params.samplenames} {input.bed} {input.bam} > {output.cov}
+        rm {params.samplenames}
         """
 
 ## COVERAGE FOR MAXBIN2 ##
