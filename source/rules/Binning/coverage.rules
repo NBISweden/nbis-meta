@@ -1,7 +1,6 @@
 localrules:
     binning_generate_abund_list,
-    generate_contig_SAF,
-    concoct_genomecoverage
+    generate_contig_SAF
 
 ## COVERAGE FOR CONCOCT ##
 rule concoct_coverage_table:

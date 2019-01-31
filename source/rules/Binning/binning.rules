@@ -48,7 +48,7 @@ rule run_concoct:
         cov = opj(config["results_path"],"concoct","cov","{group}","concoct_inputtable.tsv"),
         fa = opj(config["results_path"],"assembly","{group}","final_contigs_cutup.fa")
     output:
-        out = opj(config["results_path"],"concoct","bin","{group}","clustering_gt{l}.tsv".format(l=config["min_contig_length"]))
+        out = opj(config["results_path"],"concoct","bin","{group}","clustering_gt{l}.csv".format(l=config["min_contig_length"]))
     params:
         basename = opj(config["results_path"],"concoct","bin","{group}"),
         length = config["min_contig_length"]
