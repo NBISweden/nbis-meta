@@ -43,6 +43,7 @@ Installation
 Checkout the latest version of this repository (to your current directory)::
 
     git clone https://bitbucket.org/scilifelab-lts/nbis-meta
+    cd nbis-meta
 
 Change directory::
 

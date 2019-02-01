@@ -20,6 +20,9 @@ def parse_validation_error(e):
 
 shell.prefix("")
 configfile: "config.yaml"
+# Handle cases where user does not enter min_contig_length as an array
+if type(config["min_contig_length"]) != list:
+    config["min_contig_length"] = [config["min_contig_length"]]
 try:
     validate(config, "config/config.schema.yaml")
 except WorkflowError as e:
@@ -68,7 +71,7 @@ if config["assembly"]:
         include: "source/workflow/Annotation"
         inputs.append(annotation_done)
     # Binning
-    if config["binning"]:
+    if config["maxbin"] or config["concoct"]:
         inputs.append(binning_done)
         include: "source/workflow/Binning"
       # Checkm

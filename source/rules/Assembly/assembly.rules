@@ -128,8 +128,8 @@ rule bowtie_build:
 rule bowtie_map_pe:
     input:
         bt_index = expand(opj(config["results_path"],"assembly","{{group}}","final_contigs.fa.{index}.bt2l"),index=range(1,5)),
-        R1 = lambda wildcards: assemblyGroups[wildcards.group][wildcards.sample][wildcards.run]["R1"],
-        R2 = lambda wildcards: assemblyGroups[wildcards.group][wildcards.sample][wildcards.run]["R2"]
+        R1 = expand(opj(config["intermediate_path"], "preprocess", "{{sample}}_{{run}}_R1{p}.fastq.gz"), p=PREPROCESS),
+        R2 = expand(opj(config["intermediate_path"], "preprocess", "{{sample}}_{{run}}_R2{p}.fastq.gz"), p=PREPROCESS)
     output:
         bam=temp(opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_pe.bam")),
         log=opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_pe.bam.log")
@@ -150,7 +150,7 @@ rule bowtie_map_pe:
 rule bowtie_map_se:
     input:
         bt_index = expand(opj(config["results_path"],"assembly","{{group}}","final_contigs.fa.{index}.bt2l"),index=range(1,5)),
-        se = lambda wildcards: assemblyGroups[wildcards.group][wildcards.sample][wildcards.run]["se"]
+        se = expand(opj(config["intermediate_path"], "preprocess", "{{sample}}_{{run}}_se{p}.fastq.gz"), p=PREPROCESS)
     output:
         bam=temp(opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_se.bam")),
         log=opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_se.bam.log")

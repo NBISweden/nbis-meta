@@ -199,18 +199,30 @@ properties:
     description: Where to store infernal database
     default: resources/infernal
   ## Binning ##
-  binning:
+  maxbin:
     type: boolean
-    description: Indicates whether to run binning on contigs
+    description: Indicates whether to run MaxBin2 to bin contigs
+    default: false
+  concoct:
+    type: boolean
+    description: Indicates whether to run Concoct to bin contigs
     default: false
   min_contig_length:
-    type: number
-    description: Minimum contig length for binning
-    default: 1000
-  binning_threads:
+    type: array
+    description: Minimum contig lengths for binning
+    items:
+      type: integer
+      minimum: 500
+    default: [1000]
+  maxbin_threads:
     type: integer
-    description: Number of threads to use for binning
+    description: Number of threads to use for MaxBin2
     default: 10
+    minimum: 1
+  concoct_threads:
+    type: integer
+    description: Number of threads to use for Concoct
+    default: 20
     minimum: 1
   checkm:
     type: boolean
