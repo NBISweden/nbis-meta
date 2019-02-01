@@ -26,6 +26,7 @@ pipelines:
             - snakemake --configfile examples/centrifuge/config.yaml -n
             - snakemake --configfile examples/kraken/config.yaml -n
             - snakemake --configfile examples/refmap/config.yaml -n
+            - snakemake --configfile examples/binning/config.yaml -n
             - snakemake -n
 
 definitions:
