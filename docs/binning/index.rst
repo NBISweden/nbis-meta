@@ -13,7 +13,11 @@ based on composition and coverage. Currently, this workflow uses
 `CONCOCT <https://github.com/BinPro/CONCOCT/>`_. The quality and phylogeny of bins can be estimated using
 `CheckM <https://github.com/Ecogenomics/CheckM>`_.
 
-.. Note::
+.. important::
+    MaxBin2 uses conserved marker genes for prokaryotes to identify seed contigs. This means that it will not be able
+    to bin eukaryotic contigs. In order to properly bin eukaryotic contigs please use CONCOCT.
+
+.. important::
     The minimum required version of CONCOCT is 1.0.0 which only works on Linux so far.
     However, if you manage to compile CONCOCT on OSX you can use it with the workflow by
     installing it into the nbis-meta environment path and then omit the :code:`--use-conda` flag
@@ -71,6 +75,9 @@ Have a look at the jobs that will be run in this example by doing a dry-run::
     snakemake --use-conda --configfile examples/binning/config.yaml -np
 
 Results will be placed under :code:`results/examples/`.
+
+Summary statistics for generated bins are written to a file :code:`summary_stats.tsv` inside every bin directory (e.g.
+:code:`results/examples/concoct/stool/1000/summary_stats.tsv` in the example above).
 
 Splitting up the example
 ^^^^^^^^^^^^^^^^^^^^^^^^
