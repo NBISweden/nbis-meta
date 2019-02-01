@@ -17,6 +17,18 @@ def get_centrifuge_index_url(config):
         url = ""
     return url
 
+rule download_assembly_summary:
+    """Downloads assembly summary files for a certain domain from NCBI"""
+    output:
+        opj(config["resource_path"],"ncbi","assembly_lists","assembly_summary_{domain}.txt")
+    message: "Downloading assembly summary for {wildcards.domain}"
+    shell:
+        """
+        dir=$(dirname {output[0]})
+        mkdir -p $dir
+        curl -o {output[0]} ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/{wildcards.domain}/assembly_summary.txt
+        """
+
 rule download_centrifuge_build:
     """Downloads pre-built centrifuge index"""
     output:
@@ -29,7 +41,6 @@ rule download_centrifuge_build:
         shell("curl -o {params.tar} {url}")
         shell("tar -C {params.dir} -xvf {params.tar}")
         shell("rm {params.tar}")
-
 
 rule extract_centrifuge_sequences:
     """Extracts input sequences from centrifuge database"""
