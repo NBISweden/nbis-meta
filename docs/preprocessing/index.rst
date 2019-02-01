@@ -42,7 +42,9 @@ Cutadapt
 
 :code:`adapter_sequence:` Adapter sequence for trimming. By default the workflow uses the Illumina TruSeq Universal Adapter.
 
-:code:`rev_adapter_sequence`: 3' adapter to be removed from second read in a pair.
+:code:`rev_adapter_sequence:` 3' adapter to be removed from second read in a pair.
+
+:code:`cutadapt_error_rate:` Maximum allowed error rate as value between 0 and 1. Defaults to 0.1. Increasing this value removes more adapters.
 
 Phix filtering
 --------------
