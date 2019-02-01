@@ -34,6 +34,13 @@ rule maxbin_stats:
         opj(config["results_path"],"maxbin","{group}","{l}","{group}.summary")
     output:
         opj(config["results_path"],"maxbin","{group}","{l}","summary_stats.tsv")
+    params:
+        dir = opj(config["results_path"],"maxbin","{group}","{l}"),
+        suffix = ".fasta"
+    shell:
+        """
+        python source/utils/binning_stats.py --suffix {params.suffix} {params.dir} > {output[0]}
+        """
 
 ## CONCOCT ##
 
