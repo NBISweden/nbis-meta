@@ -26,7 +26,8 @@ rule run_maxbin:
         mkdir -p {params.tmp_dir}
         run_MaxBin.pl -contig {input.fa} -contig_faa {input.faa} -abund_list {input.abund_list}\
          -min_contig_length {params.min_contig_length} -thread {threads} -out {params.tmp_dir}/{wildcards.group}
-         mv {params.tmp_dir}/* {params.dir}
+        mv {params.tmp_dir}/* {params.dir}
+        rm -r {params.tmp_dir}
         """
 
 rule maxbin_stats:
