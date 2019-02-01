@@ -30,6 +30,7 @@ se_post_adapter_params: "LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:31"
 cutadapt: False
 adapter_sequence: AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC # Adapter sequence for trimming. Shown here is for Illumina TruSeq Universal Adapter.
 rev_adapter_sequence: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT
+cutadapt_error_rate: 0.1 #Maximum allowed error rate as value between 0 and 1
 # fastuniq
 fastuniq: False
 # filter phiX

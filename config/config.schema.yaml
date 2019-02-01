@@ -89,6 +89,10 @@ properties:
   rev_adapter_sequence:
     type: string
     description: Reverse adapter sequence to trim with cutadapt
+  cutadapt_error_rate:
+    type: number
+    default: 0.1
+    description: Maximum allowed error rate as value between 0 and 1 (no. of errors divided by length of matching region)
   fastuniq:
     type: boolean
     description: Indicates whether to run fastuniq

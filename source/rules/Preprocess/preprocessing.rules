@@ -308,13 +308,14 @@ rule cutadapt_pe:
         R2log=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["trimming"]+".cutadapt.log")
     params:
         adapter = config["adapter_sequence"],
-        rev_adapter = config["rev_adapter_sequence"]
+        rev_adapter = config["rev_adapter_sequence"],
+        error_rate = config["cutadapt_error_rate"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
     shell:
         """
-        cutadapt -a {params.adapter} -A {params.rev_adapter} -o {output.fastq1} -p {output.fastq2} \
-        {input.R1} {input.R2} > {output.R1log}
+        cutadapt -e {params.error_rate} -a {params.adapter} -A {params.rev_adapter} -o {output.fastq1} \
+        -p {output.fastq2} {input.R1} {input.R2} > {output.R1log}
         cp {output.R1log} {output.R2log}
         """
 
@@ -326,12 +327,13 @@ rule cutadapt_se:
     log:
         opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["trimming"]+".cutadapt.log")
     params:
-        adapter=config["adapter_sequence"]
+        adapter=config["adapter_sequence"],
+        error_rate = config["cutadapt_error_rate"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
     shell:
         """
-        cutadapt -a {params.adapter} -o {output.fastq} {input[0]} > {log}
+        cutadapt -e {params.error_rate} -a {params.adapter} -o {output.fastq} {input[0]} > {log}
         """
 
 rule download_phix:
@@ -419,6 +421,7 @@ rule fastuniq:
         R1_outtmp = opj(config["scratch_path"],"{sample}_{run}_R1"+preprocess_suffices["fastuniq"]+".fastuniq.fastq"),
         R2_outtmp = opj(config["scratch_path"],"{sample}_{run}_R2"+preprocess_suffices["fastuniq"]+".fastuniq.fastq"),
         file_list = opj(config["scratch_path"],"{sample}_{run}.filelist")
+    threads: 4
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
     shell:
