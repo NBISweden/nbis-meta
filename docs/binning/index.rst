@@ -13,7 +13,11 @@ based on composition and coverage. Currently, this workflow uses
 `CONCOCT <https://github.com/BinPro/CONCOCT/>`_. The quality and phylogeny of bins can be estimated using
 `CheckM <https://github.com/Ecogenomics/CheckM>`_.
 
-.. Note:: The minimum required version of CONCOCT is 1.0.0 which only works on Linux so far. However, if you manage to compile CONCOCT on OSX you can use it with the workflow by installing it into the nbis-meta environment path and then omit the :code:`--use-conda` flag to snakemake.
+.. Note::
+    The minimum required version of CONCOCT is 1.0.0 which only works on Linux so far.
+    However, if you manage to compile CONCOCT on OSX you can use it with the workflow by
+    installing it into the nbis-meta environment path and then omit the :code:`--use-conda` flag
+    to snakemake.
 
 
 To perform the binning step of the workflow run the following::
@@ -35,6 +39,13 @@ Output is stored under :code:`results/maxbin/<min_contig_length>/` and :code:`re
 :code:`maxbin_threads:` Number of threads to use for the MaxBin2 step.
 
 :code:`concoct_threads:` Number of threads to use for the CONCOCT step.
+
+
+.. Note::
+    If there are not enough contigs meeting the minimum contig length cutoff the workflow
+    will exit with an error. Either decrease the length cutoff or see if you can improve
+    the assembly somehow.
+
 
 Binning tutorial
 ----------------
