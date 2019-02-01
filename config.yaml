@@ -93,7 +93,7 @@ infernal_dbpath: resources/infernal
 ### BINNING ###
 ###############
 # Minimum length of contigs to use for binning. Enter more values to run binning multiple times.
-min_contig_length: [1000,2000]
+min_contig_length: [1000]
 maxbin: False
 maxbin_threads: 10
 concoct: False
