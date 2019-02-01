@@ -1,10 +1,10 @@
 binningfiles = []
 
 if config["maxbin"]:
-    binningfiles+=expand(opj(config["results_path"],"maxbin","{group}","{l}","{group}.summary"),
+    binningfiles += expand(opj(config["results_path"],"maxbin","{group}","{l}","summary_stats.tsv"),
         group = assemblyGroups.keys(), l=config["min_contig_length"])
 if config["concoct"]:
-    binningfiles+=expand(opj(config["results_path"],"concoct","{group}","{l}","fasta","done"),
+    binningfiles += expand(opj(config["results_path"],"concoct","{group}","{l}","summary_stats.tsv"),
         group = assemblyGroups.keys(), l=config["min_contig_length"])
 
 include: "../rules/Binning/coverage.rules"
