@@ -120,6 +120,8 @@ rule bowtie_build:
         expand(opj(config["results_path"],"assembly","{{group}}","final_contigs.fa.{index}.bt2l"),index=range(1,5))
     params: prefix = opj(config["results_path"],"assembly","{group}","final_contigs.fa")
     threads: config["bowtie2_threads"]
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
     shell:
         """
         bowtie2-build --large-index --threads {threads} {params.prefix} {params.prefix}
