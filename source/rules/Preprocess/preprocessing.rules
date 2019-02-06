@@ -112,7 +112,7 @@ rule sortmerna_fastq_pe:
         # Run sortmerna
         shell("sortmerna --ref {ref_string} --reads {input[0]} -a {threads} --{params.paired_strategy} --blast 3 --aligned {params.aligned_prefix} --other {params.other_prefix} {params.score_params} --log -v --fastx")
         shell("mv {params.aligned_prefix}.fastq {output.aligned}")
-        shell("mv {params.aligned_prefix}.log {output.log}")
+        shell("mv {params.aligned_prefix}.log {log}")
         shell("mv {params.other_prefix}.fastq {output.other}")
 
 rule sortmerna_split_rRNA_fastq:
