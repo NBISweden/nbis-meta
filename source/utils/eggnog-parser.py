@@ -115,6 +115,8 @@ def get_kegg_ortholog_info(outdir):
 
 def get_kegg_module_info(outdir):
     outdir = outdir.rstrip("/")
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
     # Process KEGG Module information
     logging.info("Fetching ko00002.keg from www.kegg.jp")
     url = "https://www.kegg.jp/kegg-bin/download_htext?htext=ko00002.keg&format=json"

@@ -35,11 +35,9 @@ rule get_eggnog_version:
 
 rule get_kegg_info:
     output:
-        ko2ec = opj(config["resource_path"],"kegg","kegg_ko2ec.tsv"),
-        ec2path = opj(config["resource_path"],"kegg","kegg_ec2pathways.tsv"),
-        ko2path = opj(config["resource_path"],"kegg","kegg_ko2pathways.tsv"),
-        pathways = opj(config["resource_path"],"kegg","kegg_pathways.tsv"),
-        kos = opj(config["resource_path"],"kegg","kegg_kos.tsv")
+        expand(opj(config["resource_path"],"kegg", "{f}"),
+        f = ["kegg_ec2pathways.tsv", "kegg_ko2ec.tsv", "kegg_ko2modules.tsv", "kegg_ko2pathways.tsv", "kegg_kos.tsv",
+             "kegg_modules.tsv", "kegg_pathways.tsv"])
     params:
         resource_dir = opj(config["resource_path"], "kegg")
     shell:
