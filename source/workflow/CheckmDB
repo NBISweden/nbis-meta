@@ -1,8 +1,0 @@
-include: "../rules/DB/prepare_checkm.rules"
-
-rule checkm_db_done:
-    input:
-        "resources/checkm/Prokaryote.ms"
-    message: "Checkm database complete"
-    output:
-        temp(touch(opj(config["results_path"],"progress","checkm_db.done")))

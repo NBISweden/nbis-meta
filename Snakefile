@@ -41,7 +41,6 @@ db_done = opj(config["results_path"],"progress","db.done")
 preprocess_done = opj(config["results_path"],"progress","preprocess.done")
 assembly_done = opj(config["results_path"],"progress","assembly.done")
 binning_done = opj(config["results_path"],"progress","binning.done")
-checkm_db_done = opj(config["results_path"],"progress","checkm_db.done")
 annotation_done = opj(config["results_path"],"progress","annotation.done")
 kraken_db_done = opj(config["results_path"],"progress","kraken_db.done")
 kraken_classify_done = opj(config["results_path"],"progress","kraken_classify.done")
@@ -74,12 +73,6 @@ if config["assembly"]:
     if config["maxbin"] or config["concoct"]:
         inputs.append(binning_done)
         include: "source/workflow/Binning"
-      # Checkm
-    if config["checkm"]:
-        inputs.append(checkm_db_done)
-        include: "source/workflow/CheckmDB"
-    else:
-        config["checkm"] = False
 # Kraken
 if config["kraken"]:
     # Download and process kraken datatbase
@@ -160,10 +153,6 @@ rule metaphlan2_classify:
 # binning
 rule binning:
     input: pipeline_report, preprocess_done, assembly_done, binning_done
-
-# checkm
-rule checkm_db:
-    input: pipeline_report, checkm_db_done
 
 # Reference based database
 rule refmap:
