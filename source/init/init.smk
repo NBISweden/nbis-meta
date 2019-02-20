@@ -184,6 +184,10 @@ if config["pfam"]:
 if config["taxonomic_annotation"]:
     config_params.append((" - Diamond database", os.path.abspath(opj(config["diamond_dbpath"], "{}.fasta".format(config["diamond_dbtype"])))))
 
+if config["reference_map"]:
+    config["centrifuge"] = True
+    config_params.append((" - Reference based mapping","True"))
+
 # Add read-based config info
 if config["centrifuge"]:
     # Check if custom database exists
@@ -212,8 +216,6 @@ if config["kraken"]:
     else:
         config["kraken_params"] = ""
     config_params.append((" - Read classifier","Kraken"))
-if config["reference_map"]:
-    config_params.append((" - Reference based mapping","True"))
 
 
 config_params.append((" - Configfiles", "{}".format(",".join(workflow.configfiles))))
