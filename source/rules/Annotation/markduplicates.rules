@@ -8,8 +8,9 @@ rule remove_mark_duplicates:
     log:
         opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_{seq_type}.markdup.log")
     params:
-        temp_bam=opj(config["tmpdir"],"{group}-mapping-{sample}_{run}_{seq_type}.markdup.bam"),
-        temp_sort_bam=opj(config["tmpdir"],"{group}-mapping-{sample}_{run}_{seq_type}.markdup.re_sort.bam"),
+        temp_bam=opj(config["tmpdir"],"{group}","{sample}_{run}_{seq_type}.markdup.bam"),
+        temp_sort_bam=opj(config["tmpdir"],"{group}", "{sample}_{run}_{seq_type}.markdup.re_sort.bam"),
+        temp_dir=opj(config["tmpdir"],"{group}"),
         jarfile=config["picard_jar"],
         picard_path=config["picard_path"],
         java_opt="-Xms2g -Xmx64g"
@@ -18,6 +19,7 @@ rule remove_mark_duplicates:
         runtime = lambda wildcards, attempt: attempt**2*60*4
     shell:
         """
+        mkdir -p {params.temp_dir}
         java {params.java_opt} -XX:ParallelGCThreads={threads} -cp params.picard_path -jar \
         {params.jarfile} MarkDuplicates I={input} O={params.temp_bam} M={output[2]} \
         ASO=coordinate REMOVE_DUPLICATES=TRUE 2> {log}
