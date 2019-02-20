@@ -11,6 +11,8 @@ rule concoct_coverage_table:
         cov = opj(config["results_path"],"concoct","{group}","cov","concoct_inputtable.tsv")
     conda:
         "../../../envs/concoct.yaml"
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*2
     params:
         src = "concoct_coverage_table.py",
         samplenames = opj(config["results_path"],"concoct","{group}","cov","samplenames")
