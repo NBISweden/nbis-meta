@@ -89,8 +89,8 @@ def concat_files(files, gff_df):
 rule aggregate_featurecount:
     """Aggregates feature count files and performs TPM normalization"""
     input:
-        raw_files = lambda wildcards: get_fc_files(wildcards, "raw"),
-        tpm_files = lambda wildcards: get_fc_files(wildcards, "tpm"),
+        raw_files = get_all_files(samples, opj(config["results_path"], "assembly", "{group}", "mapping"), ".fc.raw.tab"),
+        tpm_files = get_all_files(samples, opj(config["results_path"], "assembly", "{group}", "mapping"), ".fc.tpm.tab"),
         gff_file = opj(config["results_path"],"annotation","{group}","final_contigs.features.gff")
     output:
         raw = opj(config["results_path"],"annotation","{group}","fc.count.tab"),
