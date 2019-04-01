@@ -71,4 +71,7 @@ Activate the environment using::
 
 **You are now ready to start using the workflow!**
 
-.. note:: If you plan on using the workflow in a cluster environment running the SLURM workload manager (such as Uppmax) you should configure the workflow with the SLURM snakemake profile. `See the documentation <https://nbis-metagenomic-workflow.readthedocs.io/en/latest/configuration/index.html#how-to-run-on-uppmax-hebbe-snic-resources>`_.
+.. note::
+    If you plan on using the workflow in a cluster environment running the SLURM workload manager (such as Uppmax) you
+    should configure the workflow with the SLURM snakemake profile.
+    `See the documentation <https://nbis-metagenomic-workflow.readthedocs.io/en/latest/configuration/index.html#how-to-run-on-uppmax-hebbe-snic-resources>`_.
