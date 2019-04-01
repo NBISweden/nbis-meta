@@ -70,7 +70,7 @@ if config["assembly"]:
         include: "source/workflow/Annotation"
         inputs.append(annotation_done)
     # Binning
-    if config["maxbin"] or config["concoct"]:
+    if config["maxbin"] or config["concoct"] or config["metabat"]:
         inputs.append(binning_done)
         include: "source/workflow/Binning"
 # Kraken

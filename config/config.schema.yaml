@@ -203,6 +203,10 @@ properties:
     description: Where to store infernal database
     default: resources/infernal
   ## Binning ##
+  metabat:
+    type: boolean
+    description: Indicates whether to run Metabat2 to bin contigs
+    default: false
   maxbin:
     type: boolean
     description: Indicates whether to run MaxBin2 to bin contigs
@@ -217,7 +221,12 @@ properties:
     items:
       type: integer
       minimum: 500
-    default: [1000]
+    default: [2000]
+  metabat_threads:
+    type: integer
+    description: Number of threads to use for Metabat2
+    default: 20
+    minimum: 1
   maxbin_threads:
     type: integer
     description: Number of threads to use for MaxBin2

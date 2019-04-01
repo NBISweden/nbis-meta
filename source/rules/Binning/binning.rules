@@ -1,9 +1,39 @@
-localrules:
-    concoct_cutup,
-    merge_cutup,
-    extract_fasta,
-    maxbin_stats,
-    concoct_stats
+localrules: concoct_cutup, merge_cutup, extract_fasta, maxbin_stats, concoct_stats, metabat_stats
+
+## METABAT2 ##
+
+rule run_metabat:
+    input:
+        fa = opj(config["results_path"],"assembly","{group}","final_contigs.fa"),
+        depth = opj(config["results_path"],"metabat","{group}","cov","depth.txt")
+    output:
+        opj(config["results_path"],"metabat","{group}","{l}","contig_map.tsv")
+    conda: "../../../envs/metabat.yaml"
+    threads: config["metabat_threads"]
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
+    params:
+        basename = opj(config["results_path"],"metabat","{group}","{l}","metabat")
+    shell:
+        """
+        metabat2 -i {input.fa} -a {input.depth} -m {wildcards.l} -t {threads} -o {params.basename}
+        grep '>' {params.basename}*.fa | awk -F/ '{{print $NF}}' | sed 's/.fa:>/\t/g' > {output[0]}
+        """
+
+rule metabat_stats:
+    input:
+        opj(config["results_path"],"metabat","{group}","{l}","contig_map.tsv")
+    output:
+        opj(config["results_path"],"metabat","{group}","{l}","summary_stats.tsv")
+    params:
+        dir = opj(config["results_path"],"metabat","{group}","{l}"),
+        suffix = ".fa"
+    shell:
+        """
+        python source/utils/binning_stats.py --suffix {params.suffix} {params.dir} > {output[0]}
+        """
+
+## MAXBIN ##
 
 rule run_maxbin:
     input:
@@ -14,7 +44,6 @@ rule run_maxbin:
         touch(opj(config["results_path"],"maxbin","{group}","{l}","{group}.summary"))
     params:
         dir = opj(config["results_path"],"maxbin","{group}","{l}"),
-        min_contig_length = "{l}",
         tmp_dir = opj(config["scratch_path"],"{group}","{l}")
     threads: config["maxbin_threads"]
     resources:
@@ -25,7 +54,7 @@ rule run_maxbin:
         mkdir -p {params.dir}
         mkdir -p {params.tmp_dir}
         run_MaxBin.pl -contig {input.fa} -contig_faa {input.faa} -abund_list {input.abund_list}\
-         -min_contig_length {params.min_contig_length} -thread {threads} -out {params.tmp_dir}/{wildcards.group}
+         -min_contig_length {wildcards.l} -thread {threads} -out {params.tmp_dir}/{wildcards.group}
         mv {params.tmp_dir}/* {params.dir}
         rm -r {params.tmp_dir}
         """
