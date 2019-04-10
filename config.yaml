@@ -7,8 +7,8 @@ sample_list: samples/sample_annotation_example.tab
 taxdb: resources/taxonomy
 results_path: results
 intermediate_path: results/intermediate
-temp_path: $TMPDIR
-scratch_path: $TMPDIR
+temp_path: temp
+scratch_path: temp
 resource_path: resources
 report_path: results/report
 pipeline_config_file: results/pipeline_config.txt

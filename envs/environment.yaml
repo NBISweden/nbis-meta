@@ -7,36 +7,36 @@ channels:
   - bioconda
 
 dependencies:
-  - python=3.5
+  - python>=3.5
   - snakemake>=4.4.0
-  - fastqc
-  - sortmerna
-  - centrifuge
   - seqtk
   - pandas
-  - ete3
-  - scikit-learn
-  - conda
+  - fastqc
   - bowtie2
   - samtools
   - multiqc
   - cutadapt
-  - sourmash
-  - bedtools
-  - scikit-bio=0.5.1
-  - krona>=2.7
-  - hmmer>=3.1b2
   - megahit
   - metaspades
-  - prodigal
   - trimmomatic
-  - diamond>=0.8
+  - diamond
+  - prodigal
+  - hmmer
   - seaborn
   - picard
-  - fastuniq
   - biopython
+  - subread
+  - sortmerna
+  - centrifuge
+  - ete3
+  - conda
+  - sourmash
+  - bedtools
+  - scikit-bio
+  - scikit-learn
+  - krona
+  - fastuniq
   - gffutils
   - infernal
-  - subread
   - blast
   - kraken2
