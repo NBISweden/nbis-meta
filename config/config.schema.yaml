@@ -162,6 +162,22 @@ properties:
     type: string
     description: Additional settings for Megahit
     default: "--min-contig-len 300 --prune-level 3"
+  metaspades:
+    type: boolean
+    description: Whether to use Metaspades instead of Megahit for assembly
+    default: False
+  metaspades_keep_intermediate:
+    type: boolean
+    description: Whether to keep intermediate contigs from Metaspades
+    default: False
+  metaspades_keep_corrected:
+    type: boolean
+    description: Whether to keep corrected reads produced during Metaspades assembly
+    default: False
+  metaspades_additional_settings:
+    type: string
+    description: Additional settings for Metaspades
+    default: "-k 21,31,41,51,61,71,81,91,101,111,121"
   ## Annotation ##
   eggnog:
     type: boolean

@@ -7,8 +7,8 @@ sample_list: samples/sample_annotation_example.tab
 taxdb: resources/taxonomy
 results_path: results
 intermediate_path: results/intermediate
-temp_path: temp
-scratch_path: temp
+temp_path: $TMPDIR
+scratch_path: $TMPDIR
 resource_path: resources
 report_path: results/report
 pipeline_config_file: results/pipeline_config.txt
@@ -62,10 +62,20 @@ picard_path: ""
 ###############################
 assembly: True
 assembly_threads: 20
+
+## Megahit settings
 megahit_keep_intermediate: False
 # To use the 'Megahit ep k21-k91' setting from the CAMI paper (Sczyrba et al 2017) set
 # additional_settings: to '--min-contig-len 300 --prune-level 3'
 megahit_additional_settings: '--min-contig-len 300 --prune-level 3'
+
+## Metaspades settings
+# In order to use metaspades you have to explicitly set metaspades: True otherwise the workflow will only use
+# the Megahit assembler
+metaspades: False
+metaspades_keep_intermediate: True
+metaspades_keep_corrected: True
+metaspades_additional_settings: '-k 21,31,41,51,61,71,81,91,101,111,121'
 
 # Eggnog-mapper
 eggnog: False

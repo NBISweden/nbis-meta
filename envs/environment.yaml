@@ -27,6 +27,7 @@ dependencies:
   - krona>=2.7
   - hmmer>=3.1b2
   - megahit
+  - metaspades
   - prodigal
   - trimmomatic
   - diamond>=0.8
