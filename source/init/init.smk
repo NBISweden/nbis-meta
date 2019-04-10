@@ -158,16 +158,21 @@ if(os.path.isfile(config["sample_list"])):
     config_params.append((" - Data Type (paired, single, mixed)",seq_type))
 
     if len(assemblyGroups) > 0 and config["assembly"]:
+        assembler = "megahit"
+        if config["metaspades"]:
+            assembler = "metaspades"
         config_params.append((" - Assemblies to generate", len(assemblyGroups)))
-        config_params.append(("   - Assembler", "megahit"))
-        config_params.append(("   - Keep intermediate contigs", config["megahit_keep_intermediate"]))
-        config_params.append(("   - Assembly additional params", config["megahit_additional_settings"]))
+        config_params.append(("   - Assembler", "{}".format(assembler)))
+        config_params.append(("   - Keep intermediate contigs", config["{}_keep_intermediate".format(assembler)]))
+        config_params.append(("   - Assembly additional params", config["{}_additional_settings".format(assembler)]))
         # Add information on binning
         if config["maxbin"]:
             config_params.append((" - Genome binning", "MaxBin2"))
         if config["concoct"]:
             config_params.append((" - Genome binning", "CONCOCT"))
-            config_params.append(("   - Min contig length",",".join(str(x) for x in config["min_contig_length"])))
+        if config["metabat"]:
+            config_params.append((" - Genome binning", "Metabat2"))
+        config_params.append(("   - Min contig length",",".join(str(x) for x in config["min_contig_length"])))
 else:
     print("Could not read the sample list file, wont be able to run the pipeline, tried "+config["sample_list"])
     samples = {}

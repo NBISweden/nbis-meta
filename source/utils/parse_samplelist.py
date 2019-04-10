@@ -5,8 +5,8 @@ from snakemake.utils import validate
 
 
 def parse_samplelist(f, config, PREPROCESS):
-    df = pandas.read_table(f, dtype={"sampleID": str, "runID": int, "assemblyGroup": str,
-                                         "fileName": str, "pair": str, "interleaved": bool})
+    df = pandas.read_csv(f, sep="\t", dtype={"sampleID": str, "runID": int, "assemblyGroup": str,
+                                         "fileName": str, "pair": str, "interleaved": str})
     validate(df, "config/samples.schema.yaml")
     dict_shell = lambda: defaultdict(dict_shell)  # Dictionary with arbitrary number of levels
     assemblyGroups = dict_shell()
