@@ -17,7 +17,7 @@ dependencies:
   - multiqc
   - cutadapt
   - megahit
-  - metaspades
+  - spades
   - trimmomatic
   - diamond
   - prodigal
