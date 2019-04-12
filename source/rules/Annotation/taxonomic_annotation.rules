@@ -1,3 +1,5 @@
+localrules: tango_assign_orfs
+
 rule tango_search:
     input:
         db = opj(config["resource_path"],config["taxdb"],"diamond.dmnd"),
