@@ -79,7 +79,7 @@ def get_fc_files(wildcards, file_type):
 def concat_files(files, gff_df):
     df = pd.DataFrame()
     for f in files:
-        _df = pd.read_table(f, index_col=0)
+        _df = pd.read_csv(f, index_col=0, sep="\t")
         df = pd.concat([df,_df], axis=1)
     df = pd.merge(df, gff_df, left_index=True, right_on="gene_id")
     df.drop("gene_id", axis=1, inplace=True)
@@ -96,7 +96,7 @@ rule aggregate_featurecount:
         raw = opj(config["results_path"],"annotation","{group}","fc.count.tab"),
         tpm = opj(config["results_path"],"annotation","{group}","fc.tpm.tab")
     run:
-        gff_df = pd.read_table(input.gff_file, header=None, usecols=[0,8], names=["contig","gene"])
+        gff_df = pd.read_csv(input.gff_file, header=None, usecols=[0,8], names=["contig","gene"], sep="\t")
         gff_df = gff_df.assign(gene_id=pd.Series([x.replace("gene_id ","") for x in gff_df.gene], index=gff_df.index))
         gff_df = gff_df.assign(suffix=pd.Series([x.split(" ")[-1].split("_")[-1] for x in gff_df.gene],index=gff_df.index))
         gff_df = gff_df.assign(orf=pd.Series(gff_df.contig+"_"+gff_df.suffix, index=gff_df.index))
@@ -126,9 +126,9 @@ rule sum_to_features:
         norm = opj(config["results_path"],"annotation","{group}","{db}.parsed.tpm.tab")
     run:
         import pandas as pd
-        annot_df = pd.read_table(input.annot_file, index_col=0)
-        norm_df = pd.read_table(input.norm, index_col=0)
-        count_df = pd.read_table(input.count, index_col=0)
+        annot_df = pd.read_csv(input.annot_file, index_col=0, sep="\t")
+        norm_df = pd.read_csv(input.norm, index_col=0, sep="\t")
+        count_df = pd.read_csv(input.count, index_col=0, sep="\t")
         feature_norm_sum = process_and_sum(norm_df,annot_df)
         feature_count_sum = process_and_sum(count_df,annot_df)
         feature_norm_sum.to_csv(output.norm, sep="\t")
@@ -164,8 +164,8 @@ rule sum_to_taxa:
     run:
         header = ["protein","superkingdom", "phylum","class","order","family","genus","species"]
         df = pd.read_csv(input.tax, sep="\t", index_col=0, header=None, names=header)
-        count_df = pd.read_table(input.count, header=0, index_col=0)
-        norm_df = pd.read_table(input.norm, header=0, index_col=0)
+        count_df = pd.read_csv(input.count, header=0, index_col=0, sep="\t")
+        norm_df = pd.read_csv(input.norm, header=0, index_col=0, sep="\t")
 
         taxa_count = pd.merge(df,count_df,right_index=True,left_index=True)
         taxa_count_sum = taxa_count.groupby(header[1:]).sum().reset_index()

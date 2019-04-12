@@ -128,10 +128,10 @@ rule parse_pfam:
         opj(config["results_path"],"annotation","{group}","pfam.parsed.tab")
     run:
         import pandas as pd
-        annot = pd.read_table(input[0], comment="#", header=None, sep=" +", usecols=[0,5,7,14],
-            names=["orf","pfam","pfam_type","pfam_clan"])
-        clans = pd.read_table(input[1], header=None, names=["clan","clan_name"], usecols=[0,3])
-        info = pd.read_table(input[2], header=None, names=["pfam","clan","pfam_name"], usecols=[0,1,4])
+        annot = pd.read_csv(input[0], comment="#", header=None, sep=" +", usecols=[0,5,7,14],
+            names=["orf","pfam","pfam_type","pfam_clan"], sep="\t")
+        clans = pd.read_csv(input[1], header=None, names=["clan","clan_name"], usecols=[0,3], sep="\t")
+        info = pd.read_csv(input[2], header=None, names=["pfam","clan","pfam_name"], usecols=[0,1,4], sep="\t")
         # Strip suffix for pfams
         annot.loc[:,"pfam"] = [x.split(".")[0] for x in annot.pfam]
         # Select unique orf->pfam mappings
