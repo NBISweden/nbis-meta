@@ -9,7 +9,7 @@ args = parser.parse_args()
 
 def main():
     # loop through the file and add a quality assessment for each hit...
-    df = pd.read_table(args.inFile)    # "NCBITaxID\tTaxonomy\tIndividual\tRun\tCoverage\tNrReads\tAvgReadLength\tNormalisedReadCount\tAncientStatus\tAssemblyLevel\tNumberOfEntriesInFasta\tSequenceDepth\n"
+    df = pd.read_csv(args.inFile, sep="\t")    # "NCBITaxID\tTaxonomy\tIndividual\tRun\tCoverage\tNrReads\tAvgReadLength\tNormalisedReadCount\tAncientStatus\tAssemblyLevel\tNumberOfEntriesInFasta\tSequenceDepth\n"
     with open(args.outputFile, 'w') as fo:
         fo.write("NCBITaxID\tTaxonomy\tIndividual\tRun\tScore\n")
         for index, row in df.iterrows():

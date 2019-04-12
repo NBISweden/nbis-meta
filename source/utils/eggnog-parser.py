@@ -161,14 +161,14 @@ def make_orf2ko_map(df):
 
 def parse_ko_annotations(annotations, dldir, outdir):
     logging.info("Reading annotations from {}".format(annotations))
-    annot = pd.read_table(annotations, header=None, usecols=[0,2,3,6], names=["orf","evalue","score","ko"])
+    annot = pd.read_csv(annotations, header=None, usecols=[0,2,3,6], names=["orf","evalue","score","ko"], sep="\t")
     logging.info("Loading KEGG info files from {}".format(dldir))
-    ko2ec = pd.read_table("{}/kegg_ko2ec.tsv".format(dldir), header=None, names=["ko","ec"], index_col=0)
-    ko2path = pd.read_table("{}/kegg_ko2pathways.tsv".format(dldir), header=None, names=["ko","pathway"], index_col=0)
-    ko2module = pd.read_table("{}/kegg_ko2modules.tsv".format(dldir), index_col=0, header=None, names = ["ko","module"])
-    kos = pd.read_table("{}/kegg_kos.tsv".format(dldir), index_col=0)
-    modules = pd.read_table("{}/kegg_modules.tsv".format(dldir), index_col=0)
-    pathways = pd.read_table("{}/kegg_pathways.tsv".format(dldir), index_col=0)
+    ko2ec = pd.read_csv("{}/kegg_ko2ec.tsv".format(dldir), header=None, names=["ko","ec"], index_col=0, sep="\t")
+    ko2path = pd.read_csv("{}/kegg_ko2pathways.tsv".format(dldir), header=None, names=["ko","pathway"], index_col=0, sep="\t")
+    ko2module = pd.read_csv("{}/kegg_ko2modules.tsv".format(dldir), index_col=0, header=None, names = ["ko","module"], sep="\t")
+    kos = pd.read_csv("{}/kegg_kos.tsv".format(dldir), index_col=0, sep="\t")
+    modules = pd.read_csv("{}/kegg_modules.tsv".format(dldir), index_col=0, sep="\t")
+    pathways = pd.read_csv("{}/kegg_pathways.tsv".format(dldir), index_col=0, sep="\t")
     orftable = make_orf2ko_map(annot)
     # Because each orf can have multiple enzyme annotations it might get placed into the same pathway several times
     # select the first combination for each orf to avoid redundancy.
@@ -219,17 +219,17 @@ def process_and_sum(q_df, annot_df):
 
 
 def sum_to_features(abundance, parsed):
-    parsed_df = pd.read_table(parsed, index_col=0)
-    abundance_df = pd.read_table(abundance, index_col=0)
+    parsed_df = pd.read_csv(parsed, index_col=0, sep="\t")
+    abundance_df = pd.read_csv(abundance, index_col=0, sep="\t")
     feature_sum = process_and_sum(abundance_df, parsed_df)
     return feature_sum
 
 
 def normalize(q_df, parsed, normalize_file):
-    info_df = pd.read_table(normalize_file, header=None)
+    info_df = pd.read_csv(normalize_file, header=None, sep="\t")
     info_norm_df = info_df.groupby(1).count()
     info_norm_df.columns = ["norm_factor"]
-    annot_df = pd.read_table(parsed, index_col=0)
+    annot_df = pd.read_csv(parsed, index_col=0, sep="\t")
     annot_cols = list(set(annot_df.columns).intersection(set(q_df.columns)))
     sample_cols = list(set(q_df.columns).difference(annot_cols))
     q_df = pd.merge(q_df,info_norm_df, left_index=True, right_index=True, how="left")

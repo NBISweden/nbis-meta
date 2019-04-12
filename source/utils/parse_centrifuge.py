@@ -6,7 +6,7 @@ import sys
 import pandas as pd
 
 def read_centrifuge_report(reportfile):
-    df = pd.read_table(reportfile, header=0)
+    df = pd.read_csv(reportfile, header=0, sep="\t")
     tmp = df.copy(deep=True)
     genomesizes = tmp.to_dict()["genomeSize"]
     return df, genomesizes

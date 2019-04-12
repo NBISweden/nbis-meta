@@ -42,7 +42,7 @@ def main():
                    help="Also write the raw counts to this outfile")
     args = p.parse_args()
     logging.info("Reading counts from {}".format(args.infile))
-    df = pd.read_table(args.infile, skiprows=1)
+    df = pd.read_csv(args.infile, skiprows=1, sep="\t")
     if args.sampleName:
         sampleName = args.sampleName
 

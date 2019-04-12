@@ -15,7 +15,7 @@ def make_krona_table(f, db):
                                           "species","leaf"])
     one_letter_ranks = {"D": "superkingdom", "P": "phylum", "C": "class", "O": "order", "F": "family", "G": "genus",
                         "S": "species"}
-    df = pd.read_table(f, header=None, names = ["clade_percent", "clade_reads", "reads", "rank", "taxid", "name"])
+    df = pd.read_csv(f, header=None, names = ["clade_percent", "clade_reads", "reads", "rank", "taxid", "name"], sep="\t")
     df = df.loc[df.reads > 0]
     for j, i in enumerate(df.index):
         r = df.loc[i]
