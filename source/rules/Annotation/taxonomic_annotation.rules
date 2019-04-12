@@ -54,7 +54,7 @@ rule tango_assign_orfs:
         # Read taxonomy for contigs
         tax_df = pd.read_csv(input.tax, header=0, sep="\t", index_col=0)
         # Merge dataframes
-        orf_tax_df = pd.merge(gff_df, tax_df, left_index=True, right_index=True, how="outer")
+        orf_tax_df = pd.merge(gff_df, tax_df, left_on="contig", right_index=True, how="outer")
         # Set Unclassified for NA values
         orf_tax_df.fillna("Unclassified", inplace=True)
         # Set index to ORF ids
