@@ -13,7 +13,8 @@ rule tango_search:
         runtime = lambda wildcards, attempt: attempt**2*60*10
     shell:
         """
-        tango search {params.tango_params} -p {threads} --tmpdir {params.tmpdir} -l {params.min_len}
+        tango search {params.tango_params} -p {threads} --tmpdir {params.tmpdir} -l {params.min_len} {input.fasta} \
+        {input.db} {output[0]}
         """
 
 rule tango_assign:
