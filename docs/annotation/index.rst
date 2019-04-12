@@ -14,7 +14,9 @@ Annotation of predicted protein coding sequences is performed using the tool
 
 :code:`pfam:` Set to True in order to add PFAM protein families to coding sequences.
 
-.. note:: Both eggnog-mapper and pfam-scan run on separate conda environments. In order to use these tools you must run the workflow with the :code:`--use-conda` flag.
+.. note::
+    Both eggnog-mapper and pfam-scan run on separate conda environments. In order to use these tools you must run
+    the workflow with the :code:`--use-conda` flag.
 
 Taxonomic annotation
 --------------------
@@ -41,6 +43,11 @@ format it with taxonomic ids (using the --taxonmap and --taxonnodes flags to dia
 :code:`tango_params`: Additional parameters to use for the `tango <https://github.com/johnne/tango>`_ taxonomic assigner
 
 :code:`taxonomy_ranks`: Taxonomic ranks to use in output.
+
+.. note::
+    If you want to use a custom preformatted protein database. Make sure to put it as 'diamond.dmnd' in the
+    <resource_path> directory as specified in your configfile. Then run the workflow once with the :code:`-t` flag
+    to update the timestamps on the existing files.
 
 Generating required database files
 ==================================

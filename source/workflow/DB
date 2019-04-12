@@ -2,6 +2,7 @@ dbfiles = []
 
 if config["taxonomic_annotation"]:
     dbfiles.append(opj(config["resource_path"],config["taxdb"],"diamond.dmnd".format(config["taxdb"])))
+    dbfiles.append(opj(config["resource_path"], "taxonomy/taxonomy.sqlite"))
 if config["infernal"]:
     dbfiles.append(opj(config["infernal_dbpath"],"Rfam.cm"))
 if config["eggnog"]:
