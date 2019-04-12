@@ -188,22 +188,14 @@ def make_krona_taxonomy_input(f, dir):
 
 rule taxonomy2krona:
     input:
-        opj(config["results_path"],"annotation","{group}","taxonomy","tax.tpm.tab"),
-        opj(config["results_path"],"annotation","{group}","taxonomy","tax.count.tab")
+        opj(config["results_path"],"annotation","{group}","taxonomy","tax.{fc}.tab")
     output:
-        opj(config["results_path"],"annotation","{group}","taxonomy","taxonomy.tpm.krona.html"),
-        opj(config["results_path"],"annotation","{group}","taxonomy","taxonomy.count.krona.html")
-    params: temp_dir = os.path.expandvars(config["temp_path"])
+        opj(config["results_path"],"annotation","{group}","taxonomy","taxonomy.{fc}.krona.html")
+    params:
+        dir = opj(config["results_path"],"annotation","{group}","taxonomy")
     run:
-        shell("mkdir -p {params.temp_dir}")
-        inputs = make_krona_taxonomy_input(input[0], params.temp_dir)
+        inputs = make_krona_taxonomy_input(input[0], params.dir)
         input_string = " ".join(inputs)
         shell("ktImportText -o {output[0]} {input_string}")
-        for f in [item.split(",")[0] for item in inputs]:
-            shell("rm {f}")
-
-        inputs = make_krona_taxonomy_input(input[1], params.temp_dir)
-        input_string = " ".join(inputs)
-        shell("ktImportText -o {output[1]} {input_string}")
         for f in [item.split(",")[0] for item in inputs]:
             shell("rm {f}")
