@@ -175,6 +175,17 @@ rule sum_to_taxa:
         taxa_norm_sum = taxa_norm.groupby(header[1:]).sum().reset_index()
         taxa_norm_sum.to_csv(output.norm, sep="\t", index=False)
 
+def make_krona_taxonomy_input(f, dir):
+    df = pd.read_csv(f, header=0, sep="\t")
+    samples = df.loc[:,df.dtypes!=object].columns
+    features = df.loc[:,df.dtypes==object].columns
+    inputs = []
+    for s in samples:
+        _df = df.loc[:,[s]+list(features)]
+        _df.to_csv("{}/{}".format(dir,s), sep="\t", header=True, index=False)
+        inputs.append("{}/{}".format(dir,s))
+    return inputs
+
 rule taxonomy2krona:
     input:
         opj(config["results_path"],"annotation","{group}","taxonomy","tax.tpm.tab"),
