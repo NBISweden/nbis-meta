@@ -79,17 +79,6 @@ if config["pfam"] or config["taxonomic_annotation"] or config["infernal"] or con
 else:
     config["annotation"] = False
 
-# Check that taxonomic dbtype is correctly entered
-if config["taxonomic_annotation"]:
-    if config["diamond_dbtype"] not in ["nr","uniref50","uniref90","uniref100"]:
-        config["taxonomic_annotation"] = False
-        config["diamond_protdb"] = ""
-    else:
-        config["diamond_protdb"] = opj(config["diamond_dbpath"],"diamond_"+config["diamond_dbtype"]+".dmnd")
-        taxonmap = opj(config["taxdb"],"{}.accession2taxid.gz".format(config["diamond_dbtype"]))
-else:
-    config["diamond_protdb"] = ""
-
 #######################################################
 # Figure out pre- and post-processing to be performed #
 #######################################################
@@ -166,13 +155,18 @@ if(os.path.isfile(config["sample_list"])):
         config_params.append(("   - Keep intermediate contigs", config["{}_keep_intermediate".format(assembler)]))
         config_params.append(("   - Assembly additional params", config["{}_additional_settings".format(assembler)]))
         # Add information on binning
+        binning = False
         if config["maxbin"]:
             config_params.append((" - Genome binning", "MaxBin2"))
+            binning = True
         if config["concoct"]:
             config_params.append((" - Genome binning", "CONCOCT"))
+            binning = True
         if config["metabat"]:
             config_params.append((" - Genome binning", "Metabat2"))
-        config_params.append(("   - Min contig length",",".join(str(x) for x in config["min_contig_length"])))
+            binning = True
+        if binning:
+            config_params.append(("   - Min contig length",",".join(str(x) for x in config["min_contig_length"])))
 else:
     print("Could not read the sample list file, wont be able to run the pipeline, tried "+config["sample_list"])
     samples = {}
@@ -187,7 +181,7 @@ if config["infernal"]:
 if config["pfam"]:
     config_params.append((" - PFAM database directory", os.path.abspath(opj(config["resource_path"],"pfam"))))
 if config["taxonomic_annotation"]:
-    config_params.append((" - Diamond database", os.path.abspath(opj(config["diamond_dbpath"], "{}.fasta".format(config["diamond_dbtype"])))))
+    config_params.append((" - Database for taxonomic annotation", os.path.abspath(opj(config["taxdb"], "diamond.dmnd"))))
 
 if config["reference_map"]:
     config["centrifuge"] = True

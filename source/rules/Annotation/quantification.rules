@@ -154,15 +154,16 @@ rule normalize_pathways_modules:
 
 rule sum_to_taxa:
     input:
-        genes_from_contigs = opj(config["results_path"],"annotation","{group}","taxonomy","taxonomy_genes_from_contigs.tab"),
+        tax = opj(config["results_path"],"annotation","{group}","taxonomy",
+            "orfs.{db}.taxonomy.tsv".format(db=config["taxdb"])),
         count = opj(config["results_path"],"annotation","{group}","fc.count.tab"),
         norm = opj(config["results_path"],"annotation","{group}","fc.tpm.tab")
     output:
-        count = opj(config["results_path"],"annotation","{group}","taxonomy","genes_from_contigs.count.tab"),
-        norm = opj(config["results_path"],"annotation","{group}","taxonomy","genes_from_contigs.tpm.tab")
+        count = opj(config["results_path"],"annotation","{group}","taxonomy","tax.count.tab"),
+        norm = opj(config["results_path"],"annotation","{group}","taxonomy","tax.tpm.tab")
     run:
         header = ["protein","superkingdom", "phylum","class","order","family","genus","species"]
-        df = pd.read_csv(input.genes_from_contigs, sep="\t", index_col=0, header=None, names=header)
+        df = pd.read_csv(input.tax, sep="\t", index_col=0, header=None, names=header)
         count_df = pd.read_table(input.count, header=0, index_col=0)
         norm_df = pd.read_table(input.norm, header=0, index_col=0)
 
@@ -176,8 +177,8 @@ rule sum_to_taxa:
 
 rule taxonomy2krona:
     input:
-        opj(config["results_path"],"annotation","{group}","taxonomy","genes_from_contigs.tpm.tab"),
-        opj(config["results_path"],"annotation","{group}","taxonomy","genes_from_contigs.count.tab")
+        opj(config["results_path"],"annotation","{group}","taxonomy","tax.tpm.tab"),
+        opj(config["results_path"],"annotation","{group}","taxonomy","tax.count.tab")
     output:
         opj(config["results_path"],"annotation","{group}","taxonomy","taxonomy.tpm.krona.html"),
         opj(config["results_path"],"annotation","{group}","taxonomy","taxonomy.count.krona.html")

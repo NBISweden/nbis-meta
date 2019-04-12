@@ -23,74 +23,24 @@ Taxonomic annotation of protein sequences is performed by:
 2. parsing best hits for each protein query and linking hits to taxonomic IDs
 3. assigning a taxonomic label to the lowest common taxa for the 'best hits'
 
-(Actually in this workflow, contigs are assigned a taxonomy based on
-the lowest common ancestor of the classified proteins on the contig,
-and then this contig-taxonomy is applied to all proteins on the contig)
-
 The first step above is performed in this workflow using
 `Diamond <https://github.com/bbuchfink/diamond/>`_ against a protein sequence
-reference database (see more on this below).
+reference database. The workflow supports using the uniref50, uniref90, uniref100 or nr protein databases but you can
+also use a preformatted custom database as long as it has been formatted with
 
-:code:`taxonomic_annotation:` Set to True to run the diamond search step and taxonomic assignment of protein sequences using
-the database of your choice.
+:code:`taxonomic_annotation:` Set to True to add taxonomic annotations to contigs (and ORFs).
 
-:code:`diamond_dbpath:` Path to where the diamond formatted database will be stored.
 
-:code:`diamond_dbtype:` Can be one of 'nr', 'uniref50', 'uniref90', 'uniref100'
+:code:`taxdb:` Can be one of 'nr', 'uniref50', 'uniref90', 'uniref100' or you can add a custom diamond database if you
+format it with taxonomic ids (using the --taxonmap and --taxonnodes flags to diamond makedb)
 
 :code:`diamond_threads`: How many threads to use for the diamond blast job.
 
-Methodology
-^^^^^^^^^^^
-The assignment of taxonomy in the second and third steps is based on
-a method originally introduced in
-the `DESMAN <https://github.com/chrisquince/DESMAN>`_ package. Briefly this
-is done as follows: hits reported by diamond are weighted (ranging from 0-1)
-based on the alignment fraction and %identity of the hit. The method then
-attempts to assign a taxonomy for each query protein, starting at the
-species level and then moving up to higher taxonomic ranks. At each rank,
-only hits with weights exceeding a rank-specific threshold are considered.
-By default these thresholds are set at: species = 0.95, genus = 0.9,
-family = 0.8, order = 0.7, class = 0.6, phylum = 0.5, superkingdom = 0.4.
-At each rank, if the sum of weights for one taxon is greater than half the
-total sum of weights then that taxon is assigned to the query. Higher
-taxonomic ranks (if any) are inferred directly from that taxon while
-lower ranks are given the taxon name prefixed with "Unclassified." (e.g.
-Unclassified.Proteobacteria").
+:code:`taxonomy_min_len`: Minimum length of contigs to be included in the taxonomic annotation.
 
-The plot below shows how the weights of hits relates to the %id of the
-hit as well as the alignment fraction of the query to the hit.
+:code:`tango_params`: Additional parameters to use for the `tango <https://github.com/johnne/tango>`_ taxonomic assigner
 
-.. image:: ../img/taxonomy_weights.png
-    :width: 600
-    :alt: Weighted hits plot
-
-Deciding which blast database to use
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Ideally we'd like to assign species-level taxonomy to all the protein sequences in our analysis but metagenomics
-doesn't often allow that. This is partly a database/data issue since reference databases are not good representatives of
-the taxa being studied. A lot of times the best taxonomic annotation a protein sequence can get is at genus level.
-
-Since the similarity search step can be a bottleneck it
-may be worthwhile to use a **clustered** reference database such as `UniRef <http://www.uniprot.org/help/uniref>`_.
-In UniRef, protein sequences in the UniProt database are clustered by % sequence identity using the
-`CD-HIT <http://weizhongli-lab.org/cd-hit/>`_ software and a *seed* sequence is selected for each cluster.
-
-For instance, in UniRef90 sequences are clustered at 90% sequence identity. In the 2017_08 release of UniProt/UniRef
-this reduces the number of sequences from 89,951,742 in the UniProt database to 59,207,328 in the UniRef90 database.
-Consequently, searching the UniRef90 database instead of the full UniProt database (or the NCBI nr database) will be a
-lot faster. The drawback is that the taxonomic annotation may not be as sensitive.
-
-Conveniently, each entry in UniRef database contains information on the lowest common taxa for all sequences contained
-in the cluster. So we can evaluate the number of unique taxa at each taxonomic rank in the databases.
-
-Below is a comparison of unique taxa at the genus and species level
-for Archaea, Bacteria, Eukaryota and Viruses in all the UniRef databases
-as well as in the full NCBI non-redundant database.
-
- .. image:: ../img/tax_database_comparison.png
-    :width: 400
-    :alt: Blast databases
+:code:`taxonomy_ranks`: Taxonomic ranks to use in output.
 
 Generating required database files
 ==================================

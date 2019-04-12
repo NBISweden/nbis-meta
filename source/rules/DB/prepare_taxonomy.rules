@@ -1,175 +1,122 @@
-localrules:
-    krona_taxonomy,
-    download_taxdump,
-    download_nr,
-    download_uniref
-
-rule krona_taxonomy:
-    output:
-        "resources/krona/taxonomy.tab"
-    shell:
-        """
-        ktUpdateTaxonomy.sh resources/krona
-        """
-
-rule prepare_taxfiles_nr:
-    """Downloads the nr protein accession -> taxonomy ID mapping and creates the lineage file for parsing"""
-    output:
-        lineage_file=opj(config["taxdb"],"nr.lineage"),
-        map=opj(config["taxdb"],"nr.accession2taxid.gz"),
-        sqlite_db=opj(config["taxdb"],"nr_taxa.sqlite"),
-        version_file=opj(config["taxdb"],"version")
-    params:
-        script="source/utils/make_lineage_file.py",
-        tmp_map = opj(config["scratch_path"],"nr.accession2taxid")
-    log:
-        opj(config["taxdb"],"ncbi.lineage.log")
-    resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*4
-    shell:
-        """
-        # Download protein -> taxid map
-        echo Downloading prot.accession2taxid.gz
-        curl -o {params.tmp_map}.gz ftp://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/prot.accession2taxid.gz
-        # Unzip in scratch folder but keep zipped
-        gunzip -c {params.tmp_map}.gz > {params.tmp_map}
-        # Generate lineage file
-        python {params.script} -a {params.tmp_map} -d {output.sqlite_db} -o {output.lineage_file} 2> {log}
-        # Write date
-        date > {output.version_file}
-        # Move zipped file to output
-        mv {params.tmp_map}.gz {output.map}
-        # Remove unzipped temporary file
-        rm {params.tmp_map}
-        """
+localrules:     krona_taxonomy, download_taxdump, tango_build_sqlite, tango_download, tango_format_nr, tango_format_uniref
 
 rule download_taxdump:
     output:
-        nodes = opj(config["taxdb"],"nodes.dmp"),
-        names = opj(config["taxdb"],"names.dmp"),
-        tar = temp(opj(config["taxdb"],"taxdump.tar.gz"))
-    params: dir = opj(config["taxdb"])
+        nodes = opj(config["resource_path"],"taxonomy","nodes.dmp"),
+        names = opj(config["resource_path"],"taxonomy","names.dmp"),
+        tar = opj(config["resource_path"],"taxonomy","taxdump.tar.gz")
+    params:
+        taxdir = opj(config["resource_path"], "taxonomy")
+    shadow: "minimal"
     shell:
         """
         curl -o {output.tar} ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz
-        tar -xf {output.tar} -C {params.dir}
+        tar -xf {output.tar} -C {params.taxdir}
+        touch {output.tar}
         """
 
-rule prepare_taxfiles_uniref:
-    """Creates a protein accession -> taxonomy ID map for UniRef fasta files and makes the lineage file for parsing"""
+rule krona_taxonomy:
     input:
-        dbfile=opj(config["diamond_dbpath"],"uniref{n}.fasta")
+        opj(config["resource_path"],"taxonomy","taxonomy.sqlite"),
+        opj(config["resource_path"],"taxonomy","taxdump.tar.gz"),
+        opj(config["resource_path"],"taxonomy","nodes.dmp"),
+        opj(config["resource_path"],"taxonomy","names.dmp")
     output:
-        lineage_file=opj(config["taxdb"],"uniref{n}.lineage"),
-        map=opj(config["taxdb"],"uniref{n}.accession2taxid.gz"),
-        sqlite_db=opj(config["taxdb"],"uniref{n}_taxa.sqlite")
+        opj(config["resource_path"],"krona","taxonomy.tab")
     params:
-        script="source/utils/make_lineage_file.py",
-        tmp_map = opj(os.path.expandvars(config["scratch_path"]),"uniref{n}.accession2taxid"),
-        tmp_out = opj(os.path.expandvars(config["scratch_path"]),"uniref{n}.lineage")
-    log:
-        opj(config["taxdb"],"uniref{n}.lineage.log")
-    resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*4
+        taxdir = opj(config["resource_path"],"taxonomy")
+    shell:
+        """
+        ktUpdateTaxonomy.sh --only-build --preserve {params.taxdir}
+        mv {params.taxdir}/taxonomy.tab {output}
+        """
+
+rule tango_build_sqlite:
+    input:
+        opj(config["resource_path"],"taxonomy","taxdump.tar.gz")
+    output:
+        opj(config["resource_path"],"taxonomy","taxonomy.sqlite"),
+        opj(config["resource_path"],"taxonomy","taxonomy.sqlite.traverse.pkl")
+    params:
+        taxdir = opj(config["resource_path"],"taxonomy")
+    shell:
+        """
+        tango download taxonomy -t {params.taxdir}
+        """
+
+rule tango_download:
+    output:
+        fasta = temp(opj(config["resource_path"], "{db}", "{db}.fasta.gz"))
+    params:
+        dldir = opj(config["resource_path"], "{db}"),
+        taxdir = opj(config["resource_path"], "taxonomy")
+    shell:
+        """
+        tango download {wildcards.db} --tmpdir $TMPDIR -d {params.dldir} -t {params.taxdir} --skip_idmap
+        """
+
+rule tango_download_nr_idmap:
+    output:
+        idmap = opj(config["resource_path"], "nr", "prot.accession2taxid.gz")
+    params:
+        dldir = opj(config["resource_path"], "nr")
+    shell:
+        """
+        tango download idmap -d {params.dldir}
+        """
+
+rule tango_format_uniref:
+    input:
+        fasta = opj(config["resource_path"], "{db}", "{db}.fasta.gz")
+    output:
+        fasta = opj(config["resource_path"], "{db}", "{db}.reformat.fasta.gz"),
+        idmap = opj(config["resource_path"], "{db}", "prot.accession2taxid.gz")
+    params:
+        tmpdir = config["scratch_path"]
+    shell:
+        """
+        tango format -m {output.idmap} --tmpdir {params.tmpdir} {input.fasta} {output.fasta}
+        """
+
+rule tango_format_nr:
+    input:
+        fasta = opj(config["resource_path"], "nr", "nr.fasta.gz")
+    output:
+        fasta = opj(config["resource_path"], "nr", "nr.reformat.fasta.gz")
+    params:
+        tmpdir = config["scratch_path"]
+    shell:
+        """
+        tango format --tmpdir {params.tmpdir} {input.fasta} {output.fasta}
+        """
+
+rule tango_update:
+    input:
+        idmap = opj(config["resource_path"], "{db}", "prot.accession2taxid.gz")
+    output:
+        flag = touch(opj(config["resource_path"], "{db}", "updated"))
     run:
-        import re
-        taxid_re = re.compile("TaxID=(\d+)")
-        # Map accession to taxid for each protein in the fasta file
-        with open(params.tmp_map, 'w') as fh:
-            for line in shell("grep '>' {input.dbfile}", iterable=True):
-                acc = line.rsplit()[0].replace(">","")
-                acc = acc.replace("UniRef{}_".format(wildcards.n),"")
-                try:
-                    taxid = taxid_re.findall(line)[0]
-                except IndexError:
-                    # In case there is no taxid, add it at root
-                    taxid = "1"
-                fh.write(acc+"\t"+acc+"\t"+taxid+"\t.\n")
-        # Create the lineage file in temporary path
-        shell("python {params.script} -a {params.tmp_map} -d {output.sqlite_db} -o {params.tmp_out} 2> {log}")
-        # Zip the map file in temporary path
-        shell("gzip {params.tmp_map}")
-        # Move the zipped map file to output
-        shell("mv {params.tmp_map}.gz {output.map}")
-        # Move the lineage file to output
-        shell("mv {params.tmp_out} {output.lineage_file}")
+        import os
+        if os.path.exists(opj(config["resource_path"], wildcards.db, "idmap.tsv.gz")):
+            idfile = opj(config["resource_path"], wildcards.db, "idmap.tsv.gz")
+            newfile = "{}.new.gz".format((input.idmap).rstrip(".gz"))
+            shell("tango update {input.idmap} {idfile} {newfile}")
+            shell("mv {newfile} {input.idmap}")
 
-rule download_nr:
-    output:
-        dbfile = opj(config["diamond_dbpath"],"nr"),
-        versionfile = opj(config["diamond_dbpath"],"nr.version")
-    params:
-        temp_file = opj(config["scratch_path"],"nr")
-    shell:
-        """
-        date > {output.versionfile}
-        curl -o {params.temp_file}.gz ftp://ftp.ncbi.nlm.nih.gov/blast/db/FASTA/nr.gz
-        gunzip {params.temp_file}.gz
-        mv {params.temp_file} {output.dbfile}
-        """
 
-rule download_uniref:
-    output:
-        dbfile = opj(config["diamond_dbpath"],"uniref{n}.fasta"),
-        versionfile = opj(config["diamond_dbpath"],"uniref{n}.version")
-    params:
-        ftp = "ftp://ftp.expasy.org/databases/uniprot/current_release/uniref/uniref{n}/",
-        temp_file = opj(config["scratch_path"],"uniref{n}.fasta"),
-        gzfile = "uniref{n}.fasta.gz",
-        release_note = "uniref{n}.release_note"
-    shell:
-        """
-        mkdir -p {config[scratch_path]}
-        curl -o {params.temp_file}.gz {params.ftp}{params.gzfile}
-        curl -o {output.versionfile} {params.ftp}{params.release_note}
-        gunzip -c {params.temp_file}.gz | sed 's/>UniRef{wildcards.n}_/>/g' > {params.temp_file}
-        mv {params.temp_file} {output.dbfile}
-        """
-
-rule prepare_diamond_db_nr:
+rule tango_build:
     input:
-        dbfile = opj(config["diamond_dbpath"],"nr"),
-        versionfile = opj(config["diamond_dbpath"],"nr.version")
+        flag = opj(config["resource_path"], "{db}", "updated"),
+        fasta = opj(config["resource_path"], "{db}", "{db}.reformat.fasta.gz"),
+        nodes = opj(config["resource_path"],"taxonomy","nodes.dmp"),
+        idmap = opj(config["resource_path"], "{db}", "prot.accession2taxid.gz")
     output:
-        dbfile = opj(config["diamond_dbpath"],"diamond_nr.dmnd"),
-        versionfile = opj(config["diamond_dbpath"],"diamond_nr.version")
-    threads: 1
-    params:
-        makedb_params = "--no-auto-append",
-        tmp_out = opj(config["scratch_path"],"diamond_nr.dmnd")
+        opj(config["resource_path"],"{db}","diamond.dmnd")
+    threads: config["diamond_threads"]
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*48
+        runtime = lambda wildcards, attempt: attempt**2*60*10
     shell:
-        """
-        diamond_version=$(diamond version | sed 's/diamond version //g')
-        echo "Build date: $(date)" > {output.versionfile}
-        echo "Diamond version: $diamond_version" >> {output.versionfile}
-        echo "Sequence db: nr (sequences downloaded $(cat {input.versionfile})" >> {output.versionfile}
-        diamond makedb --tmpdir {config[scratch_path]} --in {input.dbfile} --db {params.tmp_out} -p {threads} {params.makedb_params}
-        mv {params.tmp_out} {output.dbfile}
-        """
+         """
+         tango build -d {output[0]} -p {threads} {input.fasta} {input.idmap} {input.nodes} 
+         """
 
-rule prepare_diamond_db_uniref:
-    input:
-        dbfile = opj(config["diamond_dbpath"],"uniref{n}.fasta"),
-        versionfile = opj(config["diamond_dbpath"],"uniref{n}.version")
-    output:
-        dbfile = opj(config["diamond_dbpath"],"diamond_uniref{n}.dmnd"),
-        versionfile = opj(config["diamond_dbpath"],"diamond_uniref{n}.version")
-    threads: 1
-    params:
-        makedb_params = "--no-auto-append",
-        uniref_version="Uniref{n}",
-        tmp_out = opj(config["scratch_path"],"diamond_uniref{n}.dmnd")
-    resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*48
-    shell:
-        """
-        uniref_release=$(egrep -o "Release: [0-9]+_[0-9]+" {input.versionfile} | tr 'R' 'r')
-        diamond_version=$(diamond version | sed 's/diamond version //g')
-        echo "Build date: $(date)" > {output.versionfile}
-        echo "Diamond version: $diamond_version" >> {output.versionfile}
-        echo "Sequence db: {params.uniref_version} $uniref_release" >> {output.versionfile}
-        diamond makedb --tmpdir {config[scratch_path]} --in {input.dbfile} --db {params.tmp_out} -p {threads} {params.makedb_params}
-        mv {params.tmp_out} {output.dbfile}
-        """

@@ -191,15 +191,26 @@ properties:
     type: boolean
     description: Indicates whether to run taxonomic annotation
     default: false
-  diamond_dbpath:
+  taxonomy_min_len:
+    type: integer
+    description: Minimum length of contigs to use for taxonomic annotation
+    default: 500
+  tango_params:
     type: string
-    description: Where to store diamond formatted database for taxonomic annotation
-    default: resources/diamond
-  diamond_dbtype:
+    description: Parameters to use for tango taxonomy assigner
+    default: "--evalue 0.001 --top 5"
+  taxonomy_ranks:
+    type: array
+    description: Taxonomic ranks to assign to contigs
+    uniqueItems: true
+    items:
+      type: string
+      enum: ["superkingdom","kingdom","phylum","class","order","family","genus","species"]
+    default: ["superkingdom","phylum","class","order","family","genus","species"]
+  taxdb:
     type: string
-    description: What protein database to use for taxonomic annotation
-    default: uniref100
-    enum: ["uniref100", "uniref90", "uniref50", "nr"]
+    description: Protein database to use for taxonomic annotation
+    default: "uniref100"
   diamond_threads:
     type: integer
     description: How many threads to use for diamond

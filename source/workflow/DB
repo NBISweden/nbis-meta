@@ -1,8 +1,7 @@
 dbfiles = []
 
 if config["taxonomic_annotation"]:
-    dbfiles.append(config["diamond_protdb"])
-    dbfiles.append(opj(config["taxdb"],config["diamond_dbtype"]+".lineage"))
+    dbfiles.append(opj(config["resource_path"],config["taxdb"],"diamond.dmnd".format(config["taxdb"])))
 if config["infernal"]:
     dbfiles.append(opj(config["infernal_dbpath"],"Rfam.cm"))
 if config["eggnog"]:

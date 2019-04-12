@@ -1,51 +1,65 @@
-rule run_diamond:
+rule tango_search:
     input:
-        faa=opj(config["results_path"],"annotation","{group}","final_contigs.faa"),
-        taxonmap = opj(config["taxdb"],"{}.accession2taxid.gz".format(config["diamond_dbtype"])),
-        nodes = opj(config["taxdb"],"nodes.dmp"),
-        db=config["diamond_protdb"]
+        db = opj(config["resource_path"],config["taxdb"],"diamond.dmnd"),
+        fasta = opj(config["results_path"],"assembly","{group}","final_contigs.fa")
     output:
-        opj(config["results_path"],"annotation","{group}","final_contigs.diamond")
+        opj(config["results_path"],"annotation","{group}","final_contigs.{db}.tsv.gz".format(db=config["taxdb"]))
     params:
-      diamond_params="-f 6 staxids --seq yes --more-sensitive --no-auto-append --top 10",
-      tmp=opj(config["tmpdir"],"{group}.diamond_run.tmp")
+        tmpdir = config["scratch_path"],
+        tango_params = config["tango_params"],
+        min_len = config["taxonomy_min_len"]
     threads: config["diamond_threads"]
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*4
+        runtime = lambda wildcards, attempt: attempt**2*60*10
     shell:
         """
-        diamond blastp --taxonmap {input.taxonmap} --taxonnodes {input.nodes} \
-         -d {input.db} -q {input.faa} -o {params.tmp} -p {threads} {params.diamond_params}
-        mv {params.tmp} {output}
+        tango search {params.tango_params} -p {threads} --tmpdir {params.tmpdir} -l {params.min_len}
         """
 
-rule assign_taxonomy:
+rule tango_assign:
     input:
-        diamond_input_file=opj(config["results_path"],"annotation","{group}","final_contigs.diamond"),
-        gid_taxaid_mapping_file=opj(config["taxdb"],config["diamond_dbtype"]+".accession2taxid.gz"),
-        gff_file=opj(config["results_path"],"annotation","{group}","final_contigs.features.gff"),
-        lineage_file=opj(config["taxdb"],config["diamond_dbtype"]+".lineage")
+        opj(config["results_path"],"annotation","{group}","final_contigs.{db}.tsv.gz".format(db=config["taxdb"])),
+        opj(config["resource_path"],"taxonomy","taxonomy.sqlite")
     output:
-        genes=opj(config["results_path"],"annotation","{group}","taxonomy","taxonomy_genes.tab"),
-        contigs=opj(config["results_path"],"annotation","{group}","taxonomy","taxonomy_contigs.tab"),
-        genes_from_contigs=opj(config["results_path"],"annotation","{group}","taxonomy","taxonomy_genes_from_contigs.tab")
+        opj(config["results_path"],"annotation","{group}","taxonomy",
+            "final_contigs.{db}.taxonomy.tsv".format(db=config["taxdb"]))
     params:
-        prefix = opj(config["scratch_path"],"{group}","taxonomy","taxonomy"),
-        prefix_dirname = os.path.dirname(opj(config["scratch_path"],"{group}","taxonomy","taxonomy")),
-        outdir = os.path.dirname(opj(config["results_path"],"annotation","{group}","taxonomy","taxonomy_genes.tab"))
+        taxonomy_ranks = config["taxonomy_ranks"],
+        taxdir = opj(config["resource_path"],"taxonomy")
+    threads: 4
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*2
+        runtime = lambda wildcards, attempt: attempt**2*60*6
     shell:
-        """
-        mkdir -p {params.prefix_dirname}
-        mkdir -p {params.outdir}
-        gzip -c input.gid_taxaid_mapping_file > {params.prefix_dirname}/map
+         """
+         tango assign --top 5 -e 0.001 -p 4 -m rank_lca --reportranks {params.taxonomy_ranks} -t {params.taxdir} \
+         {input[0]} {output[0]}
+         """
 
-        python source/utils/ClassifyTaxonomy.py -i {input.diamond_input_file} -a {params.prefix_dirname}/map \
-        -b {input.gff_file} -l {input.lineage_file} -o {params.prefix}
+rule tango_assign_orfs:
+    input:
+        tax = opj(config["results_path"],"annotation","{group}","taxonomy",
+            "final_contigs.{db}.taxonomy.tsv".format(db=config["taxdb"])),
+        gff = opj(config["results_path"],"annotation","{group}","final_contigs.gff")
+    output:
+        tax = opj(config["results_path"],"annotation","{group}","taxonomy",
+            "orfs.{db}.taxonomy.tsv".format(db=config["taxdb"]))
+    run:
+        import pandas as pd
+        gff_df = pd.read_csv(input.gff, header=None, sep="\t", comment="#", usecols=[0,8], names=["contig","id"])
+        # Extract ids
+        ids = ["{}_{}".format(gff_df.loc[i, "contig"], gff_df.loc[i, "id"].split(";")[0].split("_")[-1]) for i in
+                   gff_df.index]
+        gff_df.loc[:, "id"] = ids
+        # Read taxonomy for contigs
+        tax_df = pd.read_csv(input.tax, header=0, sep="\t", index_col=0)
+        # Merge dataframes
+        orf_tax_df = pd.merge(gff_df, tax_df, left_index=True, right_index=True, how="outer")
+        # Set Unclassified for NA values
+        orf_tax_df.fillna("Unclassified", inplace=True)
+        # Set index to ORF ids
+        orf_tax_df.set_index("id", inplace=True)
+        orf_tax_df.drop("contig", axis=1, inplace=True)
+        orf_tax_df.to_csv(output.tax, sep="\t", index=True, header=True)
 
-        mv {params.prefix}* {params.outdir}
-        rm -r {params.prefix_dirname}
-        """
 
 

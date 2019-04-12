@@ -19,9 +19,8 @@ for group in assemblyGroups.keys():
         annotationfiles.append(opj(config["results_path"],"annotation",group,"pfam.parsed.tpm.tab"))
     # Add taxonomic annotation
     if config["taxonomic_annotation"]:
-        annotationfiles.append(opj(config["results_path"],"annotation",group,"taxonomy","taxonomy_genes.tab"))
-        annotationfiles.append(opj(config["results_path"],"annotation",group,"taxonomy","genes_from_contigs.count.tab"))
         annotationfiles.append(opj(config["results_path"],"annotation",group,"taxonomy","taxonomy.tpm.krona.html"))
+        annotationfiles.append(opj(config["results_path"],"annotation",group,"taxonomy","tax.tpm.tab"))
 
 include: "../rules/Annotation/markduplicates.rules"
 include: "../rules/Annotation/orfcalling.rules"
