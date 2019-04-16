@@ -1,15 +1,4 @@
-localrules: centrifuge_db_done
-
-centrifuge_db_inputs = expand(opj(config["centrifuge_dir"],"{base}.{i}.cf"), i=[1,2,3], base=config["centrifuge_base"])
+centrifuge_db_input = expand(opj(config["centrifuge_dir"],"{base}.{i}.cf"), i=[1,2,3], base=config["centrifuge_base"])
 if config["centrifuge_map_filtered"]:
-    centrifuge_db_inputs.append(opj(config["centrifuge_dir"],"input-sequences.fna.gz"))
+    centrifuge_db_input.append(opj(config["centrifuge_dir"],"input-sequences.fna.gz"))
 include: "../rules/Classify/prepare_centrifuge.rules"
-
-rule centrifuge_db_done:
-    input:
-        centrifuge_db_inputs
-    output:
-        temp(touch(opj(config["results_path"],"progress","centrifuge_db.done")))
-    message: "Centrifuge database created"
-
-

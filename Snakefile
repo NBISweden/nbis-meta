@@ -33,127 +33,112 @@ workdir: config["workdir"]
 # First load init file to set up samples and variables
 include: "source/init/init.smk"
 pipeline_report = config["pipeline_config_file"]
-###########
-# Targets #
-###########
+
+#############
+## Targets ##
+#############
 inputs = [pipeline_report]
-db_done = opj(config["results_path"],"progress","db.done")
-preprocess_done = opj(config["results_path"],"progress","preprocess.done")
-assembly_done = opj(config["results_path"],"progress","assembly.done")
-binning_done = opj(config["results_path"],"progress","binning.done")
-annotation_done = opj(config["results_path"],"progress","annotation.done")
-kraken_db_done = opj(config["results_path"],"progress","kraken_db.done")
-kraken_classify_done = opj(config["results_path"],"progress","kraken_classify.done")
-metaphlan2_db_done = opj(config["results_path"],"progress","metaphlan2_db.done")
-metaphlan2_classify_done = opj(config["results_path"],"progress","metaphlan2_classify.done")
-kaiju_db_done = opj(config["results_path"],"progress","kaiju_db.done")
-kaiju_classify_done = opj(config["results_path"],"progress","kaiju_classify.done")
-centrifuge_db_done = opj(config["results_path"],"progress","centrifuge_db.done")
-refmap_done = opj(config["results_path"],"progress","refmap.done")
-centrifuge_classify_done = opj(config["results_path"],"progress","centrifuge_classify.done")
-
 # Download and format databases for annotation
+db_input = []
 include: "source/workflow/DB"
-inputs.append(db_done)
-
+inputs += db_input
 # Preprocess raw input (if no preprocessing, just produce the sample report for raw data)
+preprocess_input = []
 include: "source/workflow/Preprocess"
-inputs.append(preprocess_done)
-
+inputs += preprocess_input
 # Assemble
+assembly_input = []
 if config["assembly"]:
     include: "source/workflow/Assembly"
-    inputs.append(assembly_done)
+    inputs += assembly_input
     # Rule sets that depend on de-novo assembly
     # Annotate
+    annotation_input = []
     if config["annotation"]:
         include: "source/workflow/Annotation"
-        inputs.append(annotation_done)
+        inputs += annotation_input
     # Binning
+    binning_input = []
     if config["maxbin"] or config["concoct"] or config["metabat"]:
-        inputs.append(binning_done)
         include: "source/workflow/Binning"
+        inputs += binning_input
 # Kraken
+kraken_input = []
+kraken_db_input = []
 if config["kraken"]:
     # Download and process kraken datatbase
     include: "source/workflow/KrakenDB"
     # Kraken classify samples
     include: "source/workflow/KrakenClassify"
-    inputs += [kraken_db_done, kraken_classify_done]
-# Kaiju
-if config["kaiju"]:
-    # Process the Kaiju database
-    include: "source/workflow/KaijuDB"
-    # Kaiju classify samples
-    include: "source/workflow/KaijuClassify"
-    inputs += [kaiju_db_done, kaiju_classify_done]
+    inputs += kraken_input + kraken_db_input
 # Metaphlan2
+metaphlan_input = []
+metaphlan_db_input = []
 if config["metaphlan2"]:
     include: "source/workflow/Metaphlan2DB"
     include: "source/workflow/Metaphlan2Classify"
-    inputs += [metaphlan2_db_done, metaphlan2_classify_done]
+    inputs += metaphlan_input + metaphlan_db_input
 # Centrifuge
+centrifuge_input = []
+centrifuge_db_input = []
 if config["centrifuge"]:
     include: "source/workflow/CentrifugeDB"
     include: "source/workflow/CentrifugeClassify"
-    inputs += [centrifuge_db_done, centrifuge_classify_done]
-
+    inputs += centrifuge_input + centrifuge_db_input
 # Reference-based mapping
+map_input = []
 if config["reference_map"]:
     # Use centrifuge to download genomes for reference mapping
     # So set run_centrifuge to True
     config["centrifuge"] = True
     include: "source/workflow/Map"
-    inputs.append(refmap_done)
+    inputs += map_input
 
+###########
+## RULES ##
+###########
 # master target rule
 rule all:
     input: inputs
 
 # db target rule
 rule db:
-  input: db_done
+  input: db_input
 
 # preprocess target rule
 rule preprocess:
-    input: pipeline_report, preprocess_done
+    input: pipeline_report, preprocess_input
 
 # assembly target rule
 rule assembly:
-    input: pipeline_report, preprocess_done, assembly_done
+    input: pipeline_report, preprocess_input, assembly_input
 
 # annotation target rule
 rule annotation:
-    input: pipeline_report, preprocess_done, db_done, assembly_done, annotation_done
+    input: pipeline_report, preprocess_input, db_input, assembly_input, annotation_input
 
 # centrifuge
 rule centrifuge_db:
-    input: centrifuge_db_done
+    input: centrifuge_db_input
 rule centrifuge_classify:
-    input: pipeline_report, preprocess_done, centrifuge_classify_done
+    input: pipeline_report, preprocess_input, centrifuge_input
 
 # kraken
 rule kraken_db:
-    input: kraken_db_done
+    input: kraken_db_input
 rule kraken_classify:
-    input: pipeline_report, preprocess_done, kraken_classify_done
-
-# kaiju
-rule kaiju_db:
-    input: kaiju_db_done
-rule kaiju_classify:
-    input: pipeline_report, preprocess_done, kaiju_db_done, kaiju_classify_done
+    input: pipeline_report, preprocess_input, kraken_input
 
 # metaphlan2
 rule metaphlan2_db:
-    input: metaphlan2_db_done
+    input: metaphlan_db_input
 rule metaphlan2_classify:
-    input: pipeline_report, preprocess_done, metaphlan2_db_done, metaphlan2_classify_done
+    input: pipeline_report, preprocess_input, metaphlan_db_input, metaphlan_input
 
 # binning
 rule binning:
-    input: pipeline_report, preprocess_done, assembly_done, binning_done
+    input: pipeline_report, preprocess_input, assembly_input, binning_input
 
 # Reference based database
 rule refmap:
-    input: pipeline_report, centrifuge_db_done, preprocess_done, refmap_done
+    input: pipeline_report, centrifuge_db_input, preprocess_input, map_input

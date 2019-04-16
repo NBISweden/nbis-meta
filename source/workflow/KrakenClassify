@@ -1,6 +1,2 @@
+kraken_input = [opj(config["report_path"],"kraken","kraken.krona.html")]
 include: "../rules/Classify/kraken.rules"
-rule kraken_classify_done:
-    input:
-        opj(config["report_path"],"kraken","kraken.krona.html")
-    output:
-        temp(touch(opj(config["results_path"],"progress","kraken_classify.done")))

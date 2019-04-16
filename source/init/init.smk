@@ -200,8 +200,6 @@ if config["centrifuge"]:
     # Set centrifuge index config variables
     config['centrifuge_dir'] = os.path.dirname(config['centrifuge_index_path'])
     config['centrifuge_base'] = os.path.basename(config['centrifuge_index_path'])
-if config["kaiju"]:
-    config_params.append((" - Read classifier","Kaiju"))
 if config["kraken"]:
     # Check if custom database exists
     custom = expand(opj(config["kraken_custom"], "{n}.k2d"), n=["hash","opts","taxo"])

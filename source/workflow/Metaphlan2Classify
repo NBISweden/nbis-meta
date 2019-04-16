@@ -1,8 +1,4 @@
+metaphlan_input = []
+metaphlan_input.append(opj(config["report_path"],"metaphlan2","metaphlan2.krona.html"))
+metaphlan_input.append(opj(config["report_path"],"metaphlan2","metaphlan2.heatmap.png"))
 include: "../rules/Classify/metaphlan2.rules"
-rule metaphlan2_classify_done:
-    input:
-        #opj(config["report_path"], "metaphlan2", "metaphlan2.graph.png"),
-        opj(config["report_path"],"metaphlan2","metaphlan2.krona.html"),
-        opj(config["report_path"], "metaphlan2", "metaphlan2.heatmap.png")
-    output:
-        temp(touch(opj(config["results_path"],"progress","metaphlan2_classify.done")))
