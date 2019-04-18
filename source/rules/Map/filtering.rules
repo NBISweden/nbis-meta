@@ -62,7 +62,7 @@ rule download_filtered_genomes:
         id_string = "|".join(list(all_ids))
         shell('egrep -w "{id_string}" {input.assembly_lists} | cut -f2- -d ":" > {output[2]}')
         # Read the assembly list
-        df = pd.read_table(output[2], header = None, dtype = str)
+        df = pd.read_csv(output[2], header = None, dtype = str, sep="\t")
         # Filter to match taxids
         df = df.loc[df[5].isin(list(all_ids))]
         # Filter to complete genomes

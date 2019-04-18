@@ -17,7 +17,7 @@ def main():
 
     column = args.column - 1
 
-    df = pd.read_table(args.infile, header=0, skiprows=1, dtype=str)
+    df = pd.read_csv(args.infile, header=0, skiprows=1, dtype=str, sep="\t")
     if args.sort:
         sort_column = args.sort - 1
         df.sort_values(df.columns[sort_column], ascending = False, inplace = True)

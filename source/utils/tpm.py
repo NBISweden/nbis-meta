@@ -41,7 +41,7 @@ def gene_lengths_from_gff(gff_file, feature_type="CDS", saf=False):
 
 def main(args):
     logging.info("Reading sample info")
-    sample_info = pd.read_table(args.sample_info, header=0, index_col=0, names=['avg_read_len'])
+    sample_info = pd.read_csv(args.sample_info, header=0, index_col=0, names=['avg_read_len'], sep="\t")
     logging.info("Reading gene lengths from gff")
 
     gene_lengths,gene_ids = gene_lengths_from_gff(args.gff, args.saf)
@@ -50,7 +50,7 @@ def main(args):
     first = True
     for fn in args.coverage_files:
         # Read counts per gene for sample
-        rg = pd.read_table(fn, index_col=0, header=0, compression=args.input_compression)
+        rg = pd.read_csv(fn, index_col=0, header=0, compression=args.input_compression, sep="\t")
         sample_name = list(rg.columns)[-1]
         logging.info("Calculating TPM for " + sample_name)
         # Intersect with genes in the gene length file

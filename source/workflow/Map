@@ -1,17 +1,12 @@
 include: "../rules/Map/bowtie.rules"
 include: "../rules/Map/filtering.rules"
 include: "../rules/Map/quantify.rules"
-include: "../rules/Classify/centrifuge.rules"
-include: "../rules/Classify/prepare_centrifuge.rules"
 
-mapfiles = []
+if not config["centrifuge"]:
+    config["centrifuge"] = True
+    include: "../rules/Classify/centrifuge.rules"
+    include: "../rules/Classify/prepare_centrifuge.rules"
 
-mapfiles.append(opj(config["report_path"],"refmap","figures","pca_tpm.pdf"))
-mapfiles.append(opj(config["results_path"],"refmap","genomes_coverage.tab"))
-
-rule refmap_done:
-    input:
-        mapfiles
-    message: "Reference-based read mapping done"
-    output:
-        temp(touch(opj(config["results_path"],"progress","refmap.done")))
+map_input = []
+map_input.append(opj(config["report_path"],"refmap","figures","pca_tpm.pdf"))
+map_input.append(opj(config["results_path"],"refmap","genomes_coverage.tab"))

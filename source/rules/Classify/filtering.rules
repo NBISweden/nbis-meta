@@ -54,7 +54,7 @@ rule get_filtered_genome_seqs:
         shell("mkdir -p {params.out_dir}")
         df = pd.DataFrame()
         for f in input.genome_files:
-            _df = pd.read_table(f)
+            _df = pd.read_csv(f, sep="\t")
             df = pd.concat([df,_df], sort=True)
         # Make unique by seqid
         df = df.groupby("seq").first().reset_index()
@@ -306,7 +306,7 @@ rule collate_genomecov:
         df = pd.DataFrame()
         for f in input:
             sample = os.path.basename(f).replace(".coverage","")
-            _df = pd.read_table(f, header=None)
+            _df = pd.read_csv(f, header=None, sep="\t")
             _df = _df.assign(sample=pd.Series([sample]*len(_df)))
             df = pd.concat([df,_df])
         df = df.iloc[:,[0,6,7]]
@@ -326,7 +326,7 @@ rule plot_genomecov:
         import seaborn as sns, matplotlib.pyplot as plt
         plt.style.use('ggplot')
 
-        df = pd.read_table(input[0])
+        df = pd.read_csv(input[0], sep="\t")
         df["genome"] = [x.replace("_"," ") for x in df.genome]
         # Plot average coverage per genome
         ax = sns.barplot(data=df, x="coverage", y="genome", errwidth=.5)

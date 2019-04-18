@@ -18,8 +18,10 @@ dependencies:
   - cutadapt
   - megahit
   - spades
+  - tango
+  - tqdm=4.29.1 # Some bug in later version of tqdm causes ZeroDivisionError
   - trimmomatic
-  - diamond
+  - diamond>=0.9.19
   - prodigal
   - hmmer
   - seaborn

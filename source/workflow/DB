@@ -1,33 +1,27 @@
-dbfiles = []
+db_input = []
 
 if config["taxonomic_annotation"]:
-    dbfiles.append(config["diamond_protdb"])
-    dbfiles.append(opj(config["taxdb"],config["diamond_dbtype"]+".lineage"))
+    db_input.append(opj(config["resource_path"],config["taxdb"],"diamond.dmnd".format(config["taxdb"])))
+    db_input.append(opj(config["resource_path"], "taxonomy/taxonomy.sqlite"))
 if config["infernal"]:
-    dbfiles.append(opj(config["infernal_dbpath"],"Rfam.cm"))
+    db_input.append(opj(config["infernal_dbpath"],"Rfam.cm"))
 if config["eggnog"]:
-    dbfiles.append(opj(config["resource_path"],"eggnog-mapper","eggnog.db"))
-    dbfiles.append(opj(config["resource_path"],"eggnog-mapper","eggnog.version"))
-    dbfiles += expand(opj(config["resource_path"],"kegg", "{f}"),
+    db_input.append(opj(config["resource_path"],"eggnog-mapper","eggnog.db"))
+    db_input.append(opj(config["resource_path"],"eggnog-mapper","eggnog.version"))
+    db_input += expand(opj(config["resource_path"],"kegg", "{f}"),
         f = ["kegg_ec2pathways.tsv", "kegg_ko2ec.tsv", "kegg_ko2modules.tsv", "kegg_ko2pathways.tsv", "kegg_kos.tsv",
              "kegg_modules.tsv", "kegg_pathways.tsv"])
 if config["pfam"]:
-    dbfiles.append(opj(config["resource_path"],"pfam","Pfam-A.hmm"))
-    dbfiles.append(opj(config["resource_path"],"pfam","Pfam-A.hmm.h3f"))
-    dbfiles.append(opj(config["resource_path"],"pfam","Pfam-A.hmm.dat"))
-    dbfiles.append(opj(config["resource_path"],"pfam","Pfam-A.clans.tsv"))
+    db_input.append(opj(config["resource_path"],"pfam","Pfam-A.hmm"))
+    db_input.append(opj(config["resource_path"],"pfam","Pfam-A.hmm.h3f"))
+    db_input.append(opj(config["resource_path"],"pfam","Pfam-A.hmm.dat"))
+    db_input.append(opj(config["resource_path"],"pfam","Pfam-A.clans.tsv"))
 if config["sortmerna"]:
     for f in config["sortmerna_dbs"]:
-        dbfiles.append(opj(config["resource_path"],"rRNA_databases","{}.idx.stats".format(f)))
+        db_input.append(opj(config["resource_path"],"rRNA_databases","{}.idx.stats".format(f)))
 
 include: "../rules/DB/prepare_sortmerna.rules"
 include: "../rules/DB/prepare_eggnog.rules"
 include: "../rules/DB/prepare_hmms.rules"
 include: "../rules/DB/prepare_infernal.rules"
 include: "../rules/DB/prepare_taxonomy.rules"
-
-rule db_done:
-    input:
-        dbfiles
-    output:
-        temp(touch(opj(config["results_path"],"progress","db.done")))

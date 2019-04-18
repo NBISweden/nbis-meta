@@ -57,9 +57,9 @@ markduplicates: True
 picard_jar: ""
 picard_path: ""
 
-###############################
-### Assembly and annotation ###
-###############################
+################
+### Assembly ###
+################
 assembly: True
 assembly_threads: 20
 
@@ -77,22 +77,29 @@ metaspades_keep_intermediate: True
 metaspades_keep_corrected: True
 metaspades_additional_settings: '-k 21,31,41,51,61,71,81,91,101,111,121'
 
+################
+## Annotation ##
+################
+
 # Eggnog-mapper
 eggnog: False
 
 # PFAM-scan
 pfam: False
 
-# BLAST database for taxonomic annotation.
-# Should be formatted using diamond.
+# Run taxonomic annotation of assembled contigs
 taxonomic_annotation: False
-diamond_dbpath: resources/diamond
-# dbtype options are: nr, uniref50, uniref90, uniref100
-# nr typically has around 432,300,014 sequences
-# uniref100 has around 114,464,072 sequences
-# uniref90 has around 59,207,328 sequences
-# uniref50 has around 24,713,224 sequences
-diamond_dbtype: uniref100
+# Skip contigs shorter than taxonomy_min_len
+taxonomy_min_len: 500
+# Additional parameters to tango assigner
+tango_params: "--evalue 0.001 --top 5"
+# Ranks to report taxonomy for
+taxonomy_ranks: ["superkingdom","phylum","class","order","family","genus","species"]
+# Protein database to use.
+# Choose between uniref50, uniref90, uniref100 and nr for taxdb.
+# If supplying your own (formatted with tango), then the diamond.dmnd file needs to be located under
+# <resource_path>/<taxdb>/diamond.dmnd
+taxdb: uniref100
 diamond_threads: 20
 
 # Infernal ncRNA detection
@@ -192,9 +199,3 @@ centrifuge_min_read_count: 5000
 ## MetaPhlAn 2 ##
 #################
 metaphlan2: False
-
-#############
-### KAIJU ###
-#############
-
-kaiju: False

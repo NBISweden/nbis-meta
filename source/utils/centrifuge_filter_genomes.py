@@ -18,7 +18,7 @@ def get_seqids(df, seqid2taxid, ncbitaxa):
 
 
 def filter_genomes(input,db,mapfile,min_read_count,output):
-    df = pd.read_table(input)
+    df = pd.read_csv(input, sep="\t")
     # Filter to number of reads
     df = df.loc[df.numReads > min_read_count]
     # Filter to ranks genus, species and leaf
@@ -26,7 +26,7 @@ def filter_genomes(input,db,mapfile,min_read_count,output):
     # Read the centrifuge sqlite database
     ncbitaxa = NCBITaxa(db)
     # Read the seqid -> taxid map file
-    seqid2taxid = pd.read_table(mapfile, header=None, names=["seq", "taxID"], index_col=0)
+    seqid2taxid = pd.read_csv(mapfile, header=None, names=["seq", "taxID"], index_col=0, sep="\t")
     filtered = get_seqids(df, seqid2taxid, ncbitaxa)
     if len(filtered) == 0:
         filtered = pd.DataFrame(columns=["taxID"], index=["seq"])

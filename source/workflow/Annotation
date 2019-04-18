@@ -1,36 +1,28 @@
-annotationfiles = []
+annotation_input = []
 
 # if any assembly groups have been specified in the sample file then run these
 for group in assemblyGroups.keys():
     # Add orfcalling results
-    annotationfiles.append(opj(config["results_path"],"annotation",group,"final_contigs.gff"))
+    annotation_input.append(opj(config["results_path"],"annotation",group,"final_contigs.gff"))
     if config["infernal"]:
-        annotationfiles.append(opj(config["results_path"],"annotation",group,"final_contigs.rfam"))
-        annotationfiles.append(opj(config["results_path"],"annotation",group,"final_contigs.infernal.gff"))
+        annotation_input.append(opj(config["results_path"],"annotation",group,"final_contigs.rfam"))
+        annotation_input.append(opj(config["results_path"],"annotation",group,"final_contigs.infernal.gff"))
     # Add EGGNOG annotation
     if config["eggnog"]:
-        #annotationfiles.append(opj(config["results_path"],"annotation",group,"{}.emapper.annotations".format(group)))
         for parsed in ["enzymes","pathways","kos","modules"]:
-            annotationfiles.append(opj(config["results_path"],"annotation",group,"{}.parsed.tpm.tab".format(parsed)))
-        annotationfiles.append(opj(config["results_path"],"annotation",group,"pathways.parsed.count.normalized.tab"))
-        annotationfiles.append(opj(config["results_path"],"annotation",group,"modules.parsed.count.normalized.tab"))
+            annotation_input.append(opj(config["results_path"],"annotation",group,"{}.parsed.tpm.tab".format(parsed)))
+        annotation_input.append(opj(config["results_path"],"annotation",group,"pathways.parsed.count.normalized.tab"))
+        annotation_input.append(opj(config["results_path"],"annotation",group,"modules.parsed.count.normalized.tab"))
     # Add PFAM annotation
     if config["pfam"]:
-        annotationfiles.append(opj(config["results_path"],"annotation",group,"pfam.parsed.tpm.tab"))
+        annotation_input.append(opj(config["results_path"],"annotation",group,"pfam.parsed.tpm.tab"))
     # Add taxonomic annotation
     if config["taxonomic_annotation"]:
-        annotationfiles.append(opj(config["results_path"],"annotation",group,"taxonomy","taxonomy_genes.tab"))
-        annotationfiles.append(opj(config["results_path"],"annotation",group,"taxonomy","genes_from_contigs.count.tab"))
-        annotationfiles.append(opj(config["results_path"],"annotation",group,"taxonomy","taxonomy.tpm.krona.html"))
+        annotation_input.append(opj(config["results_path"],"annotation",group,"taxonomy","taxonomy.tpm.krona.html"))
+        annotation_input.append(opj(config["results_path"],"annotation",group,"taxonomy","tax.tpm.tab"))
 
 include: "../rules/Annotation/markduplicates.rules"
 include: "../rules/Annotation/orfcalling.rules"
 include: "../rules/Annotation/prot_annotation.rules"
 include: "../rules/Annotation/quantification.rules"
 include: "../rules/Annotation/taxonomic_annotation.rules"
-
-rule annotation_done:
-    input:
-        annotationfiles
-    output:
-        temp(touch(opj(config["results_path"],"progress","annotation.done")))
