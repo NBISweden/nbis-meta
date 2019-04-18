@@ -48,17 +48,17 @@ include: "source/workflow/Preprocess"
 inputs += preprocess_input
 # Assemble
 assembly_input = []
+annotation_input = []
+binning_input = []
 if config["assembly"]:
     include: "source/workflow/Assembly"
     inputs += assembly_input
     # Rule sets that depend on de-novo assembly
     # Annotate
-    annotation_input = []
     if config["annotation"]:
         include: "source/workflow/Annotation"
         inputs += annotation_input
     # Binning
-    binning_input = []
     if config["maxbin"] or config["concoct"] or config["metabat"]:
         include: "source/workflow/Binning"
         inputs += binning_input
