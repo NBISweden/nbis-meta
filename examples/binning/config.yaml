@@ -5,6 +5,7 @@ sample_list: "examples/binning/sample_annotation.tab"
 results_path: "results/examples"
 maxbin: True
 concoct: True
+metabat: True
 min_contig_length: [1000,2000]
 maxbin_threads: 10
 concoct_threads: 20
