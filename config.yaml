@@ -20,6 +20,10 @@ pipeline_config_file: results/pipeline_config.txt
 trimmomatic: True
 trimmomatic_home: ""
 trim_adapters: True
+# trimmomatic_adapter select from TruSeq2, TruSeq3 and NexteraPE
+# trimmomatic adapter, select from: NexteraPE-PE, TruSeq2-PE, TruSeq2-SE, TruSeq3-PE, TruSeq3-PE-2, TruSeq3-SE
+trimmomatic_pe_adapter: "TruSeq3-PE-2"
+trimmomatic_se_adapter: "TruSeq3-SE"
 pe_adapter_params: "2:30:15"
 se_adapter_params: "2:30:15"
 pe_pre_adapter_params: ""

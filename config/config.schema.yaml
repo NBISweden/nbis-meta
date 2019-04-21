@@ -54,6 +54,16 @@ properties:
     type: boolean
     description: Whether to do adapter trimming with trimmomatic
     default: true
+  trimmomatic_pe_adapter:
+    type: string
+    description: What adapter type to trim from paired end libraries with trimmomatic
+    default: TruSeq3-PE-2
+    enum: ["NexteraPE-PE", "TruSeq2-PE", "TruSeq3-PE", "TruSeq3-PE-2"]
+  trimmomatic_se_adapter:
+    type: string
+    description: What adapter type to trim from single end libraries with trimmomatic
+    default: TruSeq3-Se
+    enum: ["TruSeq2-SE", "TruSeq3-SE"]
   pe_adapter_params:
     type: string
     description: Trimmomatic parameters for trimming adapters on paired-end samples

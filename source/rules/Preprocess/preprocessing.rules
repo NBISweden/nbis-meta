@@ -254,7 +254,7 @@ rule trimmomatic_pe:
     params:
         jarpath=config["trimmomatic_home"]+"/trimmomatic.jar",
         trim_adapters = config["trim_adapters"],
-        adapter="ILLUMINACLIP:"+config["trimmomatic_home"]+"/adapters/TruSeq3-PE-2.fa",
+        adapter="ILLUMINACLIP:"+config["trimmomatic_home"]+"/adapters/{}.fa".format(config["trimmomatic_pe_adapter"]),
         adapter_params = config["pe_adapter_params"],
         pre_adapter_params = config["pe_pre_adapter_params"],
         post_adapter_params = config["pe_post_adapter_params"]
@@ -281,7 +281,7 @@ rule trimmomatic_se:
     params:
         jarpath=config["trimmomatic_home"]+"/trimmomatic.jar",
         trim_adapters = config["trim_adapters"],
-        adapter="ILLUMINACLIP:"+config["trimmomatic_home"]+"/adapters/TruSeq3-SE.fa",
+        adapter="ILLUMINACLIP:"+config["trimmomatic_home"]+"/adapters/{}.fa".format(config["trimmomatic_se_adapter"]),
         adapter_params = config["se_adapter_params"],
         pre_adapter_params = config["se_pre_adapter_params"],
         post_adapter_params = config["se_post_adapter_params"]
