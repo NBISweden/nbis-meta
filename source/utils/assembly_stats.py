@@ -2,9 +2,12 @@ import pandas as pd, sys
 from Bio.SeqIO import parse
 from argparse import ArgumentParser
 
-def store_lengths(f):
+def store_lengths(f, minlen=False):
     r = {}
     for record in parse(f, "fasta"):
+        if minlen:
+            if len(record.seq) < minlen:
+                continue
         r[record.id] = len(record.seq)
     df = pd.DataFrame(r,index=["length"]).T
     return df
@@ -70,10 +73,12 @@ def main():
                         help="Write table of size distributions for different contig lengths to file")
     parser.add_argument("--stat-file", type=str,
                         help="Write table of general statistics (size, lengths etc) to file")
+    parser.add_argument("--min_len", type=int,
+                        help="Only consider contigs at least this long")
 
     args = parser.parse_args()
 
-    contig_lengths = store_lengths(args.infile)
+    contig_lengths = store_lengths(args.infile, args.min_len)
 
     stat_df = generate_stat_df(contig_lengths)
 
