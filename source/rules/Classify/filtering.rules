@@ -197,41 +197,41 @@ rule bowtie2build_filtered:
         """
 
 rule bowtie2_map_against_filtered_pe:
-    """Map paired-end sample against the genomes passing both centrifuge and sourmash filters"""
     input:
         index = expand(opj(config["results_path"],"centrifuge","bowtie2","genomes.filtered.{index}.bt2l"), index=range(1,5)),
         R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
         R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+PREPROCESS+".fastq.gz")
     output:
         temp(opj(config["results_path"],"centrifuge","bowtie2","{sample}_{run}_pe.sam"))
-    threads: 10
+    threads: config["bowtie2_threads"]
     params:
         prefix = opj(config["results_path"],"centrifuge","bowtie2","genomes.filtered"),
-        tmp_out = opj(config["scratch_path"],"{sample}_{run}_pe.filtered.sam")
+        tmp_out = opj(config["scratch_path"],"{sample}_{run}_pe.filtered.sam"),
+        setting = config["bowtie2_params"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
     shell:
         """
-        bowtie2 --very-sensitive-local -x {params.prefix} -1 {input.R1} -2 {input.R2} --no-unal -p {threads} > {params.tmp_out}
+        bowtie2 {params.setting} -x {params.prefix} -1 {input.R1} -2 {input.R2} --no-unal -p {threads} > {params.tmp_out}
         mv {params.tmp_out} {output[0]}
         """
 
 rule bowtie2_map_against_filtered_se:
-    """Map paired-end sample against the genomes passing both centrifuge and sourmash filters"""
     input:
         index = expand(opj(config["results_path"],"centrifuge","bowtie2","genomes.filtered.{index}.bt2l"), index=range(1,5)),
         se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+PREPROCESS+".fastq.gz")
     output:
         temp(opj(config["results_path"],"centrifuge","bowtie2","{sample}_{run}_se.sam"))
-    threads: 10
+    threads: config["bowtie2_threads"]
     params:
         prefix = opj(config["results_path"],"centrifuge","bowtie2","genomes.filtered"),
-        tmp_out = opj(config["scratch_path"],"{sample}_{run}_se.filtered.sam")
+        tmp_out = opj(config["scratch_path"],"{sample}_{run}_se.filtered.sam"),
+        setting = config["bowtie2_params"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
     shell:
         """
-        bowtie2 --very-sensitive-local -x {params.prefix} -U {input.R1} --no-unal -p {threads} > {params.tmp_out}
+        bowtie2 {params.setting} -x {params.prefix} -U {input.R1} --no-unal -p {threads} > {params.tmp_out}
         mv {params.tmp_out} {output[0]}
         """
 

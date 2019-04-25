@@ -28,15 +28,16 @@ rule map_to_filtered_pe:
         index = expand(opj(config["results_path"],"refmap","bowtie2","filtered.fna.{index}.bt2l"),index=range(1,5))
     output:
         opj(config["results_path"],"refmap","bowtie2","{sample}_{run}_pe","{sample}_{run}_pe.sorted.bam")
-    threads: 10
+    threads: config["bowtie2_threads"]
     params:
         prefix = opj(config["results_path"],"refmap","bowtie2","filtered.fna"),
-        tmp_out = opj(config["scratch_path"],"{sample}_{run}_pe.refmap.bam")
+        tmp_out = opj(config["scratch_path"],"{sample}_{run}_pe.refmap.bam"),
+        setting = config["bowtie2_params"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*2
     shell:
         """
-        bowtie2 -p {threads} -x {params.prefix} -1 {input.R1} -2 {input.R2} | samtools view -bh - | samtools sort \
+        bowtie2 {params.setting} -p {threads} -x {params.prefix} -1 {input.R1} -2 {input.R2} | samtools view -bh - | samtools sort \
         -o {params.tmp_out}
         mv {params.tmp_out} {output[0]}
         """
@@ -47,15 +48,16 @@ rule map_to_filtered_se:
         index = expand(opj(config["results_path"],"refmap","bowtie2","filtered.fna.{index}.bt2l"),index=range(1,5))
     output:
         opj(config["results_path"],"refmap","bowtie2","{sample}_{run}_se","{sample}_{run}_se.sorted.bam")
-    threads: 10
+    threads: config["bowtie2_threads"]
     params:
         prefix = opj(config["results_path"],"refmap","bowtie2","filtered.fna"),
-        tmp_out = opj(config["scratch_path"],"{sample}_{run}_se.refmap.bam")
+        tmp_out = opj(config["scratch_path"],"{sample}_{run}_se.refmap.bam"),
+        setting = config["bowtie2_params"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*2
     shell:
         """
-        bowtie2 -p {threads} -x {params.prefix} -U {input.se} | samtools view -bh - | samtools sort -o {params.tmp_out}
+        bowtie2 {params.setting} -p {threads} -x {params.prefix} -U {input.se} | samtools view -bh - | samtools sort -o {params.tmp_out}
         mv {params.tmp_out} {output[0]}
         """
 

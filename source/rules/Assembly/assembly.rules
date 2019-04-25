@@ -211,7 +211,7 @@ rule bowtie_map_pe:
         log=opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_pe.bam.log")
     params:
         temp_bam=opj(config["tmpdir"],"{group}-mapping-{sample}_{run}_pe.bam"),
-        setting = "--very-sensitive-local",
+        setting = config["bowtie2_params"],
         prefix = opj(config["results_path"],"assembly","{group}","final_contigs.fa")
     threads: config["bowtie2_threads"]
     resources:
@@ -232,7 +232,7 @@ rule bowtie_map_se:
         log=opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_se.bam.log")
     params:
         temp_bam=opj(config["tmpdir"],"{group}-mapping-{sample}_{run}_se.bam"),
-        setting = "--very-sensitive-local",
+        setting = config["bowtie2_params"],
         prefix = opj(config["results_path"],"assembly","{group}","final_contigs.fa")
     threads: config["bowtie2_threads"]
     resources:

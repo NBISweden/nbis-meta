@@ -127,6 +127,7 @@ metabat_threads: 20
 ### MAPPING ###
 ###############
 bowtie2_threads: 10
+bowtie2_params: "--very-sensitive"
 
 ####################################
 ### REFERENCE BASED READ MAPPING ###

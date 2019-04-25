@@ -284,6 +284,10 @@ properties:
     description: How many threads to use for bowtie2
     default: 10
     minimum: 1
+  bowtie2_params:
+    type: string
+    description: Parameters to pass to the bowtie2 aligner
+    default: "--very-sensitive"
   ## Reference based read mapping ##
   reference_map:
     type: boolean
