@@ -18,7 +18,7 @@ dependencies:
   - cutadapt
   - megahit
   - spades
-  - tango
+  - tango>=0.5.6 # Fix for length filtering of queries introduced in version 0.5.6
   - tqdm=4.29.1 # Some bug in later version of tqdm causes ZeroDivisionError
   - trimmomatic
   - diamond>=0.9.19
