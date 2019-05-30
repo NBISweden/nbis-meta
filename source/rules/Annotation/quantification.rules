@@ -5,7 +5,8 @@ localrules:
     sum_to_taxa,
     sum_to_features,
     normalize_pathways_modules,
-    taxonomy2krona
+    taxonomy2krona,
+    sum_to_rgi
 
 rule write_featurefile:
     input:

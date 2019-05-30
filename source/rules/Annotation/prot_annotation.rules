@@ -158,7 +158,8 @@ rule run_rgi:
         json = opj(config["resource_path"], "annotation", "{group}", "rgi.out.json"),
         txt = opj(config["resource_path"], "annotation", "{group}", "rgi.out.txt")
     params:
-        out = opj(config["resource_path"], "annotation", "{group}", "rgi.out")
+        out = opj(config["resource_path"], "annotation", "{group}", "rgi.out"),
+        settings = config["rgi_params"]
     conda:
         "../../../envs/rgi.yaml"
     threads: 10
@@ -167,5 +168,5 @@ rule run_rgi:
     shell:
         """
         rgi load --card_json {input.db} --local
-        rgi main -i {input.faa} -o {params.out} -n {threads} -a diamond --local --clean --input_type protein
+        rgi main -i {input.faa} -o {params.out} -n {threads} {params.settings}
         """

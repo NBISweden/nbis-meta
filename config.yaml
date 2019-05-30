@@ -93,6 +93,8 @@ pfam: False
 
 # Resistance Gene Identifier
 rgi: False
+# Parameters for the rgi software
+rgi_params: "-a diamond --local --clean --input_type protein"
 
 # Run taxonomic annotation of assembled contigs
 taxonomic_annotation: False
