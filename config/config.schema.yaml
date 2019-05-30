@@ -197,6 +197,10 @@ properties:
     type: boolean
     description: Indicates whether to run pfam_scan
     default: false
+  rgi:
+    type: boolean
+    description: Indicates whether to run Resistance gene identifier on protein fasta file
+    default: false
   taxonomic_annotation:
     type: boolean
     description: Indicates whether to run taxonomic annotation

@@ -91,6 +91,9 @@ eggnog: False
 # PFAM-scan
 pfam: False
 
+# Resistance Gene Identifier
+rgi: False
+
 # Run taxonomic annotation of assembled contigs
 taxonomic_annotation: False
 # Skip contigs shorter than taxonomy_min_len
