@@ -145,3 +145,27 @@ rule parse_pfam:
         annot.sort_values("orf", inplace=True)
         # Write to file
         annot.to_csv(output[0], sep="\t", index=False)
+
+################################
+## Resistance Gene Identifier ##
+################################
+
+rule run_rgi:
+    input:
+        faa = opj(config["results_path"], "annotation", "{group}", "final_contigs.faa"),
+        db = opj(config["resource_path"], "card", "card.json")
+    output:
+        json = opj(config["resource_path"], "annotation", "{group}", "rgi.out.json"),
+        txt = opj(config["resource_path"], "annotation", "{group}", "rgi.out.txt")
+    params:
+        out = opj(config["resource_path"], "annotation", "{group}", "rgi.out")
+    conda:
+        "../../../envs/rgi.yaml"
+    threads: 10
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
+    shell:
+        """
+        rgi load --card_json {input.db} --local
+        rgi main -i {input.faa} -o {params.out} -n {threads} -a diamond --local --clean --input_type protein
+        """

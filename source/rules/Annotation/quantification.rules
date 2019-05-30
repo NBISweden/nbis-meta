@@ -199,3 +199,19 @@ rule taxonomy2krona:
         shell("ktImportText -o {output[0]} {input_string}")
         for f in [item.split(",")[0] for item in inputs]:
             shell("rm {f}")
+
+rule sum_to_rgi:
+    input:
+        annot = opj(config["resource_path"], "annotation", "{group}", "rgi.out.txt"),
+        abund = opj(config["results_path"],"annotation","{group}","fc.tpm.tab")
+    output:
+        opj(config["results_path"], "annotation", "{group}", "rgi.{fc_type}.tab")
+    run:
+        annot = pd.read_csv(input.annot, sep="\t", header=0, index_col=0, usecols=[0,16])
+        # Rename index for annotations to remove text after whitespace
+        annot.rename(index=lambda x: x.split(" ")[0], inplace=True)
+        abund = pd.read_csv(input.abund, sep="\t", header=0, index_col=0)
+        df = pd.merge(annot, abund, left_index=True, right_index=True)
+        # Sum to Gene family
+        dfsum = df.groupby("AMR Gene Family").sum()
+        dfsum.to_csv(output[0], sep="\t", index=True, header=True)
