@@ -1,0 +1,5 @@
+name: rgi
+channels:
+  - bioconda
+dependencies:
+  - rgi
