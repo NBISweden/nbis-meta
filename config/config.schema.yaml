@@ -197,6 +197,14 @@ properties:
     type: boolean
     description: Indicates whether to run pfam_scan
     default: false
+  rgi:
+    type: boolean
+    description: Indicates whether to run Resistance gene identifier on protein fasta file
+    default: false
+  rgi_params:
+    type: string
+    description: Parameters for rgi main, outside of the input/output settings
+    default: "-a diamond --local --clean --input_type protein"
   taxonomic_annotation:
     type: boolean
     description: Indicates whether to run taxonomic annotation

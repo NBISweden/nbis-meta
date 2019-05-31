@@ -20,6 +20,9 @@ for group in assemblyGroups.keys():
     if config["taxonomic_annotation"]:
         annotation_input.append(opj(config["results_path"],"annotation",group,"taxonomy","taxonomy.tpm.krona.html"))
         annotation_input.append(opj(config["results_path"],"annotation",group,"taxonomy","tax.tpm.tab"))
+    # Add Resistance Gene Identifier output
+    if config["rgi"]:
+        annotation_input += expand(opj(config["results_path"],"annotation",group,"rgi.{fc_type}.tab"), fc_type = ["count","tpm"])
 
 include: "../rules/Annotation/markduplicates.rules"
 include: "../rules/Annotation/orfcalling.rules"

@@ -72,7 +72,7 @@ config_params.append((" - Results path",os.path.abspath(config["results_path"]))
 config_params.append((" - Resource path",os.path.abspath(config["resource_path"])))
 
 # Check whether to set annotation downstream of assembly
-if config["pfam"] or config["taxonomic_annotation"] or config["infernal"] or config["eggnog"]:
+if config["pfam"] or config["taxonomic_annotation"] or config["infernal"] or config["eggnog"] or config["rgi"]:
     config["annotation"] = True
     #if True also assume the user wants assembly
     config["assembly"] = True
