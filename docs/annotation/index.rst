@@ -6,16 +6,24 @@ assembled contigs.
 
 Protein family annotation
 -------------------------
-Annotation of predicted protein coding sequences is performed using the tool
-`eggnog-mapper <https://github.com/jhcepas/eggnog-mapper>`_ and/or
-`pfam_scan <https://www.ebi.ac.uk/Tools/pfa/pfamscan/>`_ (using the latest version of the PFAM database).
+Annotation of predicted protein coding sequences is performed using the tools
+`eggnog-mapper <https://github.com/jhcepas/eggnog-mapper>`_
+`pfam_scan <https://www.ebi.ac.uk/Tools/pfa/pfamscan/>`_ (using the latest version of the PFAM database) and
+`rgi <https://github.com/arpcard/rgi>`_ (Resistance Gene Identifier).
 
-:code:`eggnog:` Set to True in order to annotate coding sequences with eggnog-mapper. This also adds annotations for KEGG orthologs, modules and pathways.
+:code:`eggnog:` Set to True in order to annotate coding sequences with eggnog-mapper.
+This also adds annotations for KEGG orthologs, modules and pathways.
 
 :code:`pfam:` Set to True in order to add PFAM protein families to coding sequences.
 
+:code:`rgi`: Set to True in order to add AMR (Antimicrobial Resistance) gene families to coding sequences.
+
+:code:`rgi_params`: Determines how to run the rgi software. By default it's run in 'perfect' mode, using the diamond alignment tool.
+See the `rgi GitHub pages <https://github.com/arpcard/rgi#rgi-main-usage-for-genomes-genome-assemblies-metagenomic-contigs-or-proteomes>_`
+for more information.
+
 .. note::
-    Both eggnog-mapper and pfam-scan run on separate conda environments. In order to use these tools you must run
+    The eggnog-mapper, pfam_scan and rgi programs all utilize separate conda environments. In order to use these tools you must run
     the workflow with the :code:`--use-conda` flag.
 
 Taxonomic annotation
@@ -57,9 +65,9 @@ a long time to download and format. If you want to can run the database
 creation separately with the workflow (e.g. while you're waiting for real
 data to arrive).
 
-To create the databases needed for the protein annotation steps (eggnog, pfam and taxonomic) you can run::
+To create the databases needed for the protein annotation steps (eggnog, pfam, rgi and taxonomic) you can run::
 
-    snakemake --configfile config.yaml --config eggnog=True pfam=True taxonomic_annotation=True -np db
+    snakemake --configfile config.yaml --config eggnog=True pfam=True rgi=True taxonomic_annotation=True -np db
 
     <lots of text>
 
