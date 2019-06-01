@@ -92,7 +92,7 @@ rule parse_ko_annotations:
     params:
         outbase = opj(config["results_path"],"annotation","{group}"),
         resource_dir = opj(config["resource_path"], "kegg")
-    run:
+    shell:
         """
         python source/utils/eggnog-parser.py parse {params.resource_dir} {input.annotations} {params.outbase}
         """
