@@ -122,7 +122,7 @@ rule quantify_features:
 rule normalize_pathways_modules:
     """Normalizes pathway and module abundances by the size of each pathway/module"""
     input:
-        abund = opj(config["results_path"],"annotation","{group}","{db}.parsed.{fc_type}.tab"),
+        abund = opj(config["results_path"],"annotation","{group}","fc.{fc_type}.tab"),
         annot = opj(config["results_path"],"annotation","{group}","{db}.parsed.tab"),
         info = opj(config["resource_path"],"kegg","kegg_ko2{db}.tsv")
     output:
