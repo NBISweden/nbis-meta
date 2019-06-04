@@ -183,7 +183,7 @@ rule taxonomy2krona:
 
 rule sum_to_rgi:
     input:
-        annot = opj(config["resource_path"], "annotation", "{group}", "rgi.out.txt"),
+        annot = opj(config["results_path"], "annotation", "{group}", "rgi.out.txt"),
         abund = opj(config["results_path"],"annotation","{group}","fc.{fc_type}.tab")
     output:
         opj(config["results_path"], "annotation", "{group}", "rgi.{fc_type}.tab")

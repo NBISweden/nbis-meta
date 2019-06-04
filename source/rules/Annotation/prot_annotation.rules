@@ -155,10 +155,10 @@ rule run_rgi:
         faa = opj(config["results_path"], "annotation", "{group}", "final_contigs.faa"),
         db = opj(config["resource_path"], "card", "card.json")
     output:
-        json = opj(config["resource_path"], "annotation", "{group}", "rgi.out.json"),
-        txt = opj(config["resource_path"], "annotation", "{group}", "rgi.out.txt")
+        json = opj(config["results_path"], "annotation", "{group}", "rgi.out.json"),
+        txt = opj(config["results_path"], "annotation", "{group}", "rgi.out.txt")
     params:
-        out = opj(config["resource_path"], "annotation", "{group}", "rgi.out"),
+        out = opj(config["results_path"], "annotation", "{group}", "rgi.out"),
         settings = config["rgi_params"]
     conda:
         "../../../envs/rgi.yaml"

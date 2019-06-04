@@ -24,6 +24,7 @@ for group in assemblyGroups.keys():
     # Add Resistance Gene Identifier output
     if config["rgi"]:
         annotation_input += expand(opj(config["results_path"],"annotation",group,"rgi.{fc_type}.tab"), fc_type = ["count","tpm"])
+        annotation_input.append(opj(config["results_path"],"annotation",group,"rgi.out.txt"))
 
 include: "../rules/Annotation/markduplicates.rules"
 include: "../rules/Annotation/orfcalling.rules"
