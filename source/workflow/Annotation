@@ -11,7 +11,8 @@ for group in assemblyGroups.keys():
     if config["eggnog"]:
         for parsed in ["enzymes","pathways","kos","modules"]:
             annotation_input.append(opj(config["results_path"],"annotation",group,"{}.parsed.tpm.tab".format(parsed)))
-        annotation_input += expand(opj(config["results_path"], "annotation", group,"{eggnog_type}.parsed.{fc_type}.tab"),
+        # Add normalized output for modules and pathways
+        annotation_input += expand(opj(config["results_path"], "annotation", group,"{eggnog_type}.parsed.{fc_type}.normalized.tab"),
                                    eggnog_type = ["modules","pathways"], fc_type = ["count", "tpm"])
     # Add PFAM annotation
     if config["pfam"]:
