@@ -1,0 +1,9 @@
+rule download_sample:
+    output:
+        expand("data/{{sample}}_{R}.fastq.gz", R=["1","2"])
+    shell:
+        """
+        fastq-dump --split-3 {wildcards.sample} -O $TMPDIR
+        gzip $TMPDIR/{wildcards.sample}_*.fastq
+        mv $TMPDIR/{wildcards.sample}_*.fastq.gz data/
+        """
