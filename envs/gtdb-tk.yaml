@@ -1,0 +1,6 @@
+name: gtdb-tk
+channels:
+  - bioconda
+dependencies:
+  - gtdbtk
+  - perl-gtdbtk
