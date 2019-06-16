@@ -1,5 +1,0 @@
-name: cookiecutter
-channels:
-  - conda-forge
-dependencies:
-  - cookiecutter

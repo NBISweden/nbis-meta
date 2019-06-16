@@ -1,9 +1,0 @@
-name: maxbin
-channels:
-   - conda-forge
-   - biocore
-   - bioconda
-   - johnsundh
-dependencies:
-  - maxbin2=2.2.5
-  - perl=5.26
