@@ -38,6 +38,8 @@ pipeline_report = config["pipeline_config_file"]
 ## Targets ##
 #############
 inputs = [pipeline_report]
+# Download samples if necessary
+include: "source/rules/DB/download_samples.rules"
 # Download and format databases for annotation
 db_input = []
 include: "source/workflow/DB"
