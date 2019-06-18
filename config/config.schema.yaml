@@ -141,6 +141,10 @@ properties:
     type: string
     description: "Additional parameters for sortmerna"
     default: "--num_alignments 1 -v"
+  kraken_filter_human:
+    type: boolean
+    description: Should preprocessed reads be filtered for human reads using kraken2
+    default: False
   ## Postprocessing ##
   markduplicates:
     type: boolean

@@ -446,6 +446,55 @@ rule fastuniq_se:
         mv {input.se} {output.se}
         """
 
+########################
+## Filter human reads ##
+########################
+rule non_human_ids:
+    input:
+        opj(config["results_path"],"kraken","{sample}_{run}_{seq_type}.out")
+    output:
+        temp(opj(config["results_path"],"kraken","{sample}_{run}_{seq_type}.non_human_ids.txt"))
+    params:
+        tmp_out = "$TMPDIR/{sample}_{run}_{seq_type}.non_human_ids.txt"
+    shell:
+        """
+        bash source/utils/filter_human.sh {input[0]} > {params.tmp_out}
+        mv {params.tmp_out} {output[0]}
+        """
+
+rule filter_human_pe:
+    input:
+        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["kraken_filter_human"]+".fastq.gz"),
+        R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["kraken_filter_human"]+".fastq.gz"),
+        ids = opj(config["results_path"],"kraken","{sample}_{run}_pe.non_human_ids.txt")
+    output:
+        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["kraken_filter_human"]+".non_human.fastq.gz"),
+        R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["kraken_filter_human"]+".non_human.fastq.gz")
+    params:
+        tmp_r1 = "$TMPDIR/{sample}_{run}_R1.nh.fastq.gz",
+        tmp_r2 = "$TMPDIR/{sample}_{run}_R2.nh.fastq.gz"
+    shell:
+        """
+        seqtk subseq {input.R1} {input.ids} | gzip -c > {params.tmp_r1}
+        mv {params.tmp_r1} {output.R1}
+        seqtk subseq {input.R2} {input.ids} | gzip -c > {params.tmp_r2}
+        mv {params.tmp_r2} {output.R2}
+        """
+
+rule filter_human_se:
+    input:
+        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["kraken_filter_human"]+".fastq.gz"),
+        ids = opj(config["results_path"],"kraken","{sample}_{run}_se.non_human_ids.txt")
+    output:
+        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["kraken_filter_human"]+".non_human.fastq.gz"),
+    params:
+        tmp_se = "$TMPDIR/{sample}_{run}_se.nh.fastq.gz"
+    shell:
+        """
+        seqtk subseq {input.se} {input.ids} | gzip -c > {params.tmp_se}
+        mv {params.tmp_se} {output.se}
+        """
+
 def all_preprocessed(wildcards):
     files = []
     for sample in samples.keys():

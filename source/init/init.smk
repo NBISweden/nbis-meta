@@ -84,7 +84,7 @@ else:
 #######################################################
 PREPROCESS=""
 POSTPROCESS=""
-preprocess_suffices = {"sortmerna": "", "trimming": "", "phixfilt": "", "fastuniq": ""}
+preprocess_suffices = {"sortmerna": "", "trimming": "", "phixfilt": "", "fastuniq": "", "kraken_filter_human": ""}
 
 # SortMeRNA rRNA filtering
 if config["sortmerna"]:
@@ -121,8 +121,16 @@ else:
 
 # Deduplication
 if config["fastuniq"]:
+    preprocess_suffices["kraken_filter_human"] = preprocess_suffices["fastuniq"]+".fastuniq"
     PREPROCESS+=".fastuniq"
     config_params.append((" - Preprocessing","Fastquniq"))
+else:
+    preprocess_suffices["kraken_filter_human"] = preprocess_suffices["fastuniq"]
+
+if config["kraken_filter_human"]:
+    PREPROCESS+=".non_human"
+    config_params.append((" - Preprocessing","Human filtering"))
+
 
 if PREPROCESS!="":
     config["preprocess"] = True
