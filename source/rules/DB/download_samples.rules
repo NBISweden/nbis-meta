@@ -5,9 +5,12 @@ rule download_sample:
     output:
         "data/{sample}_1.fastq.gz",
         "data/{sample}_2.fastq.gz"
+    log: "data/{sample}.info"
     shell:
         """
-        fastq-dump --split-3 {wildcards.sample} -O $TMPDIR
+        fastq-dump --split-3 {wildcards.sample} -O $TMPDIR > {log} 2>{log}
         gzip $TMPDIR/{wildcards.sample}_*.fastq
         mv $TMPDIR/{wildcards.sample}_*.fastq.gz data/
+        md5sum {output[0]} >> {log}
+        md5sum {output[1]} >> {log}
         """
