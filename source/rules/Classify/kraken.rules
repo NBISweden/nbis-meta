@@ -7,8 +7,8 @@ localrules:
 ################
 rule kraken_pe:
     input:
-        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
-        R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+PREPROCESS+".fastq.gz"),
+        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["kraken_filter_human"]+".fastq.gz"),
+        R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["kraken_filter_human"]+".fastq.gz"),
         db = expand(opj(config["kraken_index_path"], "{n}.k2d"), n=["hash","opts","taxo"])
     output:
         opj(config["results_path"],"kraken","{sample}_{run}_pe.out"),
@@ -27,7 +27,7 @@ rule kraken_pe:
 
 rule kraken_se:
     input:
-        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+PREPROCESS+".fastq.gz"),
+        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["kraken_filter_human"]+".fastq.gz"),
         db = expand(opj(config["kraken_index_path"], "{n}.k2d"), n=["hash","opts","taxo"])
     output:
         opj(config["results_path"],"kraken","{sample}_{run}_se.out"),
@@ -77,52 +77,3 @@ rule all_kraken_to_krona:
             print(sample_run,f)
             input_string+=" {},{}".format(f,sample_run)
         shell("ktImportTaxonomy -m 3 -t 5 -tax {params.tax} {input_string} -o {output[0]}")
-
-########################
-## Filter human reads ##
-########################
-rule non_human_ids:
-    input:
-        opj(config["results_path"],"kraken","{sample}_{run}_{seq_type}.out")
-    output:
-        temp(opj(config["results_path"],"kraken","{sample}_{run}_{seq_type}.non_human_ids.txt"))
-    params:
-        tmp_out = "$TMPDIR/{sample}_{run}_{seq_type}.non_human_ids.txt"
-    shell:
-        """
-        bash source/utils/filter_human.sh {input[0]} > {params.tmp_out}
-        mv {params.tmp_out} {output[0]}
-        """
-
-rule filter_human_pe:
-    input:
-        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
-        R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+PREPROCESS+".fastq.gz"),
-        ids = opj(config["results_path"],"kraken","{sample}_{run}_pe.non_human_ids.txt")
-    output:
-        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+PREPROCESS+".non_human.fastq.gz"),
-        R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+PREPROCESS+".non_human.fastq.gz")
-    params:
-        tmp_r1 = "$TMPDIR/{sample}_{run}_R1.nh.fastq.gz",
-        tmp_r2 = "$TMPDIR/{sample}_{run}_R2.nh.fastq.gz"
-    shell:
-        """
-        seqtk subseq {input.R1} {input.ids} | gzip -c > {params.tmp_r1}
-        mv {params.tmp_r1} {output.R1}
-        seqtk subseq {input.R2} {input.ids} | gzip -c > {params.tmp_r2}
-        mv {params.tmp_r2} {output.R2}
-        """
-
-rule filter_human_se:
-    input:
-        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+PREPROCESS+".fastq.gz"),
-        ids = opj(config["results_path"],"kraken","{sample}_{run}_se.non_human_ids.txt")
-    output:
-        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+PREPROCESS+".non_human.fastq.gz")
-    params:
-        tmp_se = "$TMPDIR/{sample}_{run}_se.nh.fastq.gz"
-    shell:
-        """
-        seqtk subseq {input.se} {input.ids} | gzip -c > {params.tmp_se}
-        mv {params.tmp_se} {output.se}
-        """
