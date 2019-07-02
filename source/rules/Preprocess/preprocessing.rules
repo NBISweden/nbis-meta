@@ -456,6 +456,8 @@ rule non_human_ids:
         temp(opj(config["results_path"],"kraken","{sample}_{run}_{seq_type}.non_human_ids.txt"))
     params:
         tmp_out = "$TMPDIR/{sample}_{run}_{seq_type}.non_human_ids.txt"
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
     shell:
         """
         bash source/utils/filter_human.sh {input[0]} > {params.tmp_out}
@@ -473,6 +475,9 @@ rule filter_human_pe:
     params:
         tmp_r1 = "$TMPDIR/{sample}_{run}_R1.nh.fastq.gz",
         tmp_r2 = "$TMPDIR/{sample}_{run}_R2.nh.fastq.gz"
+    threads: 2
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*4
     shell:
         """
         seqtk subseq {input.R1} {input.ids} | gzip -c > {params.tmp_r1}
@@ -489,6 +494,8 @@ rule filter_human_se:
         se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["kraken_filter_human"]+".non_human.fastq.gz"),
     params:
         tmp_se = "$TMPDIR/{sample}_{run}_se.nh.fastq.gz"
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60*2
     shell:
         """
         seqtk subseq {input.se} {input.ids} | gzip -c > {params.tmp_se}
