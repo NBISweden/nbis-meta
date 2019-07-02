@@ -38,3 +38,4 @@ dependencies:
   - sra-tools=2.9.6
   - fastani=1.1
   - barrnap=0.9
+  - mummer4=4.0.0beta2
