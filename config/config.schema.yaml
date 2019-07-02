@@ -103,6 +103,10 @@ properties:
     type: number
     default: 0.1
     description: Maximum allowed error rate as value between 0 and 1 (no. of errors divided by length of matching region)
+  cutadapt_params:
+    type: string
+    default: ""
+    description: Additional parameters for cutadapt
   fastuniq:
     type: boolean
     description: Indicates whether to run fastuniq
