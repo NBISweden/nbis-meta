@@ -309,12 +309,13 @@ rule cutadapt_pe:
     params:
         adapter = config["adapter_sequence"],
         rev_adapter = config["rev_adapter_sequence"],
-        error_rate = config["cutadapt_error_rate"]
+        error_rate = config["cutadapt_error_rate"],
+        settings = config["cutadapt_params"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
     shell:
         """
-        cutadapt -e {params.error_rate} -a {params.adapter} -A {params.rev_adapter} -o {output.fastq1} \
+        cutadapt -e {params.error_rate} {params.settings} -a {params.adapter} -A {params.rev_adapter} -o {output.fastq1} \
         -p {output.fastq2} {input.R1} {input.R2} > {output.R1log}
         cp {output.R1log} {output.R2log}
         """
@@ -328,12 +329,13 @@ rule cutadapt_se:
         opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["trimming"]+".cutadapt.log")
     params:
         adapter=config["adapter_sequence"],
-        error_rate = config["cutadapt_error_rate"]
+        error_rate = config["cutadapt_error_rate"],
+        settings = config["cutadapt_params"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
     shell:
         """
-        cutadapt -e {params.error_rate} -a {params.adapter} -o {output.fastq} {input[0]} > {log}
+        cutadapt -e {params.error_rate} {params.settings} -a {params.adapter} -o {output.fastq} {input[0]} > {log}
         """
 
 rule download_phix:

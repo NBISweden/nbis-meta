@@ -35,6 +35,7 @@ cutadapt: False
 adapter_sequence: AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC # Adapter sequence for trimming. Shown here is for Illumina TruSeq Universal Adapter.
 rev_adapter_sequence: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT
 cutadapt_error_rate: 0.1 #Maximum allowed error rate as value between 0 and 1
+cutadapt_params: "" # Additional parameters for cutadapt
 # fastuniq
 fastuniq: False
 # filter phiX

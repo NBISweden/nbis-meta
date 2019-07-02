@@ -16,7 +16,7 @@ rule run_metabat:
         basename = opj(config["results_path"],"metabat","{group}","{l}","metabat")
     shell:
         """
-        metabat2 -i {input.fa} -a {input.depth} -m {wildcards.l} -t {threads} -o {params.basename}
+        metabat2 --seed 123 -i {input.fa} -a {input.depth} -m {wildcards.l} -t {threads} -o {params.basename}
         grep '>' {params.basename}*.fa | awk -F/ '{{print $NF}}' | sed 's/.fa:>/\t/g' > {output[0]}
         """
 
