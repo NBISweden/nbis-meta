@@ -25,10 +25,17 @@ ENV PATH="/opt/miniconda3/bin:${PATH}"
 ENV LC_ALL en_US.UTF-8
 ENV LC_LANG en_US.UTF-8
 
-# Add repositories
+# Add repository files
 COPY source ./nbis-meta
 COPY environment.yml ./nbis-meta
+COPY config ./nbis-meta
 COPY config_*.yml ./nbis-meta
+COPY gut_metagenome_samples.tsv ./nbis-meta
+COPY infant_gut_metagenome_samples.tsv ./nbis-meta
+COPY sfb_metagenome_novaseq_preprocessed_samples.tsv ./nbis-meta
+COPY sfb_metagenome_novaseq_samples.tsv ./nbis-meta
+COPY sfb_metagenome_samples.tsv ./nbis-meta
+COPY zhejiang_infant_gut_metagenome_samples.tsv ./nbis-meta
 COPY run.sh ./nbis-meta
 COPY Snakefile ./nbis-meta
 
