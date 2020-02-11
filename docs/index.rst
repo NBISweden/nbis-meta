@@ -30,11 +30,11 @@ NBIS Metagenomics Workflow
 
 Overview
 --------
-This is a snakemake workflow for rocessing and analysis of metagenomic
+This is a snakemake workflow for preprocessing and analysis of metagenomic
 datasets. It can handle single- and paired-end data and can run on a
 local laptop with either Linux or OSX, or in a cluster environment.
 
-The source code is available at `BitBucket <https://bitbucket.org/scilifelab-lts/nbis-meta>`_ and
+The source code is available at `GitHub <https://github.com/NBISweden/nbis-meta>`_ and
 is being developed as part of the `NBIS <http://nbis.se>`_ bioinformatics infrastructure.
 
 Installation
@@ -42,7 +42,7 @@ Installation
 **1. Clone the repository**
 Checkout the latest version of this repository (to your current directory)::
 
-    git clone https://bitbucket.org/scilifelab-lts/nbis-meta
+    git clone git@github.com:NBISweden/nbis-meta.git
     cd nbis-meta
 
 Change directory::
@@ -54,10 +54,10 @@ All the software needed to run this workflow is included as a
 `Conda <https://www.anaconda.com/>`_ environment file. See the conda `installation instructions <https://www.anaconda.com/download/>`_
 for how to install conda on your system.
 
-To create the environment :code:`nbis-meta` use the supplied :code:`envs/environment.yaml` file::
+To create the environment :code:`nbis-meta` use the supplied :code:`environment.yaml` file::
 
     mkdir envs/nbis-meta
-    conda env create -f envs/environment.yaml -p envs/nbis-meta
+    conda env create -f environment.yaml -p envs/nbis-meta
 
 Next, add this directory to the envs_dirs in your conda config (this is to simplify
 activation of the environment and so that the full path of the
