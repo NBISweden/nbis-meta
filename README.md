@@ -1,7 +1,6 @@
 # NBIS-Metagenomics
 A workflow for metagenomic projects
 
-[![Build status](https://img.shields.io/bitbucket/pipelines/scilifelab-lts/nbis-meta.svg)](https://img.shields.io/bitbucket/pipelines/scilifelab-lts/nbis-meta.svg)
 [![Documentation Status](https://readthedocs.org/projects/nbis-metagenomic-workflow/badge/?version=latest)](http://nbis-metagenomic-workflow.readthedocs.io/en/latest/?badge=latest)
 [![Python 3.5](https://img.shields.io/badge/python-3.5-blue.svg)](https://www.python.org/downloads/release/python-350/)
 [![Snakemake 4.4](https://img.shields.io/badge/snakemake-%E2%89%A54.4.0-brightgreen.svg?style=flat-square)](https://img.shields.io/badge/snakemake-%E2%89%A54.4.0-brightgreen.svg?style=flat-square)
@@ -22,7 +21,7 @@ Potential analyses include:
 Checkout the latest version of this repository:
 
 ```
-git clone https://bitbucket.org/scilifelab-lts/nbis-meta
+git clone https://github.com/NBISweden/nbis-meta.git
 ```
 
 Change directory:
@@ -51,9 +50,8 @@ conda env create -f envs/environment.yaml -p envs/nbis-meta
 This creates the `nbis-meta` environment inside the `envs/` directory and
 installs the environment there.
 
-Next, add this directory to the envs_dirs in your conda config (this is to simplify
-activation of the environment and so that the full path of the
-environment installation isn't shown in your bash prompt):
+Next, add this directory to the envs_dirs in your conda config (this is to 
+simplify activation of the environment.
 
 ```
 conda config --add envs_dirs $(pwd)/envs/
