@@ -50,7 +50,7 @@ sortmerna_dbs: ["rfam-5s-database-id98.fasta","rfam-5.8s-database-id98.fasta","s
 # 'paired_in' puts both reads in a pair into the 'rRNA' bin if one of them aligns (i.e. more strict)
 # 'paired_out' puts both reads in the 'other' bin
 sortmerna_paired_strategy: "paired_in"
-sortmerna_params: "--num_alignments 1 -v"
+sortmerna_params: "--num_alignments 1"
 
 ######################
 ### POSTPROCESSING ###

@@ -140,7 +140,7 @@ properties:
   sortmerna_params:
     type: string
     description: "Additional parameters for sortmerna"
-    default: "--num_alignments 1 -v"
+    default: "--num_alignments 1"
   ## Postprocessing ##
   markduplicates:
     type: boolean
