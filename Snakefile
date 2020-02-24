@@ -40,11 +40,11 @@ pipeline_report = config["pipeline_config_file"]
 inputs = [pipeline_report]
 # Download and format databases for annotation
 db_input = []
-include: "source/workflow/DB"
+include: "source/workflow/db.smk"
 inputs += db_input
 # Preprocess raw input (if no preprocessing, just produce the sample report for raw data)
 preprocess_input = []
-include: "source/workflow/Preprocess"
+include: "source/workflow/preprocess.smk"
 inputs += preprocess_input
 # Assemble
 assembly_input = []
