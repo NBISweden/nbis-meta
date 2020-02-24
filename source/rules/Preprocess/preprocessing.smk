@@ -55,65 +55,112 @@ rule link_files:
         opj(config["intermediate_path"],"preprocess","{sample}_{run}_{pair}.fastq.gz")
     message: "Linking {wildcards.sample}_{wildcards.run}_{wildcards.pair}.fastq.gz"
     run:
-        cmd = "ln -s "+os.path.abspath(samples[wildcards.sample][wildcards.run][wildcards.pair])+ " "+str(output)
+        cmd="ln -s {} {}".format(
+            os.path.abspath(
+                samples[wildcards.sample][wildcards.run][wildcards.pair]),
+                str(output))
         shell(cmd)
 
 rule sortmerna_merge_fastq:
+    """Merge fastq output from SortMeRNA"""
     input:
-        R1=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1.fastq.gz"),
-        R2=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2.fastq.gz")
+        R1=opj(config["intermediate_path"],"preprocess",
+               "{sample}_{run}_R1.fastq.gz"),
+        R2=opj(config["intermediate_path"],"preprocess",
+               "{sample}_{run}_R2.fastq.gz")
     output:
-        temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.fastq"))
-    message: "rule sortmerna_merge: Merging fastq files for SortMeRNA for {wildcards.sample}_{wildcards.run}"
+        temp(opj(config["intermediate_path"],"preprocess",
+                 "{sample}_{run}_merged.fastq"))
     params:
-        scratch = os.path.expandvars(config["scratch_path"]),
-        R1_unzipped = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_R1.fastq"),
-        R2_unzipped = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_R2.fastq"),
-        merged = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_merged.fastq"),
-        src = "source/utils/merge-paired-reads.sh"
+        scratch=os.path.expandvars(config["scratch_path"]),
+        R1_unzipped=opj(os.path.expandvars(config["scratch_path"]),
+                          "{sample}_{run}_R1.fastq"),
+        R2_unzipped=opj(os.path.expandvars(config["scratch_path"]),
+                        "{sample}_{run}_R2.fastq"),
+        merged=opj(os.path.expandvars(config["scratch_path"]),
+                   "{sample}_{run}_merged.fastq")
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*6
-    run:
-        if not os.path.isdir(params.scratch):
-            shell("mkdir -p {params.scratch}")
+    conda:
+        "../../../envs/preprocess.yml"
+    shell:
+        """
+        mkdir -p {params.scratch}
         # Unzip to scratch dir
-        shell("gunzip -c {input.R1} > {params.R1_unzipped}")
-        shell("gunzip -c {input.R2} > {params.R2_unzipped}")
-        shell("bash {params.src} {params.R1_unzipped} {params.R2_unzipped} {params.merged}")
-        shell("mv {params.merged} {output[0]}")
-        shell("rm {params.R1_unzipped} {params.R2_unzipped}")
+        gunzip -c {input.R1} > {params.R1_unzipped}
+        gunzip -c {input.R2} > {params.R2_unzipped}
+        # Merge
+        merge-paired-reads.sh \
+            {params.R1_unzipped} \
+            {params.R2_unzipped} \
+            {params.merged}
+        # Move output
+        mv {params.merged} {output[0]}
+        # Clean up
+        rm {params.R1_unzipped} {params.R2_unzipped}
+        """
+
+def get_sortmerna_ref_string(path, s):
+    """
+    Constructs the SortMeRNA --ref string
+
+    :param path: Resource path from config
+    :param s: Sortmerna databases from config
+    :return: STRING,STRING formatted string
+    """
+    files=["{p}/rRNA_databases/{db}".format(p=path, db=db)
+           for db in config["sortmerna_dbs"]]
+    ref_string =":".join(
+        ["{},{}".format(f,f) for f in files])
+    return ref_string
 
 rule sortmerna_fastq_pe:
+    """Run SortMeRNA on paired end input"""
     input:
-        opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.fastq"),
-        idx=expand(opj(config["resource_path"],"rRNA_databases","{file}.idx.stats"), file = config["sortmerna_dbs"])
+        fastq=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_merged.fastq"),
+        idx=expand(opj(config["resource_path"],"rRNA_databases","{file}.{suffix}"),
+            suffix=["bursttrie_0.dat","kmer_0.dat","pos_0.dat","stats"],
+            file=config["sortmerna_dbs"])
     output:
-        aligned = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.rRNA.fastq")),
-        other = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.non_rRNA.fastq"))
+        aligned=temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.rRNA.fastq")),
+        other=temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.non_rRNA.fastq"))
     log:
         opj(config["intermediate_path"],"preprocess","{sample}_{run}_pe.sortmerna.log")
     params:
-        paired_strategy = config["sortmerna_paired_strategy"],
-        score_params = config["sortmerna_params"],
-        other_prefix = opj(config["scratch_path"],"{sample}_{run}_merged.non_rRNA"),
-        aligned_prefix = opj(config["scratch_path"],"{sample}_{run}_merged.rRNA"),
-        scratch = config["scratch_path"]
-    message: "rule sortmerna_fastq_pe: Identifying rRNA sequences for {wildcards.sample}_{wildcards.run}"
+        paired_strategy=config["sortmerna_paired_strategy"],
+        score_params=config["sortmerna_params"],
+        other_prefix=opj(config["scratch_path"],"{sample}_{run}_merged.non_rRNA"),
+        aligned_prefix=opj(config["scratch_path"],"{sample}_{run}_merged.rRNA"),
+        scratch=config["scratch_path"],
+        ref_string=get_sortmerna_ref_string(config["resource_path"],
+                                            config["sortmerna_dbs"])
     threads: 10
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
-    run:
-        shell("mkdir -p {params.scratch}")
-        # Generate ref_db string
-        ref_string = ""
-        for f in input.idx:
-            ref_string+="{},{}:".format(f.replace(".idx.stats",""),f.replace(".stats",""))
-        ref_string = ref_string.rstrip(":")
-        # Run sortmerna
-        shell("sortmerna --ref {ref_string} --reads {input[0]} -a {threads} --{params.paired_strategy} --blast 1 --aligned {params.aligned_prefix} --other {params.other_prefix} {params.score_params} --log -v --fastx")
-        shell("mv {params.aligned_prefix}.fastq {output.aligned}")
-        shell("mv {params.aligned_prefix}.log {log}")
-        shell("mv {params.other_prefix}.fastq {output.other}")
+    conda:
+        "../../../envs/preprocess.yml"
+    shell:
+         """
+         mkdir -p {params.scratch} 
+         # Run SortMeRNA
+         sortmerna \
+            --blast 1 \
+            --log \
+            -v \
+            --fastx \
+            --ref {params.ref_string} \
+            --reads {input[0]} \
+            -a {threads} \
+            --{params.paired_strategy} \
+            --aligned {params.aligned_prefix} \
+            --other {params.other_prefix} \
+            {params.score_params}
+         
+         mv {params.aligned_prefix}.fastq {output.aligned}
+         mv {params.aligned_prefix}.log {log}
+         mv {params.other_prefix}.fastq {output.other}
+         """
 
 rule sortmerna_split_rRNA_fastq:
     input:
@@ -124,14 +171,15 @@ rule sortmerna_split_rRNA_fastq:
     params:
         tmpdir=opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna"),
         R1 = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna","{sample}_{run}_R1.rRNA.fastq"),
-        R2 = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna","{sample}_{run}_R2.rRNA.fastq"),
-        src = "source/utils/unmerge-paired-reads.sh"
+        R2 = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna","{sample}_{run}_R2.rRNA.fastq")
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*6
+    conda:
+        "../../../envs/preprocess.yml"
     shell:
         """
         mkdir -p {params.tmpdir}
-        bash {params.src} {input.aligned} {params.R1} {params.R2}
+        unmerge-paired-reads.sh {input.aligned} {params.R1} {params.R2}
         gzip {params.R1}
         gzip {params.R2}
         mv {params.R1}.gz {output.R1}
@@ -150,6 +198,8 @@ rule sortmerna_split_other_fastq:
         R2 = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna","{sample}_{run}_R2.non_rRNA.fastq")
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*6
+    conda:
+        "../../../envs/preprocess.yml"
     shell:
         """
         mkdir -p {params.tmpdir}
@@ -172,8 +222,10 @@ rule sortmerna_unzip_fastq:
 
 rule sortmerna_fastq_se:
     input:
-        opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.fastq"),
-        idx=expand(opj(config["resource_path"],"rRNA_databases","{file}.idx.stats"), file = config["sortmerna_dbs"])
+        fastq=opj(config["intermediate_path"],"preprocess",
+                  "{sample}_{run}_se.fastq"),
+        idx=expand(opj(config["resource_path"],"rRNA_databases",
+                       "{file}.idx.stats"), file = config["sortmerna_dbs"])
     output:
         aligned = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.rRNA.fastq")),
         other = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.non_rRNA.fastq"))
@@ -183,23 +235,27 @@ rule sortmerna_fastq_se:
         score_params = config["sortmerna_params"],
         other_prefix = opj(config["scratch_path"],"{sample}_{run}_se.non_rRNA"),
         aligned_prefix = opj(config["scratch_path"],"{sample}_{run}_se.rRNA"),
-        scratch = config["scratch_path"]
-    message: "rule sortmerna_fastq_se: Identifying rRNA sequences for {wildcards.sample}_{wildcards.run}"
+        scratch = config["scratch_path"],
+        ref_string=get_sortmerna_ref_string(config["resource_path"],
+                                            config["sortmerna_dbs"])
     threads: 10
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
-    run:
-        shell("mkdir -p {params.scratch}")
-        # Generate ref_db string
-        ref_string = ""
-        for f in input.idx:
-            ref_string+="{},{}:".format(f.replace(".idx.stats",""),f.replace(".stats",""))
-        ref_string = ref_string.rstrip(":")
-        # Run sortmerna
-        shell("sortmerna --ref {ref_string} --reads {input[0]} -a {threads} --blast 1 --aligned {params.aligned_prefix} --other {params.other_prefix} {params.score_params} --log -v --fastx")
-        shell("mv {params.aligned_prefix}.fastq {output.aligned}")
-        shell("mv {params.aligned_prefix}.log {output.log}")
-        shell("mv {params.other_prefix}.fastq {output.other}")
+    conda:
+        "../../../envs/preprocess.yml"
+    shell:
+        """
+        mkdir -p {params.scratch}
+        
+        sortmerna --blast 1 --log -v --fastx \  
+        --ref {params.ref_string} --reads {input[0]} -a {threads} --blast 1 \
+        --aligned {params.aligned_prefix} --other {params.other_prefix} \ 
+        {params.score_params}
+        
+        mv {params.aligned_prefix}.fastq {output.aligned}
+        mv {params.aligned_prefix}.log {output.log}
+        mv {params.other_prefix}.fastq {output.other}
+        """
 
 rule sortmerna_zip_aligned_fastq:
     input:
