@@ -41,12 +41,6 @@ config_params.append((" - System",system))
 
 config["tmpdir"] = config["temp_path"]
 
-# Figure out trimmomatic home if configuration path not available
-if not os.path.exists(config["trimmomatic_home"]) and config["trimmomatic"]:
-    config["trimmomatic_home"] = envdir+"/share/trimmomatic/"
-    if not os.path.exists(config["trimmomatic_home"]):
-        print("Trimmomatic path not found",file=sys.stderr)
-
 # Locate picard.jar if markduplicates is used
 if not config["picard_jar"] and config["markduplicates"]:
     for line in shell("find {envdir} -name picard.jar", iterable = True):
