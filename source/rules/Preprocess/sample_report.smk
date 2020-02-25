@@ -2,6 +2,7 @@ localrules:
     samples_qc_report
 
 rule fastqc:
+    """Run fastqc on preprocessed data"""
     input:
         opj(config["intermediate_path"],"preprocess",
             "{sample}_{run}_{pair}"+PREPROCESS+".fastq.gz")
@@ -16,9 +17,7 @@ rule fastqc:
     conda:
         "../../../envs/preprocess.yml"
     shell:
-        """
-        fastqc -q --noextract -o {params.results_path} {input}
-        """
+        "fastqc -q --noextract -o {params.results_path} {input}"
 
 def get_fastqc_files(wildcards):
     """Get all fastqc output"""
@@ -38,6 +37,12 @@ def get_fastqc_files(wildcards):
     return files
 
 def get_trim_logs(wildcards):
+    """
+    Get all trimming logs from Trimmomatic and/or cutadapt
+
+    :param wildcards: wildcards from snakemake
+    :return: list of files
+    """
     files = []
     if not config["trimmomatic"] and not config["cutadapt"]:
         return files
@@ -56,6 +61,12 @@ def get_trim_logs(wildcards):
     return files
 
 def get_filt_logs(wildcards):
+    """
+    Get all filter logs from Phix filtering
+
+    :param wildcards: wildcards from snakemake
+    :return: list of files
+    """
     files = []
     if not config["phix_filter"]: return files
     for sample in samples.keys():
@@ -72,6 +83,12 @@ def get_filt_logs(wildcards):
     return files
 
 def get_sortmerna_logs(wildcards):
+    """
+    Get all logs from SortMeRNA
+
+    :param wildcards: wildcards from snakemake
+    :return: list of files
+    """
     files = []
     if not config["sortmerna"]:
         return files
@@ -87,6 +104,7 @@ def get_sortmerna_logs(wildcards):
     return files
 
 rule aggregate_logs:
+    """Rule for aggregating preprocessing logs"""
     input:
         trimlogs=get_trim_logs,
         sortmernalogs=get_sortmerna_logs,
@@ -107,7 +125,7 @@ rule aggregate_logs:
             shell("cp {file} {params.output_dir}")
 
 rule samples_qc_report:
-    """ Summarize sample QC statistics in a report """
+    """Summarize sample QC statistics in a report """
     input:
         opj(config["report_path"],"multiqc_input","flag")
     output:
@@ -118,7 +136,8 @@ rule samples_qc_report:
         "shallow"
     params:
         config="config/multiqc_preprocess_config.yaml",
-        output_dir=opj(config["report_path"])
+        output_dir=opj(config["report_path"]),
+        input_dir=opj(config["report_path"],"multiqc_input")
     conda:
         "../../../envs/preprocess.yml"
     shell:
@@ -129,4 +148,5 @@ rule samples_qc_report:
             -n samples_report.html \
             -o {params.output_dir} \
             $(dirname {input})
+        rm -r {params.input_dir}
         """
