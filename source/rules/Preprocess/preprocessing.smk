@@ -290,68 +290,101 @@ rule sortmerna_link_pe:
 
 rule sortmerna_link_se:
     input:
-        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se."+config["sortmerna_keep"]+".fastq.gz")
+        se = opj(config["intermediate_path"],"preprocess",
+                 "{sample}_{run}_se."+config["sortmerna_keep"]+".fastq.gz")
     output:
-        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.sortmerna.fastq.gz")
+        se = opj(config["intermediate_path"],"preprocess",
+                 "{sample}_{run}_se.sortmerna.fastq.gz")
     run:
         link(input.se, output.se)
 
+def get_trimmomatic_string(seq_type):
+    """
+    Generates trimsetting string for Trimmomatic
+
+    :param seq_type: PE or SE depending on sequencing type
+    :return: trimsettings string
+    """
+    trim_adapters=config["trim_adapters"]
+    adapter_fasta_dir="$CONDA_PREFIX/share/trimmomatic/adapters"
+    adapter="{}/{}.fa".format(adapter_fasta_dir,
+                            config["trimmomatic_{}_adapter".format(seq_type)])
+    adapter_params=config["{}_adapter_params".format(seq_type)]
+    pre_adapter_params=config["{}_pre_adapter_params".format(seq_type)]
+    post_adapter_params=config["{}_post_adapter_params".format(seq_type)]
+    trimsettings=pre_adapter_params
+    if trim_adapters:
+        trimsettings+=" ILLUMINACLIP:"+adapter+":"+adapter_params
+    trimsettings+=" "+post_adapter_params
+    return trimsettings
+
 rule trimmomatic_pe:
     input:
-        R1=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["trimming"]+".fastq.gz"),
-        R2=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["trimming"]+".fastq.gz")
+        R1=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R1"+preprocess_suffices["trimming"]+".fastq.gz"),
+        R2=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R2"+preprocess_suffices["trimming"]+".fastq.gz")
     output:
-        R1P=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["trimming"]+".trimmomatic.fastq.gz"),
-        R1U=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["trimming"]+".trimmomatic.U.fastq.gz"),
-        R2P=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["trimming"]+".trimmomatic.fastq.gz"),
-        R2U=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["trimming"]+".trimmomatic.U.fastq.gz"),
-        R1log=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["trimming"]+".trimmomatic.log"),
-        R2log=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["trimming"]+".trimmomatic.log")
+        R1P=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R1"+preprocess_suffices["trimming"]+".trimmomatic.fastq.gz"),
+        R1U=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R1"+preprocess_suffices["trimming"]+".trimmomatic.U.fastq.gz"),
+        R2P=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R2"+preprocess_suffices["trimming"]+".trimmomatic.fastq.gz"),
+        R2U=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R2"+preprocess_suffices["trimming"]+".trimmomatic.U.fastq.gz"),
+        R1log=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R1"+preprocess_suffices["trimming"]+".trimmomatic.log"),
+        R2log=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R2"+preprocess_suffices["trimming"]+".trimmomatic.log")
     params:
-        jarpath=config["trimmomatic_home"]+"/trimmomatic.jar",
-        trim_adapters = config["trim_adapters"],
-        adapter="ILLUMINACLIP:"+config["trimmomatic_home"]+"/adapters/{}.fa".format(config["trimmomatic_pe_adapter"]),
-        adapter_params = config["pe_adapter_params"],
-        pre_adapter_params = config["pe_pre_adapter_params"],
-        post_adapter_params = config["pe_post_adapter_params"]
+        trim_string=get_trimmomatic_string("pe")
     threads: 10
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
-    message: "rule trimmomatic_pe: Trimming reads for {wildcards.sample}_{wildcards.run}"
-    run:
-        trimsettings = params.pre_adapter_params
-        if params.trim_adapters:
-            trimsettings+=" "+params.adapter+":"+params.adapter_params
-        trimsettings+=" "+params.post_adapter_params
-        shell("echo Running trimmomatic with settings: {trimsettings}")
-        shell("java -jar {params.jarpath} PE -threads {threads} {input.R1} {input.R2} {output.R1P} {output.R1U} {output.R2P} {output.R2U} {trimsettings} 2>{output.R1log}")
-        shell("sed 's/{wildcards.sample}_{wildcards.run}_R1/{wildcards.sample}_{wildcards.run}_R2/g' {output.R1log} > {output.R2log}")
+    conda:
+        "../../../envs/preprocess.yml"
+    shell:
+        """
+        trimmomatic PE \
+            -threads {threads} \
+            {input.R1} {input.R2} \
+            {output.R1P} {output.R1U} \
+            {output.R2P} {output.R2U} \
+            {params.trim_string} \
+            2>{output.R1log}
+        sed \
+            's/{wildcards.sample}_{wildcards.run}_R1/{wildcards.sample}_{wildcards.run}_R2/g' \
+            {output.R1log} > {output.R2log}    
+        """
 
 rule trimmomatic_se:
+    """Run Trimmomatic on single-end input"""
     input:
-        opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["trimming"]+".fastq.gz")
+        opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_se"+preprocess_suffices["trimming"]+".fastq.gz")
     output:
-        fastq=opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["trimming"]+".trimmomatic.fastq.gz"),
+        opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_se"+preprocess_suffices["trimming"]+".trimmomatic.fastq.gz"),
     log:
-        opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["trimming"]+".trimmomatic.log")
+        opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_se"+preprocess_suffices["trimming"]+".trimmomatic.log")
     params:
-        jarpath=config["trimmomatic_home"]+"/trimmomatic.jar",
-        trim_adapters = config["trim_adapters"],
-        adapter="ILLUMINACLIP:"+config["trimmomatic_home"]+"/adapters/{}.fa".format(config["trimmomatic_se_adapter"]),
-        adapter_params = config["se_adapter_params"],
-        pre_adapter_params = config["se_pre_adapter_params"],
-        post_adapter_params = config["se_post_adapter_params"]
+        trim_string=get_trimmomatic_string("se")
     threads: 10
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
-    message: "rule trimmomatic_se: Trimming reads for {wildcards.sample}_{wildcards.run}"
-    run:
-        trimsettings = params.pre_adapter_params
-        if params.trim_adapters:
-            trimsettings+=" "+params.adapter+":"+params.adapter_params
-        trimsettings+=" "+params.post_adapter_params
-        shell("echo Running trimmomatic with settings: {trimsettings}")
-        shell("java -jar {params.jarpath} SE -threads {threads} {input} {output.fastq} {trimsettings} 2>{log}")
+    conda:
+        "../../../envs/preprocess.yml"
+    shell:
+        """
+        trimmomatic SE \
+            -threads {threads} \
+            {input} \
+            {output} \
+            {params.trim_string} \
+            2>{log}
+        """
 
 rule cutadapt_pe:
     input:
