@@ -564,27 +564,42 @@ rule filter_phix_se:
 
 rule fastuniq:
     input:
-        R1=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["fastuniq"]+".fastq.gz"),
-        R2=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["fastuniq"]+".fastq.gz")
+        R1=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R1"+preprocess_suffices["fastuniq"]+".fastq.gz"),
+        R2=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R2"+preprocess_suffices["fastuniq"]+".fastq.gz")
     output:
-        R1=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["fastuniq"]+".fastuniq.fastq.gz"),
-        R2=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["fastuniq"]+".fastuniq.fastq.gz"),
+        R1=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R1"+preprocess_suffices["fastuniq"]+".fastuniq.fastq.gz"),
+        R2=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R2"+preprocess_suffices["fastuniq"]+".fastuniq.fastq.gz"),
     params:
-        R1_intmp = opj(config["scratch_path"],"{sample}_{run}_R1"+preprocess_suffices["fastuniq"]+".fastq"),
-        R2_intmp = opj(config["scratch_path"],"{sample}_{run}_R2"+preprocess_suffices["fastuniq"]+".fastq"),
-        R1_outtmp = opj(config["scratch_path"],"{sample}_{run}_R1"+preprocess_suffices["fastuniq"]+".fastuniq.fastq"),
-        R2_outtmp = opj(config["scratch_path"],"{sample}_{run}_R2"+preprocess_suffices["fastuniq"]+".fastuniq.fastq"),
-        file_list = opj(config["scratch_path"],"{sample}_{run}.filelist")
+        R1_intmp=opj(config["scratch_path"],
+            "{sample}_{run}_R1"+preprocess_suffices["fastuniq"]+".fastq"),
+        R2_intmp=opj(config["scratch_path"],
+            "{sample}_{run}_R2"+preprocess_suffices["fastuniq"]+".fastq"),
+        R1_outtmp=opj(config["scratch_path"],
+            "{sample}_{run}_R1"+preprocess_suffices["fastuniq"]+".fastuniq.fastq"),
+        R2_outtmp=opj(config["scratch_path"],
+            "{sample}_{run}_R2"+preprocess_suffices["fastuniq"]+".fastuniq.fastq"),
+        file_list=opj(config["scratch_path"],
+            "{sample}_{run}.filelist")
     threads: 4
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
+    conda:
+        "../../../envs/preprocess.yml"
     shell:
         """
         gunzip -c {input.R1} > {params.R1_intmp}
         gunzip -c {input.R2} > {params.R2_intmp}
         echo {params.R1_intmp} > {params.file_list}
         echo {params.R2_intmp} >> {params.file_list}
-        fastuniq -i {params.file_list} -t q -o {params.R1_outtmp} -p {params.R2_outtmp}
+        fastuniq \
+            -i {params.file_list} \
+            -t q \
+            -o {params.R1_outtmp} \
+            -p {params.R2_outtmp}
         gzip -c {params.R1_outtmp} > {output.R1}
         gzip -c {params.R2_outtmp} > {output.R2}
         """
@@ -592,9 +607,11 @@ rule fastuniq:
 rule fastuniq_se:
     """Dummy rule for fastuniq on single-end input"""
     input:
-        se=opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["fastuniq"]+".fastq.gz")
+        se=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_se"+preprocess_suffices["fastuniq"]+".fastq.gz")
     output:
-        se=opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["fastuniq"]+".fastuniq.fastq.gz")
+        se=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_se"+preprocess_suffices["fastuniq"]+".fastuniq.fastq.gz")
     shell:
         """
         mv {input.se} {output.se}
@@ -616,7 +633,6 @@ rule avg_seq_length:
         all_preprocessed
     output:
         opj(config["intermediate_path"],"preprocess","read_lengths.tab")
-    message: "Calculating average read length for samples. Output stored in {output}."
     run:
         import numpy as np
         sample_lengths = {}
