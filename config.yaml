@@ -3,7 +3,7 @@
 #############
 # NOTE: Paths should not include trailing "/"
 workdir: .
-sample_list: samples/sample_annotation_example.tab
+sample_list: samples/example_sample_list.tsv
 taxdb: resources/taxonomy
 results_path: results
 intermediate_path: results/intermediate
