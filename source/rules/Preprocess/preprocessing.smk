@@ -279,21 +279,25 @@ rule sortmerna_zip_other_fastq:
 
 rule sortmerna_link_pe:
   input:
-    R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1."+config["sortmerna_keep"]+".fastq.gz"),
-    R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2."+config["sortmerna_keep"]+".fastq.gz")
+    R1=opj(config["intermediate_path"],"preprocess",
+                "{sample}_{run}_R1."+config["sortmerna_keep"]+".fastq.gz"),
+    R2=opj(config["intermediate_path"],"preprocess",
+             "{sample}_{run}_R2."+config["sortmerna_keep"]+".fastq.gz")
   output:
-    R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1.sortmerna.fastq.gz"),
-    R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2.sortmerna.fastq.gz")
+    R1=opj(config["intermediate_path"],"preprocess",
+             "{sample}_{run}_R1.sortmerna.fastq.gz"),
+    R2=opj(config["intermediate_path"],"preprocess",
+           "{sample}_{run}_R2.sortmerna.fastq.gz")
   run:
     link(input.R1, output.R1)
     link(input.R2, output.R2)
 
 rule sortmerna_link_se:
     input:
-        se = opj(config["intermediate_path"],"preprocess",
+        se=opj(config["intermediate_path"],"preprocess",
                  "{sample}_{run}_se."+config["sortmerna_keep"]+".fastq.gz")
     output:
-        se = opj(config["intermediate_path"],"preprocess",
+        se=opj(config["intermediate_path"],"preprocess",
                  "{sample}_{run}_se.sortmerna.fastq.gz")
     run:
         link(input.se, output.se)
@@ -388,41 +392,66 @@ rule trimmomatic_se:
 
 rule cutadapt_pe:
     input:
-        R1=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["trimming"]+".fastq.gz"),
-        R2=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["trimming"]+".fastq.gz")
+        R1=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R1"+preprocess_suffices["trimming"]+".fastq.gz"),
+        R2=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R2"+preprocess_suffices["trimming"]+".fastq.gz")
     output:
-        fastq1=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["trimming"]+".cutadapt.fastq.gz"),
-        fastq2=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["trimming"]+".cutadapt.fastq.gz"),
-        R1log=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["trimming"]+".cutadapt.log"),
-        R2log=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["trimming"]+".cutadapt.log")
+        fastq1=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R1"+preprocess_suffices["trimming"]+".cutadapt.fastq.gz"),
+        fastq2=opj(config["intermediate_path"],
+            "preprocess","{sample}_{run}_R2"+preprocess_suffices["trimming"]+".cutadapt.fastq.gz"),
+        R1log=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R1"+preprocess_suffices["trimming"]+".cutadapt.log"),
+        R2log=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R2"+preprocess_suffices["trimming"]+".cutadapt.log")
     params:
-        adapter = config["adapter_sequence"],
-        rev_adapter = config["rev_adapter_sequence"],
-        error_rate = config["cutadapt_error_rate"]
+        adapter=config["adapter_sequence"],
+        rev_adapter=config["rev_adapter_sequence"],
+        error_rate=config["cutadapt_error_rate"]
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*4
+        runtime=lambda wildcards, attempt: attempt**2*60*4
+    conda:
+        "../../../envs/preprocess.yml"
+    threads: 10
     shell:
         """
-        cutadapt -e {params.error_rate} -a {params.adapter} -A {params.rev_adapter} -o {output.fastq1} \
-        -p {output.fastq2} {input.R1} {input.R2} > {output.R1log}
+        cutadapt \
+            -e {params.error_rate} \
+            -a {params.adapter} \
+            -A {params.rev_adapter} \
+            -o {output.fastq1} \
+            -p {output.fastq2} \
+            -j {threads} \
+            {input.R1} {input.R2} > {output.R1log}
         cp {output.R1log} {output.R2log}
         """
 
 rule cutadapt_se:
     input:
-        opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["trimming"]+".fastq.gz")
+        opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_se"+preprocess_suffices["trimming"]+".fastq.gz")
     output:
-        fastq=opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["trimming"]+".cutadapt.fastq.gz"),
+        opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_se"+preprocess_suffices["trimming"]+".cutadapt.fastq.gz")
     log:
-        opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["trimming"]+".cutadapt.log")
+        opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_se"+preprocess_suffices["trimming"]+".cutadapt.log")
     params:
         adapter=config["adapter_sequence"],
-        error_rate = config["cutadapt_error_rate"]
+        error_rate=config["cutadapt_error_rate"]
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*4
+        runtime=lambda wildcards, attempt: attempt**2*60*4
+    conda:
+        "../../../envs/preprocess.yml"
+    threads: 10
     shell:
         """
-        cutadapt -e {params.error_rate} -a {params.adapter} -o {output.fastq} {input[0]} > {log}
+        cutadapt \
+            -e {params.error_rate} \
+            -a {params.adapter} \
+            -j {threads} \
+            -o {output[0]} {input[0]} > {log}
         """
 
 rule download_phix:
