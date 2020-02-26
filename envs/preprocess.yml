@@ -10,3 +10,4 @@ dependencies:
   - fastqc=0.11.9
   - multiqc=1.8
   - fastuniq=1.1
+  - bowtie2=2.3.5.1
