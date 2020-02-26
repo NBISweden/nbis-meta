@@ -20,7 +20,7 @@ rule index_db:
             "{{file}}.{suffix}"), suffix=["bursttrie_0.dat","kmer_0.dat",
                                               "pos_0.dat","stats"])
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*5
+        runtime=lambda wildcards, attempt: attempt**2*60*5
     conda:
         "../../../envs/preprocess.yml"
     shell:
