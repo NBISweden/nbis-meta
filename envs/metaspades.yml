@@ -1,0 +1,5 @@
+channels:
+  - bioconda
+dependencies:
+  - python=3.8.1
+  - spades=3.14.0

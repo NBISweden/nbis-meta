@@ -65,72 +65,113 @@ def generate_html(df):
 # Assembly #
 ############
 
+def rename_records(f, fh, i):
+    """
+    Prepends a number to read ids
+
+    :param f: Input fastq file (gzipped)
+    :param fh: Output filehandle
+    :param i: File index to prepend to reads
+    :return: Output filehandle
+    """
+    for record in SeqIO.parse(gz.open(f, 'rt'), 'fastq'):
+        record.id = "{}_{}".format(i, record.id)
+        SeqIO.write(record, fh, "fastq")
+    return fh
+
 if config["metaspades"]:
-    rule run_metaspades:
+    rule generate_metaspades_input_list:
+        """Generate input files for use with Metaspades"""
         input:
             lambda wildcards: get_all_group_files(wildcards.group)
+        output:
+            R1=temp(opj(config["results_path"],"assembly",
+                        "{group}","R1.fq")),
+            R2=temp(opj(config["results_path"],"assembly",
+                        "{group}","R2.fq")),
+            se=touch(temp(opj(config["results_path"],"assembly",
+                        "{group}","se.fq")))
+        run:
+            files = {"R1": [], "R2": [], "se": []}
+            # Collect all files belonging to the assembly group
+            for sample in assemblyGroups[wildcards.group].keys():
+                for run in assemblyGroups[wildcards.group][sample]:
+                    for pair in assemblyGroups[wildcards.group][sample][run].keys():
+                        files[pair].append(assemblyGroups[wildcards.group][sample][run][pair][0])
+            # Rename and concatenate reads (required for Metaspades)
+            with open(output.R1, 'w') as fh1, open(output.R2, 'w') as fh2, open(output.se, 'w') as fhse:
+                for i, f in enumerate(files["R1"]):
+                    f2=files["R2"][i]
+                    fh1 = rename_records(f, fh1, i)
+                    fh2 = rename_records(f2, fh2, i)
+                for i, f in enumerate(files["se"], start=i+1):
+                    fhse = rename_records(f, fhse, i)
+
+    rule run_metaspades:
+        input:
+            R1=opj(config["results_path"],"assembly",
+                        "{group}","R1.fq"),
+            R2=opj(config["results_path"],"assembly",
+                        "{group}","R2.fq"),
+            se=opj(config["results_path"],"assembly",
+                        "{group}","se.fq")
         output:
             opj(config["results_path"],"assembly","{group}","final_contigs.fa"),
             opj(config["results_path"],"assembly","{group}","spades.log")
         params:
-            intermediate_contigs=opj(config["intermediate_path"],"assembly","{group}","intermediate_contigs"),
-            corrected=opj(config["intermediate_path"],"assembly","{group}","corrected"),
+            intermediate_contigs=opj(config["intermediate_path"],"assembly",
+                                     "{group}","intermediate_contigs"),
+            corrected=opj(config["intermediate_path"],"assembly",
+                          "{group}","corrected"),
             additional_settings=config["metaspades_additional_settings"],
-            tmp=opj(config["tmpdir"],"{group}.metaspades")
+            tmp=opj(config["tmpdir"],"{group}.metaspades"),
+            output_dir=opj(config["results_path"],"assembly","{group}")
         threads: config["assembly_threads"]
         resources:
-            runtime = lambda wildcards, attempt: attempt**2*60*4
-        run:
+            runtime=lambda wildcards, attempt: attempt**2*60*4
+        conda:
+            "../../../envs/metaspades.yml"
+        shell:
+            """
             # Create directories
-            output_dir=os.path.dirname(output[0])
-            shell("mkdir -p {output_dir}")
-            shell("mkdir -p {}".format(config["tmpdir"]))
-            shell("mkdir -p {params.tmp}")
-            # Gather files
-            files = {"R1": [], "R2": []}
-            for sample in assemblyGroups[wildcards.group].keys():
-                for run in assemblyGroups[wildcards.group][sample]:
-                    if not is_pe(samples[sample][run]):
-                        continue
-                    files["R1"].append(assemblyGroups[wildcards.group][sample][run]["R1"][0])
-                    files["R2"].append(assemblyGroups[wildcards.group][sample][run]["R2"][0])
-            # If more than one sample, merge forward and reverse files separately
-            clean = False
-            if len(files["R1"])>1:
-                R1 = opj(params.tmp,"R1.fastq")
-                R2 = opj(params.tmp,"R2.fastq")
-                for i, f in enumerate(files["R1"]):
-                    f2 = files["R2"][i]
-                    shell("seqtk rename {f} {i}_ >> {R1}")
-                    shell("seqtk rename {f2} {i}_ >> {R2}")
-                clean = True
-            else:
-                R1 = files["R1"][0]
-                R2 = files["R2"][0]
-            shell("""
-                metaspades.py -t {threads} -1 {R1} -2 {R2} -o {params.tmp} --tmp-dir {params.tmp} \
-                {params.additional_settings}
-                """)
+            mkdir -p {params.tmp}
+            # Only use single-end if present
+            if [ -s {input.se} ]; then
+                single="-s {input.se}"
+            else
+                single=""
+            fi
+            metaspades.py \
+                -t {threads} \
+                -1 {input.R1} \
+                -2 {input.R2} \
+                $single \
+                -o {params.tmp}
+            
             # If set to keep intermediate contigs, move to intermediate folder before deleting
-            if config["metaspades_keep_intermediate"]:
-                shell("mkdir -p {params.intermediate_contigs}")
-                shell("rsync -azv {params.tmp}/K* {params.intermediate_contigs}")
-            if config["metaspades_keep_corrected"]:
-                shell("mkdir -p {params.corrected}")
-                shell("rsync -azv {params.tmp}/corrected {params.corrected}")
+            if [ "{config[metaspades_keep_intermediate]}" == "True" ]; then
+                mkdir -p {params.intermediate_contigs}
+                rsync -azv {params.tmp}/K* {params.intermediate_contigs}
+            fi
+            if [ "{config[metaspades_keep_corrected]}" == "True" ]; then
+                mkdir -p {params.corrected}
+                rsync -azv {params.tmp}/corrected {params.corrected}
+            fi
+            
             # Clear intermediate contigs
-            shell("rm -rf {params.tmp}/K*")
+            rm -rf {params.tmp}/K*
             # Clear corrected reads dir
-            shell("rm -rf {params.tmp}/corrected")
+            rm -rf {params.tmp}/corrected
             # Sync tmp output to outdir before removing
-            if clean:
-                shell("rm {R1} {R2}")
-            shell("rsync -azv {params.tmp}/* {output_dir}")
-            shell("rm -rf {params.tmp}")
-            shell("mv {output_dir}/scaffolds.fasta {output_dir}/final_contigs.fa")
+            rsync -azv {params.tmp}/* {params.output_dir}
+            rm -rf {params.tmp}
+            mv {params.output_dir}/scaffolds.fasta {params.output_dir}/final_contigs.fa
+            """
+
 
 else:
     rule generate_megahit_input_list:
+        """Generate input lists for Megahit"""
         input:
             lambda wildcards: get_all_group_files(wildcards.group)
         output:
@@ -146,13 +187,10 @@ else:
                 for run in assemblyGroups[wildcards.group][sample]:
                     for pair in assemblyGroups[wildcards.group][sample][run].keys():
                         files[pair].append(assemblyGroups[wildcards.group][sample][run][pair][0])
-            R1 = ",".join(files["R1"])
-            R2 = ",".join(files["R2"])
-            se = ",".join(files["se"])
             with open(output.R1, 'w') as fh1, open(output.R2, 'w') as fh2, open(output.se, 'w') as fhse:
-                fh1.write(R1)
-                fh2.write(R2)
-                fhse.write(se)
+                fh1.write(",".join(files["R1"]))
+                fh2.write(",".join(files["R2"]))
+                fhse.write(",".join(files["se"]))
 
     rule run_megahit:
         input:
@@ -175,7 +213,7 @@ else:
         resources:
             runtime=lambda wildcards, attempt: attempt**2*60*4
         conda:
-            "../../../envs/assembly.yml"
+            "../../../envs/megahit.yml"
         shell:
             """
             rm -rf {params.tmp}
@@ -217,6 +255,7 @@ else:
             """
 
 rule write_bed:
+    """Creates bed-format file from assembly"""
     input:
         opj(config["results_path"],"assembly","{group}","final_contigs.fa")
     output:
