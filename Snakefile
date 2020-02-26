@@ -51,7 +51,7 @@ assembly_input = []
 annotation_input = []
 binning_input = []
 if config["assembly"]:
-    include: "source/workflow/Assembly"
+    include: "source/workflow/assembly.smk"
     inputs += assembly_input
     # Rule sets that depend on de-novo assembly
     # Annotate
