@@ -53,7 +53,7 @@ rule featurecount_se:
 rule normalize_featurecount:
     input:
         opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_{seq_type}.fc.tab"),
-        opj(config["intermediate_path"],"preprocess","read_lengths.tab")
+        opj(config["intermediate_path"],"preprocess","read_lengths.tsv")
     output:
         opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_{seq_type}.fc.tpm.tab"),
         opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_{seq_type}.fc.raw.tab")

@@ -93,7 +93,7 @@ rule count_se:
 rule normalize:
     input:
         counts = opj(config["results_path"],"refmap","featureCount","{sample}_{run}_{seq_type}.fc.tab"),
-        readlengths_file = opj(config["intermediate_path"],"preprocess","read_lengths.tab")
+        readlengths_file = opj(config["intermediate_path"],"preprocess","read_lengths.tsv")
     output:
         raw = opj(config["results_path"],"refmap","featureCount","{sample}_{run}_{seq_type}.fc.raw.tab"),
         tpm = opj(config["results_path"],"refmap","featureCount","{sample}_{run}_{seq_type}.fc.tpm.tab")

@@ -617,38 +617,15 @@ rule fastuniq_se:
         mv {input.se} {output.se}
         """
 
-def all_preprocessed(wildcards):
-    files = []
-    for sample in samples.keys():
-        for run in samples[sample].keys():
-            if "R2" not in samples[sample][run].keys():
-                files.append(opj(config["intermediate_path"],"preprocess","{}_{}_se{}.fastq.gz".format(sample,run,PREPROCESS)))
-            else:
-                files.append(opj(config["intermediate_path"],"preprocess","{}_{}_R1{}.fastq.gz".format(sample,run,PREPROCESS)))
-    return files
-
 rule avg_seq_length:
+    """Extracts average sequence lengths from FastQC"""
     input:
-        # Use function to set all preprocessed files as input target
-        all_preprocessed
+        "results/report/samples_report_data/multiqc_general_stats.txt"
     output:
-        opj(config["intermediate_path"],"preprocess","read_lengths.tab")
+        opj(config["intermediate_path"],"preprocess","read_lengths.tsv")
     run:
-        import numpy as np
-        sample_lengths = {}
-        lengths = {}
-        for f in input:
-            basename = os.path.basename(f)
-            sample_run = basename.replace("_se{}.fastq.gz".format(PREPROCESS), "")
-            sample_run = sample_run.replace("_R1{}.fastq.gz".format(PREPROCESS), "")
-            for line in shell("seqtk seq -f 0.01 {f} | seqtk comp | cut -f2 | sort | uniq -c", iterable = True):
-                  line = (line.rstrip()).lstrip()
-                  items = line.split(" ")
-                  l = [int(items[1])]*int(items[0])
-                  try:
-                      lengths[sample_run] += l
-                  except KeyError:
-                      lengths[sample_run] = l
-            sample_lengths[sample_run] = np.round(np.mean(lengths[sample_run]),2)
-        df = pd.DataFrame(sample_lengths,index=["avg_len"]).T
-        df.to_csv(output[0], sep="\t")
+        import pandas as pd
+        df=pd.read_csv(input[0], header=0, sep="\t", index_col=0)
+        df=df.loc[:,"FastQC_mqc-generalstats-fastqc-avg_sequence_length"]
+        df.columns=["read_length"]
+        df.to_csv(output[0], sep="\t", index=True)

@@ -73,7 +73,7 @@ rule contig_featurecount:
 rule binning_normalize_contigs:
     input:
         fc = opj(config["results_path"],"maxbin","{group}","cov","{sample}_{run}_{seq_type}.fc.tab"),
-        sample_info = opj(config["intermediate_path"],"preprocess","read_lengths.tab")
+        sample_info = opj(config["intermediate_path"],"preprocess","read_lengths.tsv")
     output:
         tpm = opj(config["results_path"],"maxbin","{group}","cov","{sample}_{run}_{seq_type}.tpm.tab")
     resources:
