@@ -3,7 +3,7 @@ assembly_input = [opj(config["report_path"],"assemblies_report.html"),
                   opj(config["report_path"],"assembly_stats.pdf"),
                   opj(config["report_path"],"alignment_rate.pdf")]
 
-include: "../rules/Assembly/assembly.rules"
+include: "../rules/Assembly/assembly.smk"
 include: "../rules/Assembly/assembly_report.rules"
 
 if not config["annotation"]:
