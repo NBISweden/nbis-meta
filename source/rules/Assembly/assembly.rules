@@ -130,24 +130,17 @@ if config["metaspades"]:
             shell("mv {output_dir}/scaffolds.fasta {output_dir}/final_contigs.fa")
 
 else:
-    rule run_megahit:
+    rule generate_megahit_input_list:
         input:
             lambda wildcards: get_all_group_files(wildcards.group)
         output:
-            opj(config["results_path"],"assembly","{group}","final_contigs.fa"),
-            opj(config["results_path"],"assembly","{group}","log")
-        params:
-            intermediate_contigs=opj(config["intermediate_path"],"assembly","{group}","intermediate_contigs"),
-            additional_settings=config["megahit_additional_settings"],
-            tmp=opj(config["tmpdir"],"{group}.megahit")
-        threads: config["assembly_threads"]
-        resources:
-            runtime = lambda wildcards, attempt: attempt**2*60*4
+            R1=temp(opj(config["results_path"],"assembly",
+                            "{group}","input_1")),
+            R2=temp(opj(config["results_path"],"assembly",
+                            "{group}","input_2")),
+            se=temp(opj(config["results_path"],"assembly",
+                            "{group}","input_se"))
         run:
-            output_dir=os.path.dirname(output[0])
-            shell("mkdir -p {output_dir}")
-            shell("rm -rf {params.tmp}")
-            shell("mkdir -p {}".format(config["tmpdir"]))
             files = {"R1": [], "R2": [], "se": []}
             for sample in assemblyGroups[wildcards.group].keys():
                 for run in assemblyGroups[wildcards.group][sample]:
@@ -156,22 +149,72 @@ else:
             R1 = ",".join(files["R1"])
             R2 = ",".join(files["R2"])
             se = ",".join(files["se"])
-            if not se:
-                shell("megahit -t {threads} -1 {R1} -2 {R2} -o {params.tmp} {params.additional_settings}")
-            else:
-                shell("megahit -t {threads} -1 {R1} -2 {R2} -r {se} -o {params.tmp} {params.additional_settings}")
+            with open(output.R1, 'w') as fh1, open(output.R2, 'w') as fh2, open(output.se, 'w') as fhse:
+                fh1.write(R1)
+                fh2.write(R2)
+                fhse.write(se)
 
-            # If set to keep intermediate contigs, move to intermediate folder before deleting
-            if config["megahit_keep_intermediate"]:
-                shell("mkdir -p {params.intermediate_contigs}")
-                shell("rsync -azv {params.tmp}/intermediate_contigs/* {params.intermediate_contigs}")
-
-            shell("rm -rf {params.tmp}/intermediate_contigs")
-
+    rule run_megahit:
+        input:
+            R1=opj(config["results_path"],"assembly",
+                            "{group}","input_1"),
+            R2=opj(config["results_path"],"assembly",
+                            "{group}","input_2"),
+            se=opj(config["results_path"],"assembly",
+                            "{group}","input_se")
+        output:
+            opj(config["results_path"],"assembly","{group}","final_contigs.fa"),
+            opj(config["results_path"],"assembly","{group}","log")
+        params:
+            intermediate_contigs=opj(config["intermediate_path"],"assembly",
+                                     "{group}","intermediate_contigs"),
+            additional_settings=config["megahit_additional_settings"],
+            tmp=opj(config["tmpdir"],"{group}.megahit"),
+            output_dir=opj(config["results_path"],"assembly","{group}")
+        threads: config["assembly_threads"]
+        resources:
+            runtime=lambda wildcards, attempt: attempt**2*60*4
+        conda:
+            "../../../envs/assembly.yml"
+        shell:
+            """
+            rm -rf {params.tmp}
+            
+            # Get input strings
+            R1=$(cat {input.R1})
+            R2=$(cat {input.R2})
+            # Only use single-end if present
+            se=$(cat {input.se})
+            if [ -s {input.se} ]; then
+                single="-r $se"
+            else
+                single=""
+            fi
+            
+            # Run Megahit
+            megahit \
+                -t {threads} \
+                -1 $R1 \
+                -2 $R2 \
+                $single \
+                -o {params.tmp} \
+                {params.additional_settings} \
+                >/dev/null 2>&1
+            
+            # Sync intermediate contigs if asked for
+            if [ "{config[megahit_keep_intermediate]}" == "True" ]; then
+                mkdir -p {params.intermediate_contigs}
+                rsync -azv {params.tmp}/intermediate_contigs/* {params.intermediate_contigs}
+            fi
+            
+            # Cleanup intermediate
+            rm -rf {params.tmp}/intermediate_contigs
+            
             # Sync tmp output to outdir before removing
-            shell("rsync -azv {params.tmp}/* {output_dir}")
-            shell("rm -rf {params.tmp}")
-            shell("mv {output_dir}/final.contigs.fa {output_dir}/final_contigs.fa")
+            rsync -azv {params.tmp}/* {params.output_dir}
+            rm -rf {params.tmp}
+            mv {params.output_dir}/final.contigs.fa {params.output_dir}/final_contigs.fa
+            """
 
 rule write_bed:
     input:
