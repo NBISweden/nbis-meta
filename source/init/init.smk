@@ -234,14 +234,34 @@ rule write_config:
                     items.append("")
                 fh_out.write(" - {}: version {}, build {} {}\n".format(items[0], items[1], items[2], items[3]))
 
-
 rule download_examples:
+    """
+    Use sra-tools to download the BMock12 Mock Community-12, Illumina.
+    Subsample using seqtk
+    """
     output:
-        expand("examples/data/{sample}_100000_R{i}.fastq.gz",
-            sample = ["anterior_nares", "buccal_mucosa", "retr_crease", "stool"], i = ["1","2"])
-    params:
-        url = "https://bitbucket.org/johnne/metagenomic-mocks/raw/995102fbc6e19963f9b4861da0050b41c04a0063/results"
-    run:
-        for f in output:
-            fn=os.path.basename(f)
-            shell("curl -L -o examples/data/{fn} {params.url}/{fn}")
+        temp("examples/data/SRR8073716_1.fastq"),
+        temp("examples/data/SRR8073716_2.fastq")
+    conda:
+        "../../envs/examples.yml"
+    shell:
+         """
+         fastq-dump \
+            -X 1000000 \
+            --split-3 \
+            -O examples/data \
+            SRR8073716
+            
+         """
+
+rule split_examples:
+    input:
+        "examples/data/SRR8073716_{i}.fastq"
+    output:
+        "examples/data/{sample}_{s}_R{i}.fastq.gz"
+    conda:
+        "../../envs/examples.yml"
+    shell:
+         """
+         seqtk sample -s {wildcards.s} {input[0]} 100000 | gzip -c > {output[0]}
+         """
