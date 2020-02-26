@@ -455,74 +455,110 @@ rule cutadapt_se:
         """
 
 rule download_phix:
-    output: opj(config["resource_path"],"phix","phix.fasta")
+    """Downloads the phiX genome"""
+    output:
+        opj(config["resource_path"],"phix","phix.fasta")
     params:
-        url_base = "ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/819/615/GCF_000819615.1_ViralProj14015"
+        url_base="ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/819/615/GCF_000819615.1_ViralProj14015"
     shell:
         """
-        curl -L -o {output[0]}.gz {params.url_base}/GCF_000819615.1_ViralProj14015_genomic.fna.gz
+        curl \
+            -L \
+            -o {output[0]}.gz \
+            {params.url_base}/GCF_000819615.1_ViralProj14015_genomic.fna.gz
         gunzip {output[0]}.gz
         """
 
 rule bowtie_build_phix:
-    input: opj(config["resource_path"],"phix","phix.fasta")
+    """Build bowtie2 index for phiX"""
+    input:
+        opj(config["resource_path"],"phix","phix.fasta")
     output:
-        expand(opj(config["resource_path"],"phix","phix.{index}.bt2"),index=range(1,5))
-    params: prefix = opj(config["resource_path"],"phix","phix")
+        expand(opj(config["resource_path"],"phix","phix.{index}.bt2"),
+               index=range(1,5))
+    params:
+        prefix=opj(config["resource_path"],"phix","phix")
     threads: 1
-    message: "Building bowtie2 index for {input}"
+    conda:
+        "../../../envs/preprocess.yml"
     shell:
         """
-        bowtie2-build --threads {threads} {input} {params.prefix}
+        bowtie2-build \
+            --threads {threads} \
+            {input} {params.prefix} >/dev/null 2>&1
         """
 
 rule filter_phix_pe:
+    """Maps reads against the phiX genome, keeping non-concordantly mapped"""
     input:
-        bt_index = expand(opj(config["resource_path"],"phix","phix.{index}.bt2"),index=range(1,5)),
-        R1=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["phixfilt"]+".fastq.gz"),
-        R2=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["phixfilt"]+".fastq.gz")
+        bt_index=expand(opj(config["resource_path"],"phix",
+                            "phix.{index}.bt2"),index=range(1,5)),
+        R1=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R1"+preprocess_suffices["phixfilt"]+".fastq.gz"),
+        R2=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R2"+preprocess_suffices["phixfilt"]+".fastq.gz")
     output:
-        R1=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+preprocess_suffices["phixfilt"]+".phixfilt.fastq.gz"),
-        R2=opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+preprocess_suffices["phixfilt"]+".phixfilt.fastq.gz"),
-        log=opj(config["intermediate_path"],"preprocess","{sample}_{run}_PHIX_pe"+preprocess_suffices["phixfilt"]+".log")
+        R1=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R1"+preprocess_suffices["phixfilt"]+".phixfilt.fastq.gz"),
+        R2=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R2"+preprocess_suffices["phixfilt"]+".phixfilt.fastq.gz"),
+        log=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_PHIX_pe"+preprocess_suffices["phixfilt"]+".log")
     params:
-        tmp_out = config["scratch_path"],
-        setting = config["bowtie2_params"],
-        prefix = opj(config["resource_path"],"phix","phix")
+        tmp_out=config["scratch_path"],
+        setting=config["bowtie2_params"],
+        prefix=opj(config["resource_path"],"phix","phix")
     threads: config["bowtie2_threads"]
-    message: "Filtering Phix sequences from {wildcards.sample}_{wildcards.run}"
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60
+    conda:
+        "../../../envs/preprocess.yml"
     shell:
         """
         mkdir -p {params.tmp_out}
-        bowtie2 {params.setting} -p {threads} -x {params.prefix} -1 {input.R1} -2 {input.R2} \
-        --un-conc-gz {params.tmp_out}/{wildcards.sample}_{wildcards.run}_R%.filtered.fastq.gz > /dev/null 2>{output.log}
+        bowtie2 \
+            {params.setting} \
+            -p {threads} \
+            -x {params.prefix} \
+            -1 {input.R1} \
+            -2 {input.R2} \
+            --un-conc-gz \
+            {params.tmp_out}/{wildcards.sample}_{wildcards.run}_R%.filtered.fastq.gz > /dev/null 2>{output.log}
         mv {params.tmp_out}/{wildcards.sample}_{wildcards.run}_R1.filtered.fastq.gz {output.R1}
         mv {params.tmp_out}/{wildcards.sample}_{wildcards.run}_R2.filtered.fastq.gz {output.R2}
         """
 
 rule filter_phix_se:
+    """Maps reads against the phiX genome, keeping non-concordantly mapped"""
     input:
-        bt_index = expand(opj(config["resource_path"],"phix","phix.{index}.bt2"),index=range(1,5)),
-        se=opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["phixfilt"]+".fastq.gz")
+        bt_index=expand(opj(config["resource_path"],"phix",
+                            "phix.{index}.bt2"),index=range(1,5)),
+        se=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_se"+preprocess_suffices["phixfilt"]+".fastq.gz")
     output:
-        se=opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+preprocess_suffices["phixfilt"]+".phixfilt.fastq.gz"),
+        se=opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_se"+preprocess_suffices["phixfilt"]+".phixfilt.fastq.gz"),
     log:
-        opj(config["intermediate_path"],"preprocess","{sample}_{run}_PHIX_se"+preprocess_suffices["phixfilt"]+".log")
+        opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_PHIX_se"+preprocess_suffices["phixfilt"]+".log")
     params:
-        tmp_out = config["scratch_path"],
-        setting = config["bowtie2_params"],
-        prefix = opj(config["resource_path"],"phix","phix")
+        tmp_out=config["scratch_path"],
+        setting=config["bowtie2_params"],
+        prefix=opj(config["resource_path"],"phix","phix")
     threads: config["bowtie2_threads"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60
-    message: "Filtering Phix sequences from {wildcards.sample}_{wildcards.run}"
+    conda:
+        "../../../envs/preprocess.yml"
     shell:
         """
         mkdir -p {params.tmp_out}
-        bowtie2 {params.setting} -p {threads} -x {params.prefix} --un-gz \
-        {params.tmp_out}/{wildcards.sample}_{wildcards.run}_se.filtered.fastq.gz {input.se} > /dev/null 2>{log}
+        bowtie2 \
+            {params.setting} \
+            -p {threads} \
+            -x {params.prefix} \
+            --un-gz \
+            {params.tmp_out}/{wildcards.sample}_{wildcards.run}_se.filtered.fastq.gz {input.se} > /dev/null 2>{log}
         mv {params.tmp_out}/{wildcards.sample}_{wildcards.run}_se.filtered.fastq.gz {output.se}
         """
 
