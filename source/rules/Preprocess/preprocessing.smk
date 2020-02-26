@@ -93,7 +93,7 @@ rule sortmerna_merge_fastq:
         merge-paired-reads.sh \
             {params.R1_unzipped} \
             {params.R2_unzipped} \
-            {params.merged}
+            {params.merged} >/dev/null 2>&1
         # Move output
         mv {params.merged} {output[0]}
         # Clean up
@@ -117,16 +117,19 @@ def get_sortmerna_ref_string(path, s):
 rule sortmerna_fastq_pe:
     """Run SortMeRNA on paired end input"""
     input:
-        fastq=opj(config["intermediate_path"],"preprocess",
+        opj(config["intermediate_path"],"preprocess",
             "{sample}_{run}_merged.fastq"),
-        idx=expand(opj(config["resource_path"],"rRNA_databases","{file}.{suffix}"),
+        expand(opj(config["resource_path"],"rRNA_databases","{file}.{suffix}"),
             suffix=["bursttrie_0.dat","kmer_0.dat","pos_0.dat","stats"],
             file=config["sortmerna_dbs"])
     output:
-        aligned=temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.rRNA.fastq")),
-        other=temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.non_rRNA.fastq"))
+        aligned=temp(opj(config["intermediate_path"],"preprocess",
+                         "{sample}_{run}_merged.rRNA.fastq")),
+        other=temp(opj(config["intermediate_path"],"preprocess",
+                       "{sample}_{run}_merged.non_rRNA.fastq"))
     log:
-        opj(config["intermediate_path"],"preprocess","{sample}_{run}_pe.sortmerna.log")
+        opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_pe.sortmerna.log")
     params:
         paired_strategy=config["sortmerna_paired_strategy"],
         score_params=config["sortmerna_params"],
@@ -155,7 +158,8 @@ rule sortmerna_fastq_pe:
             --{params.paired_strategy} \
             --aligned {params.aligned_prefix} \
             --other {params.other_prefix} \
-            {params.score_params}
+            {params.score_params} \
+            >/dev/null 2>&1
          
          mv {params.aligned_prefix}.fastq {output.aligned}
          mv {params.aligned_prefix}.log {log}
@@ -164,22 +168,31 @@ rule sortmerna_fastq_pe:
 
 rule sortmerna_split_rRNA_fastq:
     input:
-        aligned = opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.rRNA.fastq"),
+        aligned=opj(config["intermediate_path"],"preprocess",
+                      "{sample}_{run}_merged.rRNA.fastq"),
     output:
-        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1.rRNA.fastq.gz"),
-        R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2.rRNA.fastq.gz"),
+        R1=opj(config["intermediate_path"],"preprocess",
+                 "{sample}_{run}_R1.rRNA.fastq.gz"),
+        R2=opj(config["intermediate_path"],"preprocess",
+                 "{sample}_{run}_R2.rRNA.fastq.gz")
     params:
-        tmpdir=opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna"),
-        R1 = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna","{sample}_{run}_R1.rRNA.fastq"),
-        R2 = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna","{sample}_{run}_R2.rRNA.fastq")
+        tmpdir=opj(os.path.expandvars(config["scratch_path"]),
+                   "{sample}_{run}_sortmerna"),
+        R1=opj(os.path.expandvars(config["scratch_path"]),
+                 "{sample}_{run}_sortmerna","{sample}_{run}_R1.rRNA.fastq"),
+        R2=opj(os.path.expandvars(config["scratch_path"]),
+                 "{sample}_{run}_sortmerna","{sample}_{run}_R2.rRNA.fastq")
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*6
+        runtime=lambda wildcards, attempt: attempt**2*60*6
     conda:
         "../../../envs/preprocess.yml"
     shell:
         """
         mkdir -p {params.tmpdir}
-        unmerge-paired-reads.sh {input.aligned} {params.R1} {params.R2}
+        unmerge-paired-reads.sh \
+            {input.aligned} \
+            {params.R1} \
+            {params.R2} >/dev/null 2>&1
         gzip {params.R1}
         gzip {params.R2}
         mv {params.R1}.gz {output.R1}
@@ -188,22 +201,31 @@ rule sortmerna_split_rRNA_fastq:
 
 rule sortmerna_split_other_fastq:
     input:
-        other = opj(config["intermediate_path"],"preprocess","{sample}_{run}_merged.non_rRNA.fastq")
+        other=opj(config["intermediate_path"],"preprocess",
+                  "{sample}_{run}_merged.non_rRNA.fastq")
     output:
-        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1.non_rRNA.fastq.gz"),
-        R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2.non_rRNA.fastq.gz")
+        R1=opj(config["intermediate_path"],"preprocess",
+               "{sample}_{run}_R1.non_rRNA.fastq.gz"),
+        R2=opj(config["intermediate_path"],"preprocess",
+               "{sample}_{run}_R2.non_rRNA.fastq.gz")
     params:
-        tmpdir=opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna"),
-        R1 = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna","{sample}_{run}_R1.non_rRNA.fastq"),
-        R2 = opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_sortmerna","{sample}_{run}_R2.non_rRNA.fastq")
+        tmpdir=opj(os.path.expandvars(config["scratch_path"]),
+                   "{sample}_{run}_sortmerna"),
+        R1=opj(os.path.expandvars(config["scratch_path"]),
+               "{sample}_{run}_sortmerna","{sample}_{run}_R1.non_rRNA.fastq"),
+        R2=opj(os.path.expandvars(config["scratch_path"]),
+               "{sample}_{run}_sortmerna","{sample}_{run}_R2.non_rRNA.fastq")
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*6
+        runtime=lambda wildcards, attempt: attempt**2*60*6
     conda:
         "../../../envs/preprocess.yml"
     shell:
         """
         mkdir -p {params.tmpdir}
-        unmerge-paired-reads.sh {input.other} {params.R1} {params.R2}
+        unmerge-paired-reads.sh \
+            {input.other} \
+            {params.R1} \
+            {params.R2} >/dev/null 2>&1
         gzip {params.R1}
         gzip {params.R2}
         mv {params.R1}.gz {output.R1}
@@ -212,9 +234,11 @@ rule sortmerna_split_other_fastq:
 
 rule sortmerna_unzip_fastq:
     input:
-        opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.fastq.gz")
+        opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_se.fastq.gz")
     output:
-        temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.fastq"))
+        temp(opj(config["intermediate_path"],"preprocess",
+                 "{sample}_{run}_se.fastq"))
     shell:
         """
         gunzip -c {input[0]} > {output[0]}
@@ -222,46 +246,60 @@ rule sortmerna_unzip_fastq:
 
 rule sortmerna_fastq_se:
     input:
-        fastq=opj(config["intermediate_path"],"preprocess",
+        opj(config["intermediate_path"],"preprocess",
                   "{sample}_{run}_se.fastq"),
-        idx=expand(opj(config["resource_path"],"rRNA_databases",
-                       "{file}.idx.stats"), file = config["sortmerna_dbs"])
+        expand(opj(config["resource_path"],"rRNA_databases","{file}.{suffix}"),
+            suffix=["bursttrie_0.dat","kmer_0.dat","pos_0.dat","stats"],
+            file=config["sortmerna_dbs"])
     output:
-        aligned = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.rRNA.fastq")),
-        other = temp(opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.non_rRNA.fastq"))
+        aligned=temp(opj(config["intermediate_path"],"preprocess",
+                         "{sample}_{run}_se.rRNA.fastq")),
+        other=temp(opj(config["intermediate_path"],"preprocess",
+                       "{sample}_{run}_se.non_rRNA.fastq"))
     log:
-        opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.sortmerna.log")
+        opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_se.sortmerna.log")
     params:
-        score_params = config["sortmerna_params"],
-        other_prefix = opj(config["scratch_path"],"{sample}_{run}_se.non_rRNA"),
-        aligned_prefix = opj(config["scratch_path"],"{sample}_{run}_se.rRNA"),
-        scratch = config["scratch_path"],
+        score_params=config["sortmerna_params"],
+        other_prefix=opj(config["scratch_path"],"{sample}_{run}_se.non_rRNA"),
+        aligned_prefix=opj(config["scratch_path"],"{sample}_{run}_se.rRNA"),
+        scratch=config["scratch_path"],
         ref_string=get_sortmerna_ref_string(config["resource_path"],
                                             config["sortmerna_dbs"])
     threads: 10
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*4
+        runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
         "../../../envs/preprocess.yml"
     shell:
         """
         mkdir -p {params.scratch}
-        
-        sortmerna --blast 1 --log -v --fastx \  
-        --ref {params.ref_string} --reads {input[0]} -a {threads} --blast 1 \
-        --aligned {params.aligned_prefix} --other {params.other_prefix} \ 
-        {params.score_params}
+        # Run SortMeRNA
+        sortmerna \
+            --blast 1 \
+            --log \
+            -v \
+            --fastx \
+            --ref {params.ref_string} \
+            --reads {input[0]} \
+            -a {threads} \
+            --aligned {params.aligned_prefix} \
+            --other {params.other_prefix} \
+            {params.score_params} \
+            >/dev/null 2>&1
         
         mv {params.aligned_prefix}.fastq {output.aligned}
-        mv {params.aligned_prefix}.log {output.log}
+        mv {params.aligned_prefix}.log {log}
         mv {params.other_prefix}.fastq {output.other}
         """
 
 rule sortmerna_zip_aligned_fastq:
     input:
-        fastq = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.rRNA.fastq")
+        fastq=opj(config["intermediate_path"],"preprocess",
+                  "{sample}_{run}_se.rRNA.fastq")
     output:
-        fastq = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.rRNA.fastq.gz")
+        fastq=opj(config["intermediate_path"],"preprocess",
+                    "{sample}_{run}_se.rRNA.fastq.gz")
     shell:
         """
         gzip {input.fastq}
@@ -269,9 +307,11 @@ rule sortmerna_zip_aligned_fastq:
 
 rule sortmerna_zip_other_fastq:
     input:
-        fastq = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.non_rRNA.fastq")
+        fastq=opj(config["intermediate_path"],"preprocess",
+                  "{sample}_{run}_se.non_rRNA.fastq")
     output:
-        fastq = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se.non_rRNA.fastq.gz")
+        fastq=opj(config["intermediate_path"],"preprocess",
+                    "{sample}_{run}_se.non_rRNA.fastq.gz")
     shell:
         """
         gzip {input.fastq}
