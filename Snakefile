@@ -1,9 +1,10 @@
 from snakemake.utils import min_version, validate
 from snakemake.exceptions import WorkflowError
 min_version("5.10.0")
+import gzip as gz
+from Bio import SeqIO
 
 # Snakemake workflow for various types of metagenomics analyses.
-# See documentation at https://bitbucket.org/scilifelab-lts/nbis-meta
 
 def parse_validation_error(e):
     instance = ""
