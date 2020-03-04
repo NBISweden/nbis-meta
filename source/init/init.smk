@@ -41,14 +41,6 @@ config_params.append((" - System",system))
 
 config["tmpdir"] = config["temp_path"]
 
-# Locate picard.jar if markduplicates is used
-if not config["picard_jar"] and config["markduplicates"]:
-    for line in shell("find {envdir} -name picard.jar", iterable = True):
-        basename = os.path.basename(line)
-        if basename == "picard.jar":
-            config["picard_jar"] = line
-            config["picard_path"] = os.path.dirname(line)
-
 # Check that workflow is actually running on Uppmax if so specified
 hostname = platform.node()
 if 'uppmax.uu.se' in hostname:
