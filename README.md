@@ -50,8 +50,8 @@ conda env create -f envs/environment.yaml -p envs/nbis-meta
 This creates the `nbis-meta` environment inside the `envs/` directory and
 installs the environment there.
 
-Next, add this directory to the envs_dirs in your conda config (this is to 
-simplify activation of the environment.
+Next, add this directory to the `envs_dirs` in your conda config (this is to 
+simplify activation of the environment).
 
 ```
 conda config --add envs_dirs $(pwd)/envs/
