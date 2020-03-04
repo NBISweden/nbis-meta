@@ -10,21 +10,28 @@ rule remove_mark_duplicates:
     params:
         temp_bam=opj(config["tmpdir"],"{group}","{sample}_{run}_{seq_type}.markdup.bam"),
         temp_sort_bam=opj(config["tmpdir"],"{group}", "{sample}_{run}_{seq_type}.markdup.re_sort.bam"),
-        temp_dir=opj(config["tmpdir"],"{group}"),
-        jarfile=config["picard_jar"],
-        picard_path=config["picard_path"],
-        java_opt="-Xms2g -Xmx64g"
-    threads: 10
+        temp_dir=opj(config["tmpdir"],"{group}")
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
+    threads: 10
+    conda:
+        "../../../envs/quantify.yml"
     shell:
         """
         mkdir -p {params.temp_dir}
-        java {params.java_opt} -XX:ParallelGCThreads={threads} -cp params.picard_path -jar \
-        {params.jarfile} MarkDuplicates I={input} O={params.temp_bam} M={output[2]} \
-        ASO=coordinate REMOVE_DUPLICATES=TRUE 2> {log}
+        java \
+            -Xms2g -Xmx64g \
+            -XX:ParallelGCThreads={threads} \
+            -jar $CONDA_PREFIX/share/picard-*/picard.jar \
+            MarkDuplicates \
+            I={input} \
+            M={output[2]} \
+            O={params.temp_bam} \
+            REMOVE_DUPLICATES=TRUE \
+            ASO=coordinate \
+            2> {log}
         # Re sort the bam file using samtools
-        samtools sort -@ 9 -o {params.temp_sort_bam} {params.temp_bam}
+        samtools sort -o {params.temp_sort_bam} {params.temp_bam}
         # Index the bam file
         samtools index {params.temp_sort_bam}
         mv {params.temp_sort_bam} {output[0]}
