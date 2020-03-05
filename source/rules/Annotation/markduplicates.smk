@@ -13,9 +13,9 @@ rule remove_mark_duplicates:
         temp_dir=opj(config["tmpdir"],"{group}")
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
-    threads: 10
     conda:
         "../../../envs/quantify.yml"
+    threads: 10
     shell:
         """
         mkdir -p {params.temp_dir}
@@ -28,6 +28,7 @@ rule remove_mark_duplicates:
             M={output[2]} \
             O={params.temp_bam} \
             REMOVE_DUPLICATES=TRUE \
+            USE_JDK_DEFLATER=TRUE USE_JDK_INFLATER=TRUE \
             ASO=coordinate \
             2> {log}
         # Re sort the bam file using samtools
