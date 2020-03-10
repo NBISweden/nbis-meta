@@ -1,8 +1,9 @@
 channels:
   - bioconda
   - defaults
-
 dependencies:
-  - python=3.7.6
-  - bowtie2=2.3.5.1
+  - python=3.8.1
   - subread=2.0.0
+  - samtools=1.9
+  - picard=2.21.9
+  - bowtie2=2.4.1
