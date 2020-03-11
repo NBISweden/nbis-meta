@@ -28,17 +28,47 @@ rule prodigal:
             -p meta 2>{log}
         """
 
+rule trnascan:
+    input:
+        opj(config["results_path"],"assembly","{group}","final_contigs.fa")
+    output:
+        file=opj(config["results_path"],"annotation","{group}",
+                 "tRNA.out"),
+        bed=opj(config["results_path"],"annotation","{group}",
+                 "tRNA.bed"),
+        fasta=opj(config["results_path"],"annotation","{group}",
+                 "tRNA.fasta")
+    log:
+        opj(config["results_path"],"annotation","{group}",
+                 "tRNA.log")
+    threads: 4
+    conda:
+        "../../../envs/annotation.yml"
+    shell:
+        """
+        tRNAscan-SE \
+            -G \
+            -b {output.bed} \
+            -o {output.file} \
+            -a {output.fasta} \
+            --thread {threads} {input} \
+            2>{log}            
+        """
+
+
 rule infernal:
     input:
         fastafile=opj(config["results_path"],"assembly","{group}",
                       "final_contigs.fa"),
-        db=opj(config["infernal_dbpath"],"Rfam.cm"),
+        db=expand(opj(config["infernal_dbpath"],"Rfam.rRNA.cm.i1{suffix}"),
+               suffix=["m","i","f","p"]),
         cl=opj(config["infernal_dbpath"],"Rfam.clanin")
     output:
-        opj(config["results_path"],"annotation","{group}","final_contigs.rfam")
-    threads: 2
-    message:
-        ""
+        opj(config["results_path"],"annotation","{group}",
+            "final_contigs.cmscan")
+    params:
+        db=opj(config["infernal_dbpath"],"Rfam.rRNA.cm")
+    threads: 8
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*10
     conda:
@@ -54,7 +84,7 @@ rule infernal:
             --tblout {output} \
             --fmt 2 \
             --clanin {input.cl} \
-            {input.db} \
+            {params.db} \
             {input.fastafile} > /dev/null
         """
 
