@@ -10,4 +10,4 @@ include: "../rules/Assembly/assembly.smk"
 if not config["annotation"]:
     include: "../rules/Annotation/orfcalling.smk"
     include: "../rules/Annotation/markduplicates.smk"
-    include: "../rules/Annotation/quantification.rules"
+    include: "../rules/Annotation/quantification.smk"
