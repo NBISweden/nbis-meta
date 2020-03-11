@@ -80,19 +80,37 @@ rule featurecount_se:
             {input.bam}
         """
 
+rule samtools_stats:
+    input:
+        opj(config["results_path"],"assembly","{group}",
+                "mapping","{sample}_{run}_{seq_type}"+POSTPROCESS+".bam")
+    output:
+        opj(config["results_path"],"assembly","{group}",
+                "mapping","{sample}_{run}_{seq_type}"+POSTPROCESS+".bam.stats")
+    conda:
+        "../../../envs/quantify.yml"
+    shell:
+        """
+        samtools stats {input} > {output}
+        """
+
 rule normalize_featurecount:
     input:
-        opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_{seq_type}.fc.tab"),
-        opj(config["intermediate_path"],"preprocess","read_lengths.tsv")
+        opj(config["results_path"],"assembly","{group}","mapping",
+            "{sample}_{run}_{seq_type}.fc.tab"),
+        opj(config["results_path"],"assembly","{group}","mapping",
+            "{sample}_{run}_{seq_type}"+POSTPROCESS+".bam.stats")
     output:
-        opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_{seq_type}.fc.tpm.tab"),
-        opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_{seq_type}.fc.raw.tab")
+        opj(config["results_path"],"assembly","{group}","mapping",
+            "{sample}_{run}_{seq_type}.fc.tpm.tab"),
+        opj(config["results_path"],"assembly","{group}","mapping",
+            "{sample}_{run}_{seq_type}.fc.raw.tab")
     params:
         s="{sample}_{run}",
         script="source/utils/featureCountsTPM.py"
     shell:
         """
-        rl=$(grep -w {params.s} {input[1]} | cut -f2)
+        rl=$(grep -w "average length" {input[1]} |  egrep -o "[0-9]+")
         python {params.script} --rl $rl -i {input[0]} -o {output[0]} --rc {output[1]} --sampleName {params.s}
         """
 
