@@ -57,7 +57,7 @@ if config["assembly"]:
     # Rule sets that depend on de-novo assembly
     # Annotate
     if config["annotation"]:
-        include: "source/workflow/Annotation"
+        include: "source/workflow/annotation.smk"
         inputs += annotation_input
     # Binning
     if config["maxbin"] or config["concoct"] or config["metabat"]:
