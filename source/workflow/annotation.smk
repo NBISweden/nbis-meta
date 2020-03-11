@@ -5,8 +5,9 @@ for group in assemblyGroups.keys():
     # Add orfcalling results
     annotation_input.append(opj(config["results_path"],"annotation",group,"final_contigs.gff"))
     if config["infernal"]:
-        annotation_input.append(opj(config["results_path"],"annotation",group,"final_contigs.rfam"))
-        annotation_input.append(opj(config["results_path"],"annotation",group,"final_contigs.infernal.gff"))
+        annotation_input.append(opj(config["results_path"],"annotation",group,"final_contigs.cmscan"))
+    if config["tRNAscan"]:
+        annotation_input.append(opj(config["results_path"],"annotation",group,"tRNA.out"))
     # Add EGGNOG annotation
     if config["eggnog"]:
         for parsed in ["enzymes","pathways","kos","modules"]:
@@ -26,8 +27,8 @@ for group in assemblyGroups.keys():
         annotation_input += expand(opj(config["results_path"],"annotation",group,"rgi.{fc_type}.tab"), fc_type = ["count","tpm"])
         annotation_input.append(opj(config["results_path"],"annotation",group,"rgi.out.txt"))
 
-include: "../rules/Annotation/markduplicates.rules"
-include: "../rules/Annotation/orfcalling.rules"
+include: "../rules/Annotation/markduplicates.smk"
+include: "../rules/Annotation/orfcalling.smk"
 include: "../rules/Annotation/prot_annotation.rules"
 include: "../rules/Annotation/quantification.rules"
 include: "../rules/Annotation/taxonomic_annotation.rules"
