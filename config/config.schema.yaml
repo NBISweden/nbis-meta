@@ -189,6 +189,23 @@ properties:
     description: Additional settings for Metaspades
     default: "-k 21,31,41,51,61,71,81,91,101,111,121"
   ## Annotation ##
+  tRNAscan:
+    type: boolean
+    description: Indicates whether to run tRNAscan-SE
+    default: true
+  infernal:
+    type: boolean
+    description: Indicates whether to run infernal for rRNA identification
+    default: true
+  infernal_threads:
+    type: integer
+    description: How many threads to use for infernal
+    default: 8
+    minimum: 1
+  infernal_dbpath:
+    type: string
+    description: Where to store infernal database
+    default: resources/infernal
   eggnog:
     type: boolean
     description: Indicates whether to run eggnog-mapper
@@ -234,19 +251,6 @@ properties:
     description: How many threads to use for diamond
     default: 20
     minimum: 1
-  infernal:
-    type: boolean
-    description: Indicates whether to run infernal for nc-rRNA identification
-    default: false
-  infernal_threads:
-    type: integer
-    description: How many threads to use for infernal
-    default: 2
-    minimum: 1
-  infernal_dbpath:
-    type: string
-    description: Where to store infernal database
-    default: resources/infernal
   ## Binning ##
   metabat:
     type: boolean
