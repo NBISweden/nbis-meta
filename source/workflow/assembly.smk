@@ -8,6 +8,6 @@ assembly_input += [opj(config["report_path"],"assembly_stats.txt"),
 include: "../rules/Assembly/assembly.smk"
 
 if not config["annotation"]:
-    include: "../rules/Annotation/orfcalling.rules"
+    include: "../rules/Annotation/orfcalling.smk"
     include: "../rules/Annotation/markduplicates.smk"
     include: "../rules/Annotation/quantification.rules"
