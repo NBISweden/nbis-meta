@@ -68,7 +68,7 @@ rule infernal:
             "final_contigs.cmscan")
     params:
         db=opj(config["infernal_dbpath"],"Rfam.rRNA.cm")
-    threads: 8
+    threads: config["infernal_threads"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*10
     conda:
