@@ -84,12 +84,19 @@ metaspades_additional_settings: '-k 21,31,41,51,61,71,81,91,101,111,121'
 ################
 ## Annotation ##
 ################
+# tRNAscan-SE
+tRNAscan: True
+
+# Infernal ncRNA detection
+infernal: True
+infernal_threads: 8
+infernal_dbpath: resources/infernal
 
 # Eggnog-mapper
-eggnog: False
+eggnog: True
 
 # PFAM-scan
-pfam: False
+pfam: True
 
 # Resistance Gene Identifier
 rgi: False
@@ -110,11 +117,6 @@ taxonomy_ranks: ["superkingdom","phylum","class","order","family","genus","speci
 # <resource_path>/<taxdb>/diamond.dmnd
 taxdb: uniref100
 diamond_threads: 20
-
-# Infernal ncRNA detection
-infernal: False
-infernal_threads: 2
-infernal_dbpath: resources/infernal
 
 ###############
 ### BINNING ###
