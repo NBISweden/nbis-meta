@@ -4,7 +4,8 @@ if config["taxonomic_annotation"]:
     db_input.append(opj(config["resource_path"],config["taxdb"],"diamond.dmnd".format(config["taxdb"])))
     db_input.append(opj(config["resource_path"], "taxonomy/taxonomy.sqlite"))
 if config["infernal"]:
-    db_input.append(opj(config["infernal_dbpath"],"Rfam.cm"))
+    db_input+=expand(opj(config["infernal_dbpath"],"Rfam.rRNA.cm.i1{suffix}"),
+               suffix=["m","i","f","p"])
 if config["eggnog"]:
     db_input.append(opj(config["resource_path"],"eggnog-mapper","eggnog.db"))
     db_input.append(opj(config["resource_path"],"eggnog-mapper","eggnog.version"))
@@ -25,6 +26,6 @@ if config["rgi"]:
 include: "../rules/DB/prepare_sortmerna.smk"
 include: "../rules/DB/prepare_eggnog.rules"
 include: "../rules/DB/prepare_hmms.rules"
-include: "../rules/DB/prepare_infernal.rules"
+include: "../rules/DB/prepare_infernal.smk"
 include: "../rules/DB/prepare_taxonomy.rules"
 include: "../rules/DB/prepare_rgi.rules"
