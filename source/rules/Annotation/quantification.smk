@@ -20,34 +20,64 @@ rule write_featurefile:
 
 rule featurecount_pe:
     input:
-        gff=opj(config["results_path"],"annotation","{group}","final_contigs.features.gff"),
-        bam=opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_pe"+POSTPROCESS+".bam")
+        gff=opj(config["results_path"],"annotation","{group}",
+                "final_contigs.features.gff"),
+        bam=opj(config["results_path"],"assembly","{group}",
+                "mapping","{sample}_{run}_pe"+POSTPROCESS+".bam")
     output:
-        opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_pe.fc.tab"),
-        opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_pe.fc.tab.summary")
+        opj(config["results_path"],"assembly","{group}","mapping",
+            "{sample}_{run}_pe.fc.tab"),
+        opj(config["results_path"],"assembly","{group}","mapping",
+            "{sample}_{run}_pe.fc.tab.summary")
     threads: 4
-    params: tmpdir = config["tmpdir"]
+    params: tmpdir=config["tmpdir"]
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*30
+        runtime=lambda wildcards, attempt: attempt**2*30
+    conda:
+        "../../../envs/quantify.yml"
     shell:
         """
-        featureCounts -a {input.gff} -o {output[0]} -t CDS -g gene_id -M -p -B -T {threads} --tmpDir {params.tmpdir} {input.bam}
+        featureCounts \
+            -a {input.gff} \
+            -o {output[0]} \
+            -t CDS \
+            -g gene_id \
+            -M \
+            -p \
+            -B \
+            -T {threads} \
+            --tmpDir {params.tmpdir} \
+            {input.bam}
         """
 
 rule featurecount_se:
     input:
-        gff=opj(config["results_path"],"annotation","{group}","final_contigs.features.gff"),
-        bam=opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_se"+POSTPROCESS+".bam")
+        gff=opj(config["results_path"],"annotation","{group}",
+                "final_contigs.features.gff"),
+        bam=opj(config["results_path"],"assembly","{group}",
+                "mapping","{sample}_{run}_se"+POSTPROCESS+".bam")
     output:
-        opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_se.fc.tab"),
-        opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_se.fc.tab.summary")
+        opj(config["results_path"],"assembly","{group}",
+            "mapping","{sample}_{run}_se.fc.tab"),
+        opj(config["results_path"],"assembly","{group}",
+            "mapping","{sample}_{run}_se.fc.tab.summary")
     threads: 4
-    params: tmpdir = config["tmpdir"]
+    params: tmpdir=config["tmpdir"]
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*30
+        runtime=lambda wildcards, attempt: attempt**2*30
+    conda:
+        "../../../envs/quantify.yml"
     shell:
         """
-        featureCounts -a {input.gff} -o {output[0]} -t CDS -g gene_id -M -T {threads} --tmpDir {params.tmpdir} {input.bam}
+        featureCounts \
+            -a {input.gff} \
+            -o {output[0]} \
+            -t CDS \
+            -g gene_id \
+            -M \
+            -T {threads} \
+            --tmpDir {params.tmpdir} \
+            {input.bam}
         """
 
 rule normalize_featurecount:
@@ -58,8 +88,8 @@ rule normalize_featurecount:
         opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_{seq_type}.fc.tpm.tab"),
         opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_{seq_type}.fc.raw.tab")
     params:
-        s = "{sample}_{run}",
-        script = "source/utils/featureCountsTPM.py"
+        s="{sample}_{run}",
+        script="source/utils/featureCountsTPM.py"
     shell:
         """
         rl=$(grep -w {params.s} {input[1]} | cut -f2)
@@ -67,8 +97,8 @@ rule normalize_featurecount:
         """
 
 def get_fc_files(wildcards, file_type):
-    g = wildcards.group
-    files = []
+    g=wildcards.group
+    files=[]
     for sample in assemblyGroups[g].keys():
         for run in assemblyGroups[g][sample].keys():
             if "se" in assemblyGroups[g][sample][run].keys():
@@ -78,11 +108,11 @@ def get_fc_files(wildcards, file_type):
     return files
 
 def concat_files(files, gff_df):
-    df = pd.DataFrame()
+    df=pd.DataFrame()
     for f in files:
-        _df = pd.read_csv(f, index_col=0, sep="\t")
-        df = pd.concat([df,_df], axis=1)
-    df = pd.merge(df, gff_df, left_index=True, right_on="gene_id")
+        _df=pd.read_csv(f, index_col=0, sep="\t")
+        df=pd.concat([df,_df], axis=1)
+    df=pd.merge(df, gff_df, left_index=True, right_on="gene_id")
     df.drop("gene_id", axis=1, inplace=True)
     df.set_index("orf", inplace=True)
     return df
@@ -90,28 +120,28 @@ def concat_files(files, gff_df):
 rule aggregate_featurecount:
     """Aggregates feature count files and performs TPM normalization"""
     input:
-        raw_files = get_all_files(samples, opj(config["results_path"], "assembly", "{group}", "mapping"), ".fc.raw.tab"),
-        tpm_files = get_all_files(samples, opj(config["results_path"], "assembly", "{group}", "mapping"), ".fc.tpm.tab"),
-        gff_file = opj(config["results_path"],"annotation","{group}","final_contigs.features.gff")
+        raw_files=get_all_files(samples, opj(config["results_path"], "assembly", "{group}", "mapping"), ".fc.raw.tab"),
+        tpm_files=get_all_files(samples, opj(config["results_path"], "assembly", "{group}", "mapping"), ".fc.tpm.tab"),
+        gff_file=opj(config["results_path"],"annotation","{group}","final_contigs.features.gff")
     output:
-        raw = opj(config["results_path"],"annotation","{group}","fc.count.tab"),
-        tpm = opj(config["results_path"],"annotation","{group}","fc.tpm.tab")
+        raw=opj(config["results_path"],"annotation","{group}","fc.count.tab"),
+        tpm=opj(config["results_path"],"annotation","{group}","fc.tpm.tab")
     run:
-        gff_df = pd.read_csv(input.gff_file, header=None, usecols=[0,8], names=["contig","gene"], sep="\t")
-        gff_df = gff_df.assign(gene_id=pd.Series([x.replace("gene_id ","") for x in gff_df.gene], index=gff_df.index))
-        gff_df = gff_df.assign(suffix=pd.Series([x.split(" ")[-1].split("_")[-1] for x in gff_df.gene],index=gff_df.index))
-        gff_df = gff_df.assign(orf=pd.Series(gff_df.contig+"_"+gff_df.suffix, index=gff_df.index))
-        gff_df = gff_df[["orf","gene_id"]]
+        gff_df=pd.read_csv(input.gff_file, header=None, usecols=[0,8], names=["contig","gene"], sep="\t")
+        gff_df=gff_df.assign(gene_id=pd.Series([x.replace("gene_id ","") for x in gff_df.gene], index=gff_df.index))
+        gff_df=gff_df.assign(suffix=pd.Series([x.split(" ")[-1].split("_")[-1] for x in gff_df.gene],index=gff_df.index))
+        gff_df=gff_df.assign(orf=pd.Series(gff_df.contig+"_"+gff_df.suffix, index=gff_df.index))
+        gff_df=gff_df[["orf","gene_id"]]
 
-        raw_df = concat_files(input.raw_files, gff_df)
-        tpm_df = concat_files(input.tpm_files, gff_df)
+        raw_df=concat_files(input.raw_files, gff_df)
+        tpm_df=concat_files(input.tpm_files, gff_df)
         raw_df.to_csv(output.raw, sep="\t")
         tpm_df.to_csv(output.tpm, sep="\t")
 
 rule quantify_features:
     input:
-        abund = opj(config["results_path"],"annotation","{group}","fc.{fc_type}.tab"),
-        annot = opj(config["results_path"],"annotation","{group}","{db}.parsed.tab")
+        abund=opj(config["results_path"],"annotation","{group}","fc.{fc_type}.tab"),
+        annot=opj(config["results_path"],"annotation","{group}","{db}.parsed.tab")
     output:
         opj(config["results_path"],"annotation","{group}","{db}.parsed.{fc_type}.tab")
     shell:
@@ -122,9 +152,9 @@ rule quantify_features:
 rule normalize_pathways_modules:
     """Normalizes pathway and module abundances by the size of each pathway/module"""
     input:
-        abund = opj(config["results_path"],"annotation","{group}","fc.{fc_type}.tab"),
-        annot = opj(config["results_path"],"annotation","{group}","{db}.parsed.tab"),
-        info = opj(config["resource_path"],"kegg","kegg_ko2{db}.tsv")
+        abund=opj(config["results_path"],"annotation","{group}","fc.{fc_type}.tab"),
+        annot=opj(config["results_path"],"annotation","{group}","{db}.parsed.tab"),
+        info=opj(config["resource_path"],"kegg","kegg_ko2{db}.tsv")
     output:
         opj(config["results_path"],"annotation","{group}","{db}.parsed.{fc_type}.normalized.tab")
     shell:
@@ -135,34 +165,34 @@ rule normalize_pathways_modules:
 
 rule sum_to_taxa:
     input:
-        tax = opj(config["results_path"],"annotation","{group}","taxonomy",
+        tax=opj(config["results_path"],"annotation","{group}","taxonomy",
             "orfs.{db}.taxonomy.tsv".format(db=config["taxdb"])),
-        count = opj(config["results_path"],"annotation","{group}","fc.count.tab"),
-        norm = opj(config["results_path"],"annotation","{group}","fc.tpm.tab")
+        count=opj(config["results_path"],"annotation","{group}","fc.count.tab"),
+        norm=opj(config["results_path"],"annotation","{group}","fc.tpm.tab")
     output:
-        count = opj(config["results_path"],"annotation","{group}","taxonomy","tax.count.tab"),
-        norm = opj(config["results_path"],"annotation","{group}","taxonomy","tax.tpm.tab")
+        count=opj(config["results_path"],"annotation","{group}","taxonomy","tax.count.tab"),
+        norm=opj(config["results_path"],"annotation","{group}","taxonomy","tax.tpm.tab")
     run:
-        header = ["protein","superkingdom", "phylum","class","order","family","genus","species"]
-        df = pd.read_csv(input.tax, sep="\t", index_col=0, header=None, names=header)
-        count_df = pd.read_csv(input.count, header=0, index_col=0, sep="\t")
-        norm_df = pd.read_csv(input.norm, header=0, index_col=0, sep="\t")
+        header=["protein","superkingdom", "phylum","class","order","family","genus","species"]
+        df=pd.read_csv(input.tax, sep="\t", index_col=0, header=None, names=header)
+        count_df=pd.read_csv(input.count, header=0, index_col=0, sep="\t")
+        norm_df=pd.read_csv(input.norm, header=0, index_col=0, sep="\t")
 
-        taxa_count = pd.merge(df,count_df,right_index=True,left_index=True)
-        taxa_count_sum = taxa_count.groupby(header[1:]).sum().reset_index()
+        taxa_count=pd.merge(df,count_df,right_index=True,left_index=True)
+        taxa_count_sum=taxa_count.groupby(header[1:]).sum().reset_index()
         taxa_count_sum.to_csv(output.count, sep="\t", index=False)
 
-        taxa_norm = pd.merge(df,norm_df,right_index=True,left_index=True)
-        taxa_norm_sum = taxa_norm.groupby(header[1:]).sum().reset_index()
+        taxa_norm=pd.merge(df,norm_df,right_index=True,left_index=True)
+        taxa_norm_sum=taxa_norm.groupby(header[1:]).sum().reset_index()
         taxa_norm_sum.to_csv(output.norm, sep="\t", index=False)
 
 def make_krona_taxonomy_input(f, dir):
-    df = pd.read_csv(f, header=0, sep="\t")
-    samples = df.loc[:,df.dtypes!=object].columns
-    features = df.loc[:,df.dtypes==object].columns
-    inputs = []
+    df=pd.read_csv(f, header=0, sep="\t")
+    samples=df.loc[:,df.dtypes!=object].columns
+    features=df.loc[:,df.dtypes==object].columns
+    inputs=[]
     for s in samples:
-        _df = df.loc[:,[s]+list(features)]
+        _df=df.loc[:,[s]+list(features)]
         _df.to_csv("{}/{}".format(dir,s), sep="\t", header=True, index=False)
         inputs.append("{}/{}".format(dir,s))
     return inputs
@@ -173,26 +203,26 @@ rule taxonomy2krona:
     output:
         opj(config["results_path"],"annotation","{group}","taxonomy","taxonomy.{fc}.krona.html")
     params:
-        dir = opj(config["results_path"],"annotation","{group}","taxonomy")
+        dir=opj(config["results_path"],"annotation","{group}","taxonomy")
     run:
-        inputs = make_krona_taxonomy_input(input[0], params.dir)
-        input_string = " ".join(inputs)
+        inputs=make_krona_taxonomy_input(input[0], params.dir)
+        input_string=" ".join(inputs)
         shell("ktImportText -o {output[0]} {input_string}")
         for f in [item.split(",")[0] for item in inputs]:
             shell("rm {f}")
 
 rule sum_to_rgi:
     input:
-        annot = opj(config["results_path"], "annotation", "{group}", "rgi.out.txt"),
-        abund = opj(config["results_path"],"annotation","{group}","fc.{fc_type}.tab")
+        annot=opj(config["results_path"], "annotation", "{group}", "rgi.out.txt"),
+        abund=opj(config["results_path"],"annotation","{group}","fc.{fc_type}.tab")
     output:
         opj(config["results_path"], "annotation", "{group}", "rgi.{fc_type}.tab")
     run:
-        annot = pd.read_csv(input.annot, sep="\t", header=0, index_col=0, usecols=[0,16])
+        annot=pd.read_csv(input.annot, sep="\t", header=0, index_col=0, usecols=[0,16])
         # Rename index for annotations to remove text after whitespace
         annot.rename(index=lambda x: x.split(" ")[0], inplace=True)
-        abund = pd.read_csv(input.abund, sep="\t", header=0, index_col=0)
-        df = pd.merge(annot, abund, left_index=True, right_index=True)
+        abund=pd.read_csv(input.abund, sep="\t", header=0, index_col=0)
+        df=pd.merge(annot, abund, left_index=True, right_index=True)
         # Sum to Gene family
-        dfsum = df.groupby("AMR Gene Family").sum()
+        dfsum=df.groupby("AMR Gene Family").sum()
         dfsum.to_csv(output[0], sep="\t", index=True, header=True)
