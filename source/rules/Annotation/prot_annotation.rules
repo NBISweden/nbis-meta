@@ -15,7 +15,8 @@ rule emapper_homology_search:
         tmp_out = opj(os.path.expandvars(config["scratch_path"]), "{group}-eggnog","{group}"),
         flags = "-m diamond --no_annot --no_file_comments"
     log: opj(config["results_path"],"annotation","{group}","{group}.emapper.seed_orthologs.log")
-    conda: "../../../envs/eggnog-mapper.yaml"
+    conda:
+        "../../../envs/annotation.yml"
     message: "Running eggnog diamond search on {wildcards.group}"
     threads: 10
     resources:
@@ -42,7 +43,8 @@ if config["runOnUppMax"] == "yes":
             out = opj(config["results_path"],"annotation","{group}","{group}"),
             flags = "--no_file_comments"
         log: opj(config["results_path"],"annotation","{group}","{group}.emapper.annotations.log")
-        conda: "../../../envs/eggnog-mapper.yaml"
+        conda:
+            "../../../envs/annotation.yml"
         message: "Annotating hits table for {wildcards.group}"
         threads: 10
         resources:
@@ -67,7 +69,8 @@ else:
             out = opj(config["results_path"],"annotation","{group}","{group}"),
             flags = "--no_file_comments"
         log: opj(config["results_path"],"annotation","{group}","{group}.emapper.annotations.log")
-        conda: "../../../envs/eggnog-mapper.yaml"
+        conda:
+            "../../../envs/annotation.yml"
         message: "Annotating hits table for {wildcards.group}"
         threads: 10
         resources:
@@ -103,19 +106,25 @@ rule parse_ko_annotations:
 rule pfam_scan:
     input:
         opj(config["results_path"],"annotation","{group}","final_contigs.faa"),
-        expand(opj(config["resource_path"],"pfam","Pfam-A.hmm.h3{suffix}"), suffix = ["f","i","m","p"])
+        expand(opj(config["resource_path"],"pfam","Pfam-A.hmm.h3{suffix}"),
+               suffix = ["f","i","m","p"])
     output:
         opj(config["results_path"],"annotation","{group}","{group}.pfam.out")
-    conda: "../../../envs/pfam_scan.yaml"
+    conda:
+        "../../../envs/annotation.yml"
     params:
         dir = opj(config["resource_path"],"pfam"),
-        tmp_out = opj(os.path.expandvars(config["scratch_path"]), "{group}.pfam.out")
+        tmp_out = opj(os.path.expandvars(config["scratch_path"]),"{group}.pfam.out")
     threads: 10
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
     shell:
         """
-        pfam_scan.pl -fasta {input[0]} -dir {params.dir} -outfile {params.tmp_out} -cpu {threads}
+        pfam_scan.pl \
+            -fasta {input[0]} \
+            -dir {params.dir} \
+            -outfile {params.tmp_out} \
+            -cpu {threads}
         mv {params.tmp_out} {output[0]}
         """
 
