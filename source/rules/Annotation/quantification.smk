@@ -10,12 +10,16 @@ localrules:
 
 rule write_featurefile:
     input:
-        opj(config["results_path"],"annotation","{group}","final_contigs.gff")
+        opj(config["results_path"],"annotation","{group}",
+            "final_contigs.gff")
     output:
-        opj(config["results_path"],"annotation","{group}","final_contigs.features.gff")
+        opj(config["results_path"],"annotation","{group}",
+            "final_contigs.features.gff")
+    params:
+        src=opj("source","utils","parse_prodigal_gff.py")
     shell:
         """
-        python source/utils/parse_prodigal_gff.py {input} > {output}
+        python {params.src} {input} > {output}
         """
 
 rule featurecount_pe:
@@ -107,11 +111,16 @@ rule normalize_featurecount:
             "{sample}_{run}_{seq_type}.fc.raw.tab")
     params:
         s="{sample}_{run}",
-        script="source/utils/featureCountsTPM.py"
+        src="source/utils/featureCountsTPM.py"
     shell:
         """
         rl=$(grep -w "average length" {input[1]} |  egrep -o "[0-9]+")
-        python {params.script} --rl $rl -i {input[0]} -o {output[0]} --rc {output[1]} --sampleName {params.s}
+        python {params.src} \
+            --rl $rl \
+            -i {input[0]} \
+            -o {output[0]} \
+            --rc {output[1]} \
+            --sampleName {params.s}
         """
 
 def get_fc_files(wildcards, file_type):
