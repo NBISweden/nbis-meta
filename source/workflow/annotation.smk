@@ -29,6 +29,6 @@ for group in assemblyGroups.keys():
 
 include: "../rules/Annotation/markduplicates.smk"
 include: "../rules/Annotation/orfcalling.smk"
-include: "../rules/Annotation/prot_annotation.rules"
+include: "../rules/Annotation/prot_annotation.smk"
 include: "../rules/Annotation/quantification.smk"
 include: "../rules/Annotation/taxonomic_annotation.rules"
