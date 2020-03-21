@@ -8,7 +8,7 @@ rule run_metabat:
         depth = opj(config["results_path"],"metabat","{group}","cov","depth.txt")
     output:
         opj(config["results_path"],"metabat","{group}","{l}","contig_map.tsv")
-    conda: "../../../envs/metabat.yaml"
+    conda: "../../../envs/metabat.yml"
     threads: config["metabat_threads"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
@@ -48,7 +48,7 @@ rule run_maxbin:
     threads: config["maxbin_threads"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*5
-    conda: "../../../envs/maxbin.yaml"
+    conda: "../../../envs/maxbin.yml"
     shell:
         """
         mkdir -p {params.dir}
@@ -81,7 +81,7 @@ rule concoct_cutup:
         fa = opj(config["results_path"],"assembly","{group}","final_contigs_cutup.fa"),
         bed = opj(config["results_path"],"assembly","{group}","final_contigs_cutup.bed")
     conda:
-        "../../../envs/concoct.yaml"
+        "../../../envs/concoct.yml"
     shell:
         """
         cut_up_fasta.py -b {output.bed}  -c 10000 -o 0 -m {input.fa} > {output.fa}
@@ -98,7 +98,7 @@ rule run_concoct:
         length = "{l}"
     threads: config["concoct_threads"]
     conda:
-        "../../../envs/concoct.yaml"
+        "../../../envs/concoct.yml"
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*2
     shell:
@@ -113,7 +113,7 @@ rule merge_cutup:
         opj(config["results_path"],"concoct","{group}","{l}","clustering_gt{l}_merged.csv"),
         opj(config["results_path"],"concoct","{group}","{l}","clustering_gt{l}_merged.log")
     conda:
-        "../../../envs/concoct.yaml"
+        "../../../envs/concoct.yml"
     shell:
         """
         merge_cutup_clustering.py {input[0]} > {output[0]} 2> {output[1]}
@@ -128,7 +128,7 @@ rule extract_fasta:
     params:
         dir = opj(config["results_path"],"concoct","{group}","{l}","fasta")
     conda:
-        "../../../envs/concoct.yaml"
+        "../../../envs/concoct.yml"
     shell:
         """
         extract_fasta_bins.py {input[0]} {input[1]} --output_path {params.dir}
