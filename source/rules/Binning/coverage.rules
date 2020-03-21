@@ -8,16 +8,15 @@ rule concoct_coverage_table:
     output:
         cov = opj(config["results_path"],"concoct","{group}","cov","concoct_inputtable.tsv")
     conda:
-        "../../../envs/concoct.yaml"
+        "../../../envs/concoct.yml"
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*2
     params:
-        src = "concoct_coverage_table.py",
         samplenames = opj(config["results_path"],"concoct","{group}","cov","samplenames")
     shell:
         """
         for f in {input.bam} ; do n=$(basename $f); s=$(echo -e $n | sed 's/_[ps]e.markdup.bam//g'); echo $s; done > {params.samplenames}
-        {params.src} --samplenames {params.samplenames} {input.bed} {input.bam} > {output.cov}
+        concoct_coverage_table.py --samplenames {params.samplenames} {input.bed} {input.bam} > {output.cov}
         rm {params.samplenames}
         """
 
@@ -30,7 +29,7 @@ rule metabat_coverage:
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*2
     conda:
-        "../../../envs/metabat.yaml"
+        "../../../envs/metabat.yml"
     shell:
         """
         jgi_summarize_bam_contig_depths --outputDepth {output.depth} {input.bam} 
