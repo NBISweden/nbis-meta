@@ -265,6 +265,8 @@ rule bowtie_map_pe:
     output:
         bam=temp(opj(config["results_path"],"assembly","{group}",
                      "mapping","{sample}_{run}_pe.bam")),
+        bai=temp(opj(config["results_path"],"assembly","{group}",
+                     "mapping","{sample}_{run}_pe.bam.bai")),
         log=opj(config["results_path"],"assembly","{group}",
                 "mapping","{sample}_{run}_pe.bam.log")
     params:
@@ -294,7 +296,9 @@ rule bowtie_map_pe:
             sort \
             - \
             -o {params.temp_bam}
+        samtools index {params.temp_bam}
         mv {params.temp_bam} {output.bam}
+        mv {params.temp_bam}.bai {output.bai}
         """
 
 rule bowtie_map_se:
@@ -307,6 +311,8 @@ rule bowtie_map_se:
     output:
         bam=temp(opj(config["results_path"],"assembly","{group}",
                      "mapping","{sample}_{run}_se.bam")),
+        bai=temp(opj(config["results_path"],"assembly","{group}",
+                     "mapping","{sample}_{run}_se.bam.bai")),
         log=opj(config["results_path"],"assembly","{group}",
                 "mapping","{sample}_{run}_se.bam.log")
     params:
@@ -335,7 +341,9 @@ rule bowtie_map_se:
             sort \
             - \
             -o {params.temp_bam}
+        samtools index {params.temp_bam}
         mv {params.temp_bam} {output.bam}
+        mv {params.temp_bam}.bai {output.bai}
         """
 
 ##############
