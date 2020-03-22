@@ -64,9 +64,7 @@ rule tango_assign_orfs:
         gff_df=pd.read_csv(input.gff, header=None, sep="\t", comment="#",
                            usecols=[0,8], names=["contig","id"])
         # Extract ids
-        ids=["{}_{}".format(gff_df.loc[i, "contig"],
-                            gff_df.loc[i, "id"].split(";")[0].split("_")[-1])
-                            for i ingff_df.index]
+        ids=["{}_{}".format(gff_df.loc[i, "contig"], gff_df.loc[i, "id"].split(";")[0].split("_")[-1]) for i in gff_df.index]
         gff_df.loc[:, "id"]=ids
         # Read taxonomy for contigs
         tax_df=pd.read_csv(input.tax, header=0, sep="\t", index_col=0)
