@@ -35,26 +35,57 @@ rule metabat_stats:
 
 ## MAXBIN ##
 
+def get_fw_reads(config, p):
+    """
+    MaxBin2 only uses unpaired reads for mapping with bowtie2.
+    Here we iterate over all samples
+    """
+    files=[]
+    for sample in samples.keys():
+        for run in samples[sample].keys():
+            if "R1" in samples[sample][run].keys():
+                f=opj(config["intermediate_path"],"preprocess",
+                        "{sample}_{run}_R1{p}.fastq.gz".format(sample=sample,
+                                                               run=run,
+                                                               p=p))
+            else:
+                f=opj(config["intermediate_path"],"preprocess",
+                      "{sample}_{run}_se{p}.fastq.gz".format(sample=sample,
+                                                             run=run,
+                                                             p=p))
+            files.append(f)
+    reads_string = ""
+    for i, f in enumerate(files, start=1):
+        reads_string+="-reads{i} {f} ".format(i=i, f=f)
+    return reads_string
+
 rule run_maxbin:
     input:
-        fa = opj(config["results_path"],"assembly","{group}","final_contigs.fa"),
-        faa = opj(config["results_path"],"annotation","{group}","final_contigs.faa"),
-        abund_list = opj(config["results_path"],"maxbin","{group}","cov","abund_list")
+        opj(config["results_path"],"assembly","{group}","final_contigs.fa")
     output:
-        touch(opj(config["results_path"],"maxbin","{group}","{l}","{group}.summary"))
+        opj(config["results_path"],"maxbin","{group}","{l}","{group}.summary")
+    log:
+        opj(config["results_path"],"maxbin","{group}","{l}","maxbin.log")
     params:
-        dir = opj(config["results_path"],"maxbin","{group}","{l}"),
-        tmp_dir = opj(config["scratch_path"],"{group}","{l}")
+        dir=opj(config["results_path"],"maxbin","{group}","{l}"),
+        tmp_dir=opj(config["scratch_path"],"{group}","{l}"),
+        reads=get_fw_reads(config, PREPROCESS),
+        markerset=config["maxbin"]
     threads: config["maxbin_threads"]
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*5
+        runtime=lambda wildcards, attempt: attempt**2*60*5
     conda: "../../../envs/maxbin.yml"
     shell:
         """
         mkdir -p {params.dir}
         mkdir -p {params.tmp_dir}
-        run_MaxBin.pl -contig {input.fa} -contig_faa {input.faa} -abund_list {input.abund_list}\
-         -min_contig_length {wildcards.l} -thread {threads} -out {params.tmp_dir}/{wildcards.group}
+        run_MaxBin.pl \
+            -markerset {params.markerset} \
+            -contig {input} \
+            {params.reads} \
+            -min_contig_length {wildcards.l} \
+            -thread {threads} \
+            -out {params.tmp_dir}/{wildcards.group} 2>{log}
         mv {params.tmp_dir}/* {params.dir}
         rm -r {params.tmp_dir}
         """

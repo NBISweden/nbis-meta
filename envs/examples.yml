@@ -1,5 +1,0 @@
-channels:
-  - bioconda
-dependencies:
-  - sra-tools=2.10.1
-  - seqtk=1.3
