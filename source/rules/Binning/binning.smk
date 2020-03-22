@@ -152,6 +152,8 @@ rule run_concoct:
     output:
         opj(config["results_path"],"concoct","{group}","{l}",
             "clustering_gt{l}.csv")
+    log:
+        opj(config["results_path"],"concoct","{group}","{l}","log.txt")
     params:
         basename=opj(config["results_path"],"concoct","{group}","{l}"),
         length="{l}"
@@ -167,7 +169,7 @@ rule run_concoct:
             --coverage_file {input.cov} \
             --composition_file {input.fa} \
             -b {params.basename}/ \
-            -l {params.length}
+            -l {params.length} >/dev/null 2>&1
         """
 
 rule merge_cutup:
