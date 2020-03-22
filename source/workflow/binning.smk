@@ -11,5 +11,5 @@ if config["metabat"]:
         group = assemblyGroups.keys(),
         l=[x for x in config["min_contig_length"] if x>=1500]) # Metabat has a minlength of 1500
 
-include: "../rules/Binning/coverage.rules"
-include: "../rules/Binning/binning.rules"
+include: "../rules/Binning/coverage.smk"
+include: "../rules/Binning/binning.smk"
