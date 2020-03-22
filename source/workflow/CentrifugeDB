@@ -1,4 +1,0 @@
-centrifuge_db_input = expand(opj(config["centrifuge_dir"],"{base}.{i}.cf"), i=[1,2,3], base=config["centrifuge_base"])
-if config["centrifuge_map_filtered"]:
-    centrifuge_db_input.append(opj(config["centrifuge_dir"],"input-sequences.fna.gz"))
-include: "../rules/Classify/prepare_centrifuge.rules"

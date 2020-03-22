@@ -83,8 +83,8 @@ if config["metaphlan2"]:
 centrifuge_input = []
 centrifuge_db_input = []
 if config["centrifuge"]:
-    include: "source/workflow/CentrifugeDB"
-    include: "source/workflow/CentrifugeClassify"
+    include: "source/workflow/centrifuge_db.smk"
+    include: "source/workflow/centrifuge.smk"
     inputs += centrifuge_input + centrifuge_db_input
 # Reference-based mapping
 map_input = []
