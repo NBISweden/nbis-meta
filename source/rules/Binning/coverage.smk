@@ -1,95 +1,47 @@
-localrules: maxbin_generate_abund_list, generate_contig_SAF
-
 ## COVERAGE FOR CONCOCT ##
 rule concoct_coverage_table:
     input:
-        bam = get_all_files(samples, opj(config["results_path"], "assembly", "{group}", "mapping"), ".markdup.bam"),
-        bed = opj(config["results_path"],"assembly","{group}","final_contigs_cutup.bed")
+        bam=get_all_files(samples, opj(config["results_path"],"assembly",
+                                       "{group}", "mapping"), ".bam"),
+        bed=opj(config["results_path"],"assembly","{group}",
+                "final_contigs_cutup.bed")
     output:
-        cov = opj(config["results_path"],"concoct","{group}","cov","concoct_inputtable.tsv")
+        cov=opj(config["results_path"],"concoct","{group}",
+                "cov","concoct_inputtable.tsv")
     conda:
         "../../../envs/concoct.yml"
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*2
+        runtime=lambda wildcards, attempt: attempt**2*60*2
     params:
-        samplenames = opj(config["results_path"],"concoct","{group}","cov","samplenames")
+        samplenames=opj(config["results_path"],"concoct",
+                        "{group}","cov","samplenames")
     shell:
         """
-        for f in {input.bam} ; do n=$(basename $f); s=$(echo -e $n | sed 's/_[ps]e.markdup.bam//g'); echo $s; done > {params.samplenames}
-        concoct_coverage_table.py --samplenames {params.samplenames} {input.bed} {input.bam} > {output.cov}
+        for f in {input.bam} ; 
+            do 
+                n=$(basename $f); 
+                s=$(echo -e $n | sed 's/_[ps]e.markdup.bam//g'); 
+                echo $s; 
+            done > {params.samplenames}
+        concoct_coverage_table.py \
+            --samplenames {params.samplenames} \
+            {input.bed} {input.bam} > {output.cov}
         rm {params.samplenames}
         """
 
 ## COVERAGE FOR METABAT2 ##
 rule metabat_coverage:
     input:
-        bam = get_all_files(samples, opj(config["results_path"], "assembly", "{group}", "mapping"), ".markdup.bam")
+        bam=get_all_files(samples, opj(config["results_path"],"assembly",
+                                       "{group}","mapping"),".bam")
     output:
-        depth = opj(config["results_path"],"metabat","{group}","cov","depth.txt")
+        depth=opj(config["results_path"],"metabat","{group}","cov","depth.txt")
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*2
+        runtime=lambda wildcards, attempt: attempt**2*60*2
     conda:
         "../../../envs/metabat.yml"
     shell:
         """
-        jgi_summarize_bam_contig_depths --outputDepth {output.depth} {input.bam} 
+        jgi_summarize_bam_contig_depths \
+            --outputDepth {output.depth} {input.bam} 
         """
-
-## COVERAGE FOR MAXBIN2 ##
-
-# Generate SAF file for contigs
-rule generate_contig_SAF:
-    input: 
-        opj(config["results_path"],"assembly","{group}","final_contigs.fa")
-    output: 
-        opj(config["results_path"],"maxbin","{group}","cov","{group}.SAF")
-    shell:
-        """
-        python source/utils/fasta2bed.py --saf -i {input[0]} -o {output[0]}
-        """
-
-# Normalize counts
-rule contig_featurecount:
-    input:
-        saf=opj(config["results_path"],"maxbin","{group}","cov","{group}.SAF"),
-        bam=opj(config["results_path"], "assembly","{group}","mapping","{sample}_{run}_{seq_type}.markdup.bam")
-    output:
-        opj(config["results_path"],"maxbin","{group}","cov","{sample}_{run}_{seq_type}.fc.tab"),
-        opj(config["results_path"],"maxbin","{group}","cov","{sample}_{run}_{seq_type}.fc.tab.summary")
-    threads: 4
-    resources:
-        runtime = lambda wildcards, attempt: attempt**2*30
-    params:
-        tmpdir = opj(config["scratch_path"],"{group}-{sample}_{run}")
-    run:
-        shell("mkdir -p {params.tmpdir}")
-        if wildcards.seq_type == "pe":
-            shell("featureCounts -a {input.saf} -F SAF -T {threads} -o {output[0]} -M -p -B --tmpDir {params.tmpdir} {input.bam}")
-        elif wildcards.seq_type == "se":
-            shell("featureCounts -a {input.saf} -F SAF -T {threads} -o {output[0]} -M -B --tmpDir {params.tmpdir} {input.bam}")
-        shell("rm -r {params.tmpdir}")
-
-rule binning_normalize_contigs:
-    input:
-        fc = opj(config["results_path"],"maxbin","{group}","cov","{sample}_{run}_{seq_type}.fc.tab"),
-        sample_info = opj(config["intermediate_path"],"preprocess","read_lengths.tsv")
-    output:
-        tpm = opj(config["results_path"],"maxbin","{group}","cov","{sample}_{run}_{seq_type}.tpm.tab")
-    resources:
-        runtime = lambda wildcards, attempt: attempt**2*60
-    shell:
-        """
-        rl=$(grep -w {wildcards.sample}_{wildcards.run} {input.sample_info} | cut -f2)
-        python source/utils/featureCountsTPM.py -i {input.fc} --rl $rl --sampleName {wildcards.sample} | grep -v \
-         {wildcards.sample} > {output.tpm}
-        """
-
-rule maxbin_generate_abund_list:
-    input:
-        tpms = get_all_files(samples, opj(config["results_path"],"maxbin","{group}","cov"), ".tpm.tab")
-    output:
-        abund_list = opj(config["results_path"],"maxbin","{group}","cov","abund_list")
-    run:
-        with open(output.abund_list, 'w') as fh:
-            for f in input.tpms:
-                fh.write("{}\n".format(f))
