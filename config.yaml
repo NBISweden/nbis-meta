@@ -125,6 +125,9 @@ diamond_threads: 20
 min_contig_length: [2000]
 maxbin: False
 maxbin_threads: 10
+# Marker set to use for maxbin. 40 uses markers universal to both bacteria and
+# archaea. 107 uses markers found in >95% of bacteria.
+maxbin_markerset: 40
 concoct: False
 concoct_threads: 20
 metabat: False
