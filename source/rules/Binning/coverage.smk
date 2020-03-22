@@ -2,7 +2,9 @@
 rule concoct_coverage_table:
     input:
         bam=get_all_files(samples, opj(config["results_path"],"assembly",
-                                       "{group}", "mapping"), ".bam"),
+                                       "{group}","mapping"),".bam"),
+        bai=get_all_files(samples, opj(config["results_path"],"assembly",
+                                       "{group}","mapping"),".bam.bai"),
         bed=opj(config["results_path"],"assembly","{group}",
                 "final_contigs_cutup.bed")
     output:
@@ -14,13 +16,14 @@ rule concoct_coverage_table:
         runtime=lambda wildcards, attempt: attempt**2*60*2
     params:
         samplenames=opj(config["results_path"],"concoct",
-                        "{group}","cov","samplenames")
+                        "{group}","cov","samplenames"),
+        p=POSTPROCESS
     shell:
         """
         for f in {input.bam} ; 
             do 
                 n=$(basename $f); 
-                s=$(echo -e $n | sed 's/_[ps]e.markdup.bam//g'); 
+                s=$(echo -e $n | sed 's/_[ps]e{params.p}.bam//g'); 
                 echo $s; 
             done > {params.samplenames}
         concoct_coverage_table.py \
