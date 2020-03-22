@@ -3,5 +3,5 @@ centrifuge_input = []
 if config["centrifuge_map_filtered"]:
     centrifuge_input.append(opj(config["report_path"],"bowtie2","mean_genome_coverage.pdf"))
 centrifuge_input.append(opj(config["report_path"],"centrifuge","centrifuge.krona.html"))
-include: "../rules/Classify/centrifuge.rules"
+include: "../rules/Classify/centrifuge.smk"
 include: "../rules/Classify/filtering.rules"
