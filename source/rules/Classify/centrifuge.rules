@@ -5,49 +5,70 @@ localrules:
 
 rule centrifuge_pe:
     input:
-        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
-        R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+PREPROCESS+".fastq.gz"),
-        db = expand(opj(config["centrifuge_dir"],"{base}.{i}.cf"), i=[1,2,3], base=config["centrifuge_base"])
+        R1=opj(config["intermediate_path"],"preprocess",
+               "{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
+        R2=opj(config["intermediate_path"],"preprocess",
+               "{sample}_{run}_R2"+PREPROCESS+".fastq.gz"),
+        db=expand(opj(config["centrifuge_dir"],"{base}.{i}.cf"),
+                  i=[1,2,3], base=config["centrifuge_base"])
     output:
         opj(config["results_path"],"centrifuge","{sample}_{run}_pe.out"),
         opj(config["results_path"],"centrifuge","{sample}_{run}_pe.report")
     params:
-        prefix = opj(config["centrifuge_dir"], "{base}".format(base=config["centrifuge_base"])),
-        tmp_out = opj(config["scratch_path"],"{sample}_{run}_pe.out"),
-        tmp_report = opj(config["scratch_path"],"{sample}_{run}_pe.report")
-    message: "Running centrifuge on {wildcards.sample}_{wildcards.run}"
+        prefix=opj(config["centrifuge_dir"],
+                   "{base}".format(base=config["centrifuge_base"])),
+        tmp_out=opj(config["scratch_path"],"{sample}_{run}_pe.out"),
+        tmp_report=opj(config["scratch_path"],"{sample}_{run}_pe.report")
     threads: 20
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60
+        runtime=lambda wildcards, attempt: attempt**2*60
+    conda:
+        "../../../envs/centrifuge.yml"
     shell:
         """
         mkdir -p {config[scratch_path]}
-        centrifuge -k {config[centrifuge_max_assignments]} -1 {input.R1} -2 {input.R2} -x {params.prefix} \
-        -S {params.tmp_out} --report-file {params.tmp_report} -p {threads}
+        centrifuge \
+            -k {config[centrifuge_max_assignments]} \
+            -1 {input.R1} \
+            -2 {input.R2} \
+            -x {params.prefix} \
+            -S {params.tmp_out} \
+            --report-file {params.tmp_report} \
+            -p {threads}
         mv {params.tmp_out} {output[0]}
         mv {params.tmp_report} {output[1]}
         """
 
 rule centrifuge_se:
     input:
-        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+PREPROCESS+".fastq.gz"),
-        db = expand(opj(config["centrifuge_dir"],"{base}.{i}.cf"), i=[1,2,3], base=config["centrifuge_base"])
+        se=opj(config["intermediate_path"],"preprocess",
+               "{sample}_{run}_se"+PREPROCESS+".fastq.gz"),
+        db=expand(opj(config["centrifuge_dir"],
+                      "{base}.{i}.cf"), i=[1,2,3],
+                  base=config["centrifuge_base"])
     output:
         opj(config["results_path"],"centrifuge","{sample}_{run}_se.out"),
         opj(config["results_path"],"centrifuge","{sample}_{run}_se.report")
     params:
-        prefix = opj(config["centrifuge_dir"], "{base}".format(base=config["centrifuge_base"])),
-        tmp_out = opj(config["scratch_path"],"{sample}_{run}_se.out"),
-        tmp_report = opj(config["scratch_path"],"{sample}_{run}_se.report")
+        prefix=opj(config["centrifuge_dir"],
+                   "{base}".format(base=config["centrifuge_base"])),
+        tmp_out=opj(config["scratch_path"],"{sample}_{run}_se.out"),
+        tmp_report=opj(config["scratch_path"],"{sample}_{run}_se.report")
     threads: 20
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60
-    message: "Running centrifuge on {wildcards.sample}_{wildcards.run}"
+        runtime=lambda wildcards, attempt: attempt**2*60
+    conda:
+        "../../../envs/centrifuge.yml"
     shell:
         """
         mkdir -p {config[scratch_path]}
-        centrifuge -k {config[centrifuge_max_assignments]} -U {input.se} -x {params.prefix} -S {params.tmp_out} \
-         --report-file {params.tmp_report} -p {threads}
+        centrifuge \
+            -k {config[centrifuge_max_assignments]} \
+            -U {input.se} \
+            -x {params.prefix} \
+            -S {params.tmp_out} \
+            --report-file {params.tmp_report} \
+            -p {threads}
         mv {params.tmp_out} {output[0]}
         mv {params.tmp_report} {output[1]}
         """
@@ -57,47 +78,72 @@ rule centrifuge_se:
 ######################
 rule centrifuge_kreport:
     input:
-        f = opj(config["results_path"],"centrifuge","{sample}_{run}_{seq_type}.out"),
-        db = expand(opj(config["centrifuge_dir"],"{base}.{i}.cf"), i=[1,2,3], base=config["centrifuge_base"])
+        f=opj(config["results_path"],"centrifuge",
+              "{sample}_{run}_{seq_type}.out"),
+        db=expand(opj(config["centrifuge_dir"],
+                      "{base}.{i}.cf"), i=[1,2,3],
+                  base=config["centrifuge_base"])
     output:
-        opj(config["results_path"],"centrifuge","{sample}_{run}_{seq_type}.kreport")
+        opj(config["results_path"],"centrifuge",
+            "{sample}_{run}_{seq_type}.kreport")
     params:
-        min_score = config["centrifuge_min_score"],
-        prefix = opj(config["centrifuge_dir"], "{base}".format(base=config["centrifuge_base"])),
+        min_score=config["centrifuge_min_score"],
+        prefix=opj(config["centrifuge_dir"],
+                   "{base}".format(base=config["centrifuge_base"]))
+    conda:
+        "../../../envs/centrifuge.yml"
     shell:
         """
-        centrifuge-kreport --min-score {params.min_score} -x {params.prefix} {input.f} > {output[0]}
+        centrifuge-kreport \
+            --min-score {params.min_score} \
+            -x {params.prefix} \
+            {input.f} > {output[0]}
         """
 
 rule centrifuge2krona:
     input:
-        opj(config["results_path"],"centrifuge","{sample}_{run}_{seq_type}.kreport"),
+        opj(config["results_path"],"centrifuge",
+            "{sample}_{run}_{seq_type}.kreport"),
         opj("resources","krona","taxonomy.tab")
     output:
-        opj(config["results_path"],"centrifuge","{sample}_{run}_{seq_type}.html")
+        opj(config["results_path"],"centrifuge",
+            "{sample}_{run}_{seq_type}.html")
     params:
-        tax = "resources/krona"
+        tax="resources/krona"
+    conda:
+        "../../../envs/krona.yml"
     shell:
         """
-        ktImportTaxonomy -m 3 -t 5 -tax {params.tax} -o {output[0]} {input[0]},{wildcards.sample}_{wildcards.run}
+        ktImportTaxonomy -t 5 -m 3 \
+            -tax {params.tax} -o {output[0]} \
+            {input[0]},{wildcards.sample}_{wildcards.run}
         """
+
+def get_krona_input(samples):
+    input_string=""
+    files = get_all_files(samples,opj(config["results_path"],
+                                    "centrifuge"),".kreport")
+    for f in files:
+        sample_run=os.path.basename(f).replace("_pe.kreport","").replace("_se.kreport","")
+        input_string+=" {},{}".format(f,sample_run)
+    return input_string
 
 rule all_centrifuge_to_krona:
     input:
-        f = get_all_files(samples, opj(config["results_path"],"centrifuge"), ".kreport"),
-        h = get_all_files(samples, opj(config["results_path"],"centrifuge"), ".html"),
-        t = opj("resources","krona","taxonomy.tab")
+        f=get_all_files(samples,opj(config["results_path"],
+                                    "centrifuge"),".kreport"),
+        h=get_all_files(samples,opj(config["results_path"],
+                                    "centrifuge"),".html"),
+        t=opj("resources","krona","taxonomy.tab")
     output:
         opj(config["report_path"],"centrifuge","centrifuge.krona.html")
     params:
-        tax = "resources/krona"
-    run:
-        input_string = ""
-        for f in input.f:
-            sample_run = os.path.basename(f).replace("_pe.kreport","").replace("_se.kreport","")
-            print(sample_run,f)
-            input_string+=" {},{}".format(f,sample_run)
-        shell("ktImportTaxonomy -t 5 -m 3 -tax {params.tax} -o {output[0]} {input_string}")
-
-
-
+        tax="resources/krona",
+        input_string=get_krona_input(samples)
+    conda:
+        "../../../envs/krona.yml"
+    shell:
+         """
+         ktImportTaxonomy \
+            -t 5 -m 3 -tax {params.tax} -o {output[0]} {params.input_string}
+         """
