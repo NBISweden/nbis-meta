@@ -116,11 +116,11 @@ if config["metaspades"]:
             # If set to keep intermediate contigs, move to intermediate folder before deleting
             if [ "{config[metaspades_keep_intermediate]}" == "True" ]; then
                 mkdir -p {params.intermediate_contigs}
-                rsync -azv {params.tmp}/K* {params.intermediate_contigs}
+                cp -r {params.tmp}/K* {params.intermediate_contigs}
             fi
             if [ "{config[metaspades_keep_corrected]}" == "True" ]; then
                 mkdir -p {params.corrected}
-                rsync -azv {params.tmp}/corrected {params.corrected}
+                cp -r {params.tmp}/corrected {params.corrected}
             fi
             
             # Clear intermediate contigs
@@ -128,7 +128,7 @@ if config["metaspades"]:
             # Clear corrected reads dir
             rm -rf {params.tmp}/corrected
             # Sync tmp output to outdir before removing
-            rsync -azv {params.tmp}/* {params.output_dir}
+            cp -r {params.tmp}/* {params.output_dir}
             rm -rf {params.tmp}
             mv {params.output_dir}/scaffolds.fasta {params.output_dir}/final_contigs.fa
             """
@@ -206,14 +206,14 @@ else:
             # Sync intermediate contigs if asked for
             if [ "{config[megahit_keep_intermediate]}" == "True" ]; then
                 mkdir -p {params.intermediate_contigs}
-                rsync -azv {params.tmp}/intermediate_contigs/* {params.intermediate_contigs}
+                cp -r {params.tmp}/intermediate_contigs/* {params.intermediate_contigs}
             fi
             
             # Cleanup intermediate
             rm -rf {params.tmp}/intermediate_contigs
             
             # Sync tmp output to outdir before removing
-            rsync -azv {params.tmp}/* {params.output_dir}
+            cp -r {params.tmp}/* {params.output_dir}
             rm -rf {params.tmp}
             mv {params.output_dir}/final.contigs.fa {params.output_dir}/final_contigs.fa
             """
