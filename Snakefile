@@ -61,7 +61,7 @@ if config["assembly"]:
         inputs += annotation_input
     # Binning
     if config["maxbin"] or config["concoct"] or config["metabat"]:
-        include: "source/workflow/Binning"
+        include: "source/workflow/binning.smk"
         inputs += binning_input
 # Kraken
 kraken_input = []
