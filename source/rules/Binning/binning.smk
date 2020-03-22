@@ -89,7 +89,7 @@ rule run_maxbin:
         dir=opj(config["results_path"],"maxbin","{group}","{l}"),
         tmp_dir=opj(config["scratch_path"],"{group}","{l}"),
         reads=get_fw_reads(config, PREPROCESS),
-        markerset=config["maxbin"]
+        markerset=config["maxbin_markerset"]
     threads: config["maxbin_threads"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*5
