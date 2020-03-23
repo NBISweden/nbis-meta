@@ -2,6 +2,36 @@
 NBIS Metagenomics Workflow
 ==========================
 
+.. toctree::
+    :maxdepth: 1
+    :caption: Setup
+    :hidden:
+
+    configuration/index
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Preprocessing
+    :hidden:
+
+    preprocessing/index
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Read-based classification
+    :hidden:
+
+    classification/index
+
+.. toctree::
+    :maxdepth: 1
+    :caption: De-novo assembly
+    :hidden:
+
+    assembly/index
+    annotation/index
+    binning/index
+
 ========
 Overview
 ========
