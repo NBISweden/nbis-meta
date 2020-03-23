@@ -323,7 +323,7 @@ properties:
     type: string
     description: Pre-built kraken index
     default: "minikraken2_v2_8GB"
-    enum: ["minikraken2_v2_8GB", "minikraken2_v1_8GB"]
+    enum: ['minikraken2_v1_8GB','minikraken2_v2_8GB','16S_Greengenes','16S_RDP','16S_Silva']
   kraken_custom:
     type: string
     description: Path to directory containing a custom built kraken2 index (must contain 'hash.k2d', 'opts.k2d', 'taxo.k2d')
