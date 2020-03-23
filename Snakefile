@@ -76,8 +76,8 @@ if config["kraken"]:
 metaphlan_input = []
 metaphlan_db_input = []
 if config["metaphlan2"]:
-    include: "source/workflow/Metaphlan2DB"
-    include: "source/workflow/Metaphlan2Classify"
+    include: "source/workflow/metaphlan2_db.smk"
+    include: "source/workflow/metaphlan2.smk"
     inputs += metaphlan_input + metaphlan_db_input
 # Centrifuge
 centrifuge_input = []
