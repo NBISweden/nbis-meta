@@ -1,49 +1,15 @@
 ==========================
 NBIS Metagenomics Workflow
 ==========================
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Setup
-    :hidden:
-
-    configuration/index
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Preprocessing
-    :hidden:
-
-    preprocessing/index
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Read-based classification
-    :hidden:
-
-    classification/index
-
-.. toctree::
-    :maxdepth: 1
-    :caption: De-novo assembly
-    :hidden:
-
-    assembly/index
-    annotation/index
-    binning/index
-
-========
-Overview
-========
-This is a snakemake workflow for preprocessing and analysis of metagenomic
-datasets. It can handle single- and paired-end data and can run on a
-local laptop with either Linux or OSX, or in a cluster environment.
+A snakemake workflow for preprocessing and analysis of metagenomic
+datasets. Handles single- and/or paired-end data and runs on a local UNIX/LINUX
+laptop, or in a cluster environment.
 
 The source code is available at
 `GitHub <https://github.com/NBISweden/nbis-meta>`_ and is being developed as
 part of the `NBIS <http://nbis.se>`_ bioinformatics infrastructure.
 
-============
+
 Installation
 ============
 
@@ -103,3 +69,34 @@ To run a container with the image and get an interactive shell, run::
     SLURM workload manager (such as Uppmax) you should configure the workflow
     with the SLURM snakemake profile.
     `See the documentation <https://nbis-metagenomic-workflow.readthedocs.io/en/latest/configuration/index.html#how-to-run-on-uppmax-hebbe-snic-resources>`_.
+
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Setup
+    :hidden:
+
+    configuration/index
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Preprocessing
+    :hidden:
+
+    preprocessing/index
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Read-based classification
+    :hidden:
+
+    classification/index
+
+.. toctree::
+    :maxdepth: 1
+    :caption: De-novo assembly
+    :hidden:
+
+    assembly/index
+    annotation/index
+    binning/index
