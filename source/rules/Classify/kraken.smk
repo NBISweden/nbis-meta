@@ -1,79 +1,54 @@
-localrules:
-    kraken2krona,
-    all_kraken_to_krona
-
 ################
 ## Run Kraken ##
 ################
 rule kraken_pe:
     input:
-        R1 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
-        R2 = opj(config["intermediate_path"],"preprocess","{sample}_{run}_R2"+PREPROCESS+".fastq.gz"),
-        db = expand(opj(config["kraken_index_path"], "{n}.k2d"), n=["hash","opts","taxo"])
+        R1=opj(config["intermediate_path"],"preprocess",
+               "{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
+        R2=opj(config["intermediate_path"],"preprocess",
+               "{sample}_{run}_R2"+PREPROCESS+".fastq.gz"),
+        db=expand(opj(config["kraken_index_path"],"{n}.k2d"),
+                  n=["hash","opts","taxo"])
     output:
         opj(config["results_path"],"kraken","{sample}_{run}_pe.out"),
         opj(config["results_path"],"kraken","{sample}_{run}_pe.kreport")
     threads: 10
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*10
+        runtime=lambda wildcards, attempt: attempt**2*60*10
     params:
-        db = opj(config["kraken_index_path"]),
-        mem = config["kraken_params"]
+        db=opj(config["kraken_index_path"]),
+        mem=config["kraken_params"]
+    conda:
+        "../../../envs/kraken.yml"
     shell:
         """
-        kraken2 {params.mem} --db {params.db} --output {output[0]} --report {output[1]} --gzip-compressed \
-        --threads {threads} --paired {input.R1} {input.R2}
+        kraken2 \
+            {params.mem} --db {params.db} --output {output[0]} \
+            --report {output[1]} --gzip-compressed \
+            --threads {threads} --paired {input.R1} {input.R2}
         """
 
 rule kraken_se:
     input:
-        se = opj(config["intermediate_path"],"preprocess","{sample}_{run}_se"+PREPROCESS+".fastq.gz"),
-        db = expand(opj(config["kraken_index_path"], "{n}.k2d"), n=["hash","opts","taxo"])
+        se=opj(config["intermediate_path"],"preprocess",
+               "{sample}_{run}_se"+PREPROCESS+".fastq.gz"),
+        db=expand(opj(config["kraken_index_path"],"{n}.k2d"),
+                  n=["hash","opts","taxo"])
     output:
         opj(config["results_path"],"kraken","{sample}_{run}_se.out"),
         opj(config["results_path"],"kraken","{sample}_{run}_se.kreport")
     threads: 10
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*10
+        runtime=lambda wildcards, attempt: attempt**2*60*10
     params:
-        db = opj(config["kraken_index_path"]),
-        mem = config["kraken_params"]
+        db=opj(config["kraken_index_path"]),
+        mem=config["kraken_params"]
+    conda:
+        "../../../envs/kraken.yml"
     shell:
         """
-        kraken2 {params.mem} --db {params.db} --output {output[0]} --report {output[1]} --gzip-compressed \
-        --threads {threads} {input.se}
+        kraken2 \
+            {params.mem} --db {params.db} --output {output[0]} \
+            --report {output[1]} --gzip-compressed \
+            --threads {threads} {input.se}
         """
-
-######################
-## Generate reports ##
-######################
-rule kraken2krona:
-    input:
-        opj(config["results_path"],"kraken","{sample}_{run}_{seq_type}.kreport"),
-        opj("resources","krona","taxonomy.tab")
-    output:
-        opj(config["results_path"],"kraken","{sample}_{run}_{seq_type}.html")
-    params:
-        tax = "resources/krona"
-    shell:
-        """
-        ktImportTaxonomy -m 3 -t 5 -tax {params.tax} -o {output[0]} {input[0]},{wildcards.sample}_{wildcards.run}
-        """
-
-rule all_kraken_to_krona:
-    """Combined krona plot for all samples"""
-    input:
-        f = get_all_files(samples, opj(config["results_path"],"kraken"), ".kreport"),
-        h = get_all_files(samples, opj(config["results_path"],"kraken"), ".html"),
-        t = opj("resources","krona","taxonomy.tab")
-    output:
-        opj(config["report_path"],"kraken","kraken.krona.html")
-    params:
-        tax = "resources/krona"
-    run:
-        input_string = ""
-        for f in input.f:
-            sample_run = os.path.basename(f).replace("_pe.kreport","").replace("_se.kreport","")
-            print(sample_run,f)
-            input_string+=" {},{}".format(f,sample_run)
-        shell("ktImportTaxonomy -m 3 -t 5 -tax {params.tax} {input_string} -o {output[0]}")

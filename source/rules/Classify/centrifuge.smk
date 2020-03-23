@@ -1,7 +1,5 @@
 localrules:
-    centrifuge2krona,
-    centrifuge_kreport,
-    all_centrifuge_to_krona
+    centrifuge_kreport
 
 rule centrifuge_pe:
     input:
@@ -99,51 +97,3 @@ rule centrifuge_kreport:
             -x {params.prefix} \
             {input.f} > {output[0]}
         """
-
-rule centrifuge2krona:
-    input:
-        opj(config["results_path"],"centrifuge",
-            "{sample}_{run}_{seq_type}.kreport"),
-        opj("resources","krona","taxonomy.tab")
-    output:
-        opj(config["results_path"],"centrifuge",
-            "{sample}_{run}_{seq_type}.html")
-    params:
-        tax="resources/krona"
-    conda:
-        "../../../envs/krona.yml"
-    shell:
-        """
-        ktImportTaxonomy -t 5 -m 3 \
-            -tax {params.tax} -o {output[0]} \
-            {input[0]},{wildcards.sample}_{wildcards.run}
-        """
-
-def get_krona_input(samples):
-    input_string=""
-    files = get_all_files(samples,opj(config["results_path"],
-                                    "centrifuge"),".kreport")
-    for f in files:
-        sample_run=os.path.basename(f).replace("_pe.kreport","").replace("_se.kreport","")
-        input_string+=" {},{}".format(f,sample_run)
-    return input_string
-
-rule all_centrifuge_to_krona:
-    input:
-        f=get_all_files(samples,opj(config["results_path"],
-                                    "centrifuge"),".kreport"),
-        h=get_all_files(samples,opj(config["results_path"],
-                                    "centrifuge"),".html"),
-        t=opj("resources","krona","taxonomy.tab")
-    output:
-        opj(config["report_path"],"centrifuge","centrifuge.krona.html")
-    params:
-        tax="resources/krona",
-        input_string=get_krona_input(samples)
-    conda:
-        "../../../envs/krona.yml"
-    shell:
-         """
-         ktImportTaxonomy \
-            -t 5 -m 3 -tax {params.tax} -o {output[0]} {params.input_string}
-         """
