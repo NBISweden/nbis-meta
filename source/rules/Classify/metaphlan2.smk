@@ -174,7 +174,8 @@ rule metaphlan2graphlan:
     output:
         temp(opj(config["report_path"],"metaphlan2","metaphlan2.tree.txt")),
         temp(opj(config["report_path"],"metaphlan2","metaphlan2.annot.txt"))
-    conda: "../../../envs/metaphlan2.yaml"
+    conda:
+        "../../../envs/graphlan.yml"
     shell:
         """
         export2graphlan.py \
@@ -192,7 +193,7 @@ rule graphlan_annotate:
     output:
         temp(opj(config["report_path"],"metaphlan2","metaphlan2.abundance.xml"))
     conda: 
-        "../../../envs/metaphlan2.yml"
+        "../../../envs/graphlan.yml"
     shell:
         """
         graphlan_annotate.py --annot {input[1]} {input[0]} {output[0]}
@@ -204,7 +205,7 @@ rule graphlan:
     output:
         opj(config["report_path"],"metaphlan2","metaphlan2.graph.png")
     conda: 
-        "../../../envs/metaphlan2.yml"
+        "../../../envs/graphlan.yml"
     shell:
         """
         graphlan.py --dpi 300 {input[0]} {output[0]}

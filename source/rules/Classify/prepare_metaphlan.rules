@@ -3,17 +3,20 @@ localrules:
 
 rule download_metaphlan:
     output:
-        opj(config["resource_path"],"metaphlan2","mpa_v20_m200.tar"),
         opj(config["resource_path"],"metaphlan2","mpa_v20_m200.fna"),
         opj(config["resource_path"],"metaphlan2","mpa_v20_m200.md5")
     params:
-        outdir = opj(config["resource_path"],"metaphlan2")
+        outdir=opj(config["resource_path"],"metaphlan2"),
+        tmpdir=opj(config["scratch_path"],"metaphlan2"),
+        url_base="https://bitbucket.org/biobakery/metaphlan2/downloads"
     shell:
         """
-        curl -L -o {output[0]} https://bitbucket.org/biobakery/metaphlan2/downloads/mpa_v20_m200.tar
-        tar -C {params.outdir} -x -f {output[0]}
-        curl -L -o {output[2]} https://bitbucket.org/biobakery/metaphlan2/downloads/mpa_v20_m200.md5
-        bunzip2 {params.outdir}/mpa_v20_m200.fna.bz2
+        curl -L -o {params.tmpdir}/mpa.tar {params.url_base}/mpa_v20_m200.tar
+        tar -C {params.tmpdir} -xf {params.tmpdir}/mpa.tar
+        rm {params.tmpdir}/mpa.tar 
+        curl -L -o {params.tmpdir}/md5 {params.url_base}/mpa_v20_m200.md5
+        bunzip2 {params.tmpdir}/mpa_v20_m200.fna.bz2
+        mv {params.tmpdir}/* {params.outdir}
         """
 
 rule bowtiebuild_metaphlan:
@@ -21,13 +24,17 @@ rule bowtiebuild_metaphlan:
         opj(config["resource_path"],"metaphlan2","mpa_v20_m200.fna"),
         opj(config["resource_path"],"metaphlan2","mpa_v20_m200.md5")
     output:
-        expand(opj(config["resource_path"],"metaphlan2","mpa_v20_m200.{index}.bt2"), index = range(1,5)),
-        expand(opj(config["resource_path"],"metaphlan2","mpa_v20_m200.rev.{rev_index}.bt2"), rev_index = range(1,3))
+        expand(opj(config["resource_path"],"metaphlan2",
+                   "mpa_v20_m200.{index}.bt2"), index=range(1,5)),
+        expand(opj(config["resource_path"],"metaphlan2",
+                   "mpa_v20_m200.rev.{rev_index}.bt2"), rev_index=range(1,3))
     params:
-        prefix = opj(config["resource_path"],"metaphlan2","mpa_v20_m200")
+        prefix=opj(config["resource_path"],"metaphlan2","mpa_v20_m200")
     threads: 10
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*48
+        runtime=lambda wildcards, attempt: attempt**2*60*48
+    conda:
+        "../../../envs/metaphlan2.yml"
     shell:
         """
         bowtie2-build --threads {threads} {input[0]} {params.prefix}
