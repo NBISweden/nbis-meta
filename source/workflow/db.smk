@@ -26,7 +26,7 @@ if config["rgi"]:
     db_input.append(opj(config["resource_path"], "card", "card.json"))
 
 include: "../rules/DB/prepare_sortmerna.smk"
-include: "../rules/DB/prepare_eggnog.rules"
+include: "../rules/DB/prepare_eggnog.smk"
 include: "../rules/DB/prepare_hmms.smk"
 include: "../rules/DB/prepare_infernal.smk"
 include: "../rules/DB/prepare_taxonomy.smk"
