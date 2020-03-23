@@ -49,7 +49,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'NBIS-Metagenomics'
-copyright = '2018, John Sundh'
+copyright = '2020, John Sundh'
 author = 'John Sundh'
 
 # The version info for the project you're documenting, acts as replacement for
