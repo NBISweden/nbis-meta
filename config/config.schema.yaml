@@ -352,7 +352,7 @@ properties:
     type: integer
     description: How many maximum number of assignments from centrifuge (set to 1 to implement LCA-classification)
     default: 1
-  metaphlan2:
+  metaphlan:
     type: boolean
     description: Indicates whether to run metaphlan2 profiler
     default: false

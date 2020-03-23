@@ -37,7 +37,7 @@ rule bowtiebuild_metaphlan:
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*48
     conda:
-        "../../../envs/metaphlan2.yml"
+        "../../../envs/metaphlan.yml"
     shell:
         """
         bowtie2-build \

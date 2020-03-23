@@ -27,7 +27,7 @@ rule metaphlan2_pe:
     params:
         bowtie2db=opj(config["resource_path"],"metaphlan2")
     conda:
-        "../../../envs/metaphlan2.yml"
+        "../../../envs/metaphlan.yml"
     threads: 10
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
@@ -64,7 +64,7 @@ rule metaphlan2_se:
     params:
         bowtie2db=opj(config["resource_path"],"metaphlan2")
     conda: 
-        "../../../envs/metaphlan2.yml"
+        "../../../envs/metaphlan.yml"
     threads: 10
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
@@ -94,7 +94,7 @@ rule metaphlan2kronatext:
         temp(opj(config["results_path"],"metaphlan2",
                  "{sample}_{run}_{seq_type}.mp2.krona"))
     conda: 
-        "../../../envs/metaphlan2.yml"
+        "../../../envs/metaphlan.yml"
     shell:
         """
         metaphlan2krona.py -p {input[0]} -k {output[0]}
@@ -149,7 +149,7 @@ rule merge_metaphlan2:
     output:
         opj(config["report_path"],"metaphlan2","metaphlan2.merged.out")
     conda: 
-        "../../../envs/metaphlan2.yml"
+        "../../../envs/metaphlan.yml"
     shell:
         """
         merge_metaphlan_tables.py {input} | sed 's/_[ps]e.mp2//g' > {output[0]}

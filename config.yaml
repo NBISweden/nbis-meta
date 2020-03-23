@@ -207,4 +207,4 @@ centrifuge_min_read_count: 5000
 #################
 ## MetaPhlAn 2 ##
 #################
-metaphlan2: False
+metaphlan: False

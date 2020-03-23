@@ -75,9 +75,9 @@ if config["kraken"]:
 # Metaphlan2
 metaphlan_input = []
 metaphlan_db_input = []
-if config["metaphlan2"]:
-    include: "source/workflow/metaphlan2_db.smk"
-    include: "source/workflow/metaphlan2.smk"
+if config["metaphlan"]:
+    include: "source/workflow/metaphlan_db.smk"
+    include: "source/workflow/metaphlan.smk"
     inputs += metaphlan_input + metaphlan_db_input
 # Centrifuge
 centrifuge_input = []
@@ -86,7 +86,7 @@ if config["centrifuge"]:
     include: "source/workflow/centrifuge_db.smk"
     include: "source/workflow/centrifuge.smk"
     inputs += centrifuge_input + centrifuge_db_input
-if config["centrifuge"] or config["kraken"] or config["metaphlan2"]:
+if config["centrifuge"] or config["kraken"] or config["metaphlan"]:
     include: "source/rules/Classify/krona.smk"
 
 ###########
@@ -125,9 +125,9 @@ rule kraken_classify:
     input: pipeline_report, preprocess_input, kraken_input
 
 # metaphlan2
-rule metaphlan2_db:
+rule metaphlan_db:
     input: metaphlan_db_input
-rule metaphlan2_classify:
+rule metaphlan_classify:
     input: pipeline_report, preprocess_input, metaphlan_db_input, metaphlan_input
 
 # binning
