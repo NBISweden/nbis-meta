@@ -68,9 +68,9 @@ kraken_input = []
 kraken_db_input = []
 if config["kraken"]:
     # Download and process kraken datatbase
-    include: "source/workflow/KrakenDB"
+    include: "source/workflow/kraken_db.smk"
     # Kraken classify samples
-    include: "source/workflow/KrakenClassify"
+    include: "source/workflow/kraken.smk"
     inputs += kraken_input + kraken_db_input
 # Metaphlan2
 metaphlan_input = []
@@ -86,6 +86,8 @@ if config["centrifuge"]:
     include: "source/workflow/centrifuge_db.smk"
     include: "source/workflow/centrifuge.smk"
     inputs += centrifuge_input + centrifuge_db_input
+if config["centrifuge"] or config["kraken"] or config["metaphlan2"]:
+    include: "source/rules/Classify/krona.smk"
 # Reference-based mapping
 map_input = []
 if config["reference_map"]:
