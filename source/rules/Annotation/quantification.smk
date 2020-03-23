@@ -4,8 +4,6 @@ localrules:
     aggregate_featurecount,
     sum_to_taxa,
     quantify_features,
-    normalize_pathways_modules,
-    taxonomy2krona,
     sum_to_rgi
 
 rule write_featurefile:
@@ -151,7 +149,7 @@ rule aggregate_featurecount:
         tpm_files=get_all_files(samples, opj(config["results_path"], "assembly", "{group}", "mapping"), ".fc.tpm.tab"),
         gff_file=opj(config["results_path"],"annotation","{group}","final_contigs.features.gff")
     output:
-        raw=opj(config["results_path"],"annotation","{group}","fc.count.tab"),
+        raw=opj(config["results_path"],"annotation","{group}","fc.raw.tab"),
         tpm=opj(config["results_path"],"annotation","{group}","fc.tpm.tab")
     run:
         gff_df=pd.read_csv(input.gff_file, header=None, usecols=[0,8], names=["contig","gene"], sep="\t")
@@ -173,21 +171,8 @@ rule quantify_features:
         opj(config["results_path"],"annotation","{group}","{db}.parsed.{fc_type}.tab")
     shell:
         """
-        python source/utils/eggnog-parser.py quantify {input.abund} {input.annot} {output[0]}
-        """
-
-rule normalize_pathways_modules:
-    """Normalizes pathway and module abundances by the size of each pathway/module"""
-    input:
-        abund=opj(config["results_path"],"annotation","{group}","fc.{fc_type}.tab"),
-        annot=opj(config["results_path"],"annotation","{group}","{db}.parsed.tab"),
-        info=opj(config["resource_path"],"kegg","kegg_ko2{db}.tsv")
-    output:
-        opj(config["results_path"],"annotation","{group}","{db}.parsed.{fc_type}.normalized.tab")
-    shell:
-        """
-        python source/utils/eggnog-parser.py quantify {input.abund} {input.annot} {output[0]} \
-         --normalize {input.info}
+        python source/utils/eggnog-parser.py \
+            quantify {input.abund} {input.annot} {output[0]}
         """
 
 rule sum_to_taxa:
@@ -212,31 +197,6 @@ rule sum_to_taxa:
         taxa_norm=pd.merge(df,norm_df,right_index=True,left_index=True)
         taxa_norm_sum=taxa_norm.groupby(header[1:]).sum().reset_index()
         taxa_norm_sum.to_csv(output.norm, sep="\t", index=False)
-
-def make_krona_taxonomy_input(f, dir):
-    df=pd.read_csv(f, header=0, sep="\t")
-    samples=df.loc[:,df.dtypes!=object].columns
-    features=df.loc[:,df.dtypes==object].columns
-    inputs=[]
-    for s in samples:
-        _df=df.loc[:,[s]+list(features)]
-        _df.to_csv("{}/{}".format(dir,s), sep="\t", header=True, index=False)
-        inputs.append("{}/{}".format(dir,s))
-    return inputs
-
-rule taxonomy2krona:
-    input:
-        opj(config["results_path"],"annotation","{group}","taxonomy","tax.{fc}.tab")
-    output:
-        opj(config["results_path"],"annotation","{group}","taxonomy","taxonomy.{fc}.krona.html")
-    params:
-        dir=opj(config["results_path"],"annotation","{group}","taxonomy")
-    run:
-        inputs=make_krona_taxonomy_input(input[0], params.dir)
-        input_string=" ".join(inputs)
-        shell("ktImportText -o {output[0]} {input_string}")
-        for f in [item.split(",")[0] for item in inputs]:
-            shell("rm {f}")
 
 rule sum_to_rgi:
     input:

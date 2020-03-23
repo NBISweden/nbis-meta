@@ -12,7 +12,8 @@ if config["eggnog"]:
     db_input.append(opj(config["resource_path"],"eggnog-mapper","eggnog.db"))
     db_input.append(opj(config["resource_path"],"eggnog-mapper","eggnog.version"))
     db_input += expand(opj(config["resource_path"],"kegg", "{f}"),
-        f = ["kegg_ec2pathways.tsv", "kegg_ko2ec.tsv", "kegg_ko2modules.tsv", "kegg_ko2pathways.tsv", "kegg_kos.tsv",
+        f = ["kegg_ec2pathways.tsv",
+             "kegg_ko2ec.tsv", "kegg_ko2pathways.tsv", "kegg_kos.tsv",
              "kegg_modules.tsv", "kegg_pathways.tsv"])
 if config["pfam"]:
     db_input.append(opj(config["resource_path"],"pfam","Pfam-A.hmm"))

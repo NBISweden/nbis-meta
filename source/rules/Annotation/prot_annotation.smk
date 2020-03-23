@@ -121,7 +121,7 @@ rule parse_ko_annotations:
         annotations=opj(config["results_path"],"annotation","{group}","{group}.emapper.annotations"),
         ko2ec=opj(config["resource_path"],"kegg","kegg_ko2ec.tsv"),
         ko2path=opj(config["resource_path"],"kegg","kegg_ko2pathways.tsv"),
-        ko2module=opj(config["resource_path"],"kegg","kegg_ko2modules.tsv"),
+        #ko2module=opj(config["resource_path"],"kegg","kegg_ko2modules.tsv"),
         kos=opj(config["resource_path"],"kegg","kegg_kos.tsv"),
         modules=opj(config["resource_path"],"kegg","kegg_modules.tsv"),
         pathways=opj(config["resource_path"],"kegg","kegg_pathways.tsv")

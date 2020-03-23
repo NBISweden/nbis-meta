@@ -1,31 +1,39 @@
+# Workflow module for protein annotations
 annotation_input = []
 
-# if any assembly groups have been specified in the sample file then run these
 for group in assemblyGroups.keys():
     # Add orfcalling results
-    annotation_input.append(opj(config["results_path"],"annotation",group,"final_contigs.gff"))
+    annotation_input.append(opj(config["results_path"],"annotation",
+                                group,"final_contigs.gff"))
     if config["infernal"]:
-        annotation_input.append(opj(config["results_path"],"annotation",group,"final_contigs.cmscan"))
+        annotation_input.append(opj(config["results_path"],"annotation",
+                                    group,"final_contigs.cmscan"))
     if config["tRNAscan"]:
-        annotation_input.append(opj(config["results_path"],"annotation",group,"tRNA.out"))
+        annotation_input.append(opj(config["results_path"],"annotation",
+                                    group,"tRNA.out"))
     # Add EGGNOG annotation
     if config["eggnog"]:
-        for parsed in ["enzymes","pathways","kos","modules"]:
-            annotation_input.append(opj(config["results_path"],"annotation",group,"{}.parsed.tpm.tab".format(parsed)))
-        # Add normalized output for modules and pathways
-        annotation_input += expand(opj(config["results_path"], "annotation", group,"{eggnog_type}.parsed.{fc_type}.normalized.tab"),
-                                   eggnog_type = ["modules","pathways"], fc_type = ["count", "tpm"])
+        annotation_input+=expand(opj(config["results_path"],"annotation",
+                                     group,"{db}.parsed.{fc}.tab"),
+                                 db=["enzymes","pathways","kos","modules"],
+                                 fc=["raw","tpm"])
     # Add PFAM annotation
     if config["pfam"]:
-        annotation_input.append(opj(config["results_path"],"annotation",group,"pfam.parsed.tpm.tab"))
+        annotation_input+=expand(opj(config["results_path"],"annotation",
+                                    group,"pfam.parsed.{fc}.tab"),
+                                fc=["tpm","raw"])
     # Add taxonomic annotation
     if config["taxonomic_annotation"]:
-        annotation_input.append(opj(config["results_path"],"annotation",group,"taxonomy","taxonomy.tpm.krona.html"))
-        annotation_input.append(opj(config["results_path"],"annotation",group,"taxonomy","tax.tpm.tab"))
+        annotation_input+=expand(opj(config["results_path"],"annotation",
+                                     group,"taxonomy","tax.{fc}.tab"),
+                                 fc=["tpm","raw"])
     # Add Resistance Gene Identifier output
     if config["rgi"]:
-        annotation_input += expand(opj(config["results_path"],"annotation",group,"rgi.{fc_type}.tab"), fc_type = ["count","tpm"])
-        annotation_input.append(opj(config["results_path"],"annotation",group,"rgi.out.txt"))
+        annotation_input += expand(opj(config["results_path"],"annotation",
+                                       group,"rgi.{fc}.tab"),
+                                   fc=["raw","tpm"])
+        annotation_input.append(opj(config["results_path"],"annotation",
+                                    group,"rgi.out.txt"))
 
 include: "../rules/Annotation/markduplicates.smk"
 include: "../rules/Annotation/orfcalling.smk"
