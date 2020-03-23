@@ -1,3 +1,5 @@
+# Workflow module for annotation database files
+
 db_input = []
 
 if config["taxonomic_annotation"]:
@@ -25,7 +27,7 @@ if config["rgi"]:
 
 include: "../rules/DB/prepare_sortmerna.smk"
 include: "../rules/DB/prepare_eggnog.rules"
-include: "../rules/DB/prepare_hmms.rules"
+include: "../rules/DB/prepare_hmms.smk"
 include: "../rules/DB/prepare_infernal.smk"
 include: "../rules/DB/prepare_taxonomy.smk"
 include: "../rules/DB/prepare_rgi.rules"
