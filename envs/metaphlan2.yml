@@ -1,8 +1,7 @@
-name: metaphlan2
 channels:
+  - conda-forge
   - bioconda
+  - defaults
 dependencies:
-  - python=2.7
-  - metaphlan2
-  - graphlan
-  - export2graphlan
+  - python=2.7.15
+  - metaphlan2=2.7.7
