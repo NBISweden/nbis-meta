@@ -8,3 +8,4 @@ dependencies:
   - eggnog-mapper=2.0.1
   - infernal=1.1.2
   - trnascan-se=2.0.5
+  - rgi=4.0.3

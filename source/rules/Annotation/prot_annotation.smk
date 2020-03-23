@@ -212,7 +212,7 @@ rule run_rgi:
         out=opj(config["results_path"],"annotation","{group}","rgi.out"),
         settings=config["rgi_params"]
     conda:
-        "../../../envs/rgi.yaml"
+        "../../../envs/annotation.yml"
     threads: 10
     resources:
         runtime=lambda wildcards,attempt: attempt**2*60
