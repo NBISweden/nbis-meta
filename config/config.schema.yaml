@@ -305,15 +305,6 @@ properties:
     type: string
     description: Parameters to pass to the bowtie2 aligner
     default: "--very-sensitive"
-  ## Reference based read mapping ##
-  reference_map:
-    type: boolean
-    description: Indicates whether to run reference based mapping
-    default: false
-  refmap_min_read_count:
-    type: integer
-    description: Minimum read count for first-step filtering using centrifuge
-    default: 50
   ## Classification ##
   kraken:
     type: boolean
@@ -349,22 +340,10 @@ properties:
     type: string
     default: "superkingdom"
     enum: ["superkingdom", "kingdom", "phylum", "class", "order", "family", "genus", "species"]
-  centrifuge_map_filtered:
-    type: boolean
-    description: Do an additional map of filtered reads back against reference genomes
-    default: false
   centrifuge_min_score:
     type: number
     description: Minimum score for considering centrifuge output
     default: 75
-  sourmash_fraction:
-    type: integer
-    description: How many kmer hashes to compute using sourmash (1 in sourmash_fraction)
-    default: 100
-  sourmash_min_cov:
-    type: number
-    description: Minimum coverage estimated from sourmash (0.1 = 10% of a genome covered by a sample)
-    default: 0.1
   centrifuge_min_read_count:
     type: number
     description: Minimum read count required during pre-filtering with centrifuge

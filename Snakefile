@@ -88,14 +88,6 @@ if config["centrifuge"]:
     inputs += centrifuge_input + centrifuge_db_input
 if config["centrifuge"] or config["kraken"] or config["metaphlan2"]:
     include: "source/rules/Classify/krona.smk"
-# Reference-based mapping
-map_input = []
-if config["reference_map"]:
-    # Use centrifuge to download genomes for reference mapping
-    # So set run_centrifuge to True
-    config["centrifuge"] = True
-    include: "source/workflow/Map"
-    inputs += map_input
 
 ###########
 ## RULES ##
@@ -141,7 +133,3 @@ rule metaphlan2_classify:
 # binning
 rule binning:
     input: pipeline_report, preprocess_input, assembly_input, binning_input
-
-# Reference based database
-rule refmap:
-    input: pipeline_report, centrifuge_db_input, preprocess_input, map_input

@@ -18,7 +18,6 @@ NBIS Metagenomics Workflow
     :caption: Read-based
 
     classification/index
-    refmap/index
 
 .. toctree::
     :maxdepth: 1

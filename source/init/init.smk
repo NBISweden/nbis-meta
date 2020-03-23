@@ -172,10 +172,6 @@ if config["pfam"]:
 if config["taxonomic_annotation"]:
     config_params.append((" - Database for taxonomic annotation", os.path.abspath(opj(config["taxdb"], "diamond.dmnd"))))
 
-if config["reference_map"]:
-    config["centrifuge"]=True
-    config_params.append((" - Reference based mapping","True"))
-
 # Add read-based config info
 if config["centrifuge"]:
     # Check if custom database exists
@@ -202,7 +198,6 @@ if config["kraken"]:
     else:
         config["kraken_params"]=""
     config_params.append((" - Read classifier","Kraken"))
-
 
 config_params.append((" - Configfiles", "{}".format(",".join(workflow.configfiles))))
 localrules: write_config
