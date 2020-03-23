@@ -156,16 +156,14 @@ rule merge_metaphlan2:
         """
 
 rule metaphlan2_heatmap:
+    #TODO: Due to deprecated matplotlib properties and incompatible conda
+    #conda versions this rule needs to be updated with proper plotting
     input:
-        opj(config["report_path"], "metaphlan2", "metaphlan2.merged.out")
+        opj(config["report_path"],"metaphlan2","metaphlan2.merged.out")
     output:
-        opj(config["report_path"], "metaphlan2", "metaphlan2.heatmap.png")
-    conda: "../../../envs/metaphlan2.yaml"
+        touch(opj(config["report_path"],"metaphlan2","metaphlan2.heatmap.png"))
     shell:
         """
-        metaphlan_hclust_heatmap.py \
-            -c bbcry --top 25 --minv 0.1 -s log \
-            --in {input[0]} --out {output[0]}
         """
 
 rule metaphlan2graphlan:
