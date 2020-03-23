@@ -9,7 +9,7 @@ rule download_pfam:
         datfile=opj(config["resource_path"],"pfam","Pfam-A.hmm.dat"),
         versionfile=opj(config["resource_path"],"pfam","Pfam-A.version"),
     params:
-        ftp = "ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release"
+        ftp="ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release"
     shell:
         """
         curl -s -L -o {output.hmmfile}.gz {params.ftp}/Pfam-A.hmm.gz
@@ -26,7 +26,7 @@ rule download_pfam_info:
         clanfile=opj(config["resource_path"],"pfam","clan.txt"),
         info=opj(config["resource_path"],"pfam","Pfam-A.clans.tsv")
     params:
-        ftp = "ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release"
+        ftp="ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release"
     shell:
         """
         curl -s -L -o {output.clanfile}.gz {params.ftp}/database_files/clan.txt.gz
@@ -40,8 +40,9 @@ rule press_pfam:
     input:
         hmmfile=opj(config["resource_path"],"pfam","Pfam-A.hmm")
     output:
-        expand(opj(config["resource_path"],"pfam","Pfam-A.hmm.h3{suffix}"), suffix = ["f","i","m","p"])
-    conda: "../../../envs/pfam_scan.yaml"
+        expand(opj(config["resource_path"],"pfam","Pfam-A.hmm.h3{suffix}"),
+               suffix=["f","i","m","p"])
+    conda: "../../../envs/annotation.yml"
     shell:
         """
         hmmpress {input.hmmfile}
