@@ -3,7 +3,7 @@ A workflow for metagenomic projects
 
 [![Documentation Status](https://readthedocs.org/projects/nbis-metagenomic-workflow/badge/?version=latest)](http://nbis-metagenomic-workflow.readthedocs.io/en/latest/?badge=latest)
 [![Python 3.7.6](https://img.shields.io/badge/python-3.7.6-blue.svg)](https://www.python.org/downloads/release/python-376/)
-[![Snakemake 5.11.2](https://img.shields.io/badge/snakemake-5.11.2-brightgreen.svg?style=flat-square)](https://img.shields.io/badge/snakemake-5.11.2-brightgreen.svg?style=flat-square)
+[![Snakemake 5.11.2](https://img.shields.io/badge/snakemake-5.11.2-brightgreen.svg?style=flat-square)](https://img.shields.io/badge/snakemake-5.11.2)
 
 ## Overview
 A [snakemake](http://snakemake.readthedocs.io/en/stable/) workflow for
