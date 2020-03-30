@@ -2,22 +2,24 @@
 A workflow for metagenomic projects
 
 [![Documentation Status](https://readthedocs.org/projects/nbis-metagenomic-workflow/badge/?version=latest)](http://nbis-metagenomic-workflow.readthedocs.io/en/latest/?badge=latest)
-[![Python 3.5](https://img.shields.io/badge/python-3.5-blue.svg)](https://www.python.org/downloads/release/python-350/)
-[![Snakemake 4.4](https://img.shields.io/badge/snakemake-%E2%89%A54.4.0-brightgreen.svg?style=flat-square)](https://img.shields.io/badge/snakemake-%E2%89%A54.4.0-brightgreen.svg?style=flat-square)
+[![Python 3.7.6](https://img.shields.io/badge/python-3.7.6-blue.svg)](https://www.python.org/downloads/release/python-376/)
+[![Snakemake 5.11.2](https://img.shields.io/badge/snakemake-5.11.2-brightgreen.svg?style=flat-square)](https://img.shields.io/badge/snakemake-5.11.2)
 
 ## Overview
-This is a [snakemake](http://snakemake.readthedocs.io/en/stable/) workflow that processes paired-end and/or single-end metagenomic samples.
+A [snakemake](http://snakemake.readthedocs.io/en/stable/) workflow for
+paired- and/or single-end metagenomic data.
 
-Potential analyses include:
+You can use this workflow for, _e.g._:
 
-- **read-based taxonomic classification**
+- **read-trimming**
+- **taxonomic classification**
 - **assembly**
-- **functional and taxonomic annotation** of coding sequences
-- **genome binning** of assembled contigs
+- **functional and taxonomic annotation**
+- **metagenomic binning**
 
 ## Installation
 
-### Clone the repository
+### From GitHub
 Checkout the latest version of this repository:
 
 ```
@@ -30,7 +32,7 @@ Change directory:
 cd nbis-meta
 ```
 
-### Install the required software
+#### Install the required software
 All the software needed to run this workflow is included as a
 [conda](http://anaconda.org) environment file. You will need to
 [install conda](https://conda.io/docs/user-guide/install/index.html)
@@ -43,18 +45,7 @@ folder.
 First create the environment using the supplied file:
 
 ```
-mkdir -p envs/nbis-meta
-conda env create -f envs/environment.yaml -p envs/nbis-meta
-```
-
-This creates the `nbis-meta` environment inside the `envs/` directory and
-installs the environment there.
-
-Next, add this directory to the envs_dirs in your conda config (this is to 
-simplify activation of the environment.
-
-```
-conda config --add envs_dirs $(pwd)/envs/
+conda env create -f envs/environment.yml
 ```
 
 Activate the environment using:
@@ -63,7 +54,7 @@ Activate the environment using:
 conda activate nbis-meta
 ```
 
-### Configure workflow for the SLURM Workload Manager (e.g. Uppmax)
+#### Configure workflow for the SLURM Workload Manager (e.g. Uppmax)
 If you are going to run the workflow on a compute cluster such as
 [Uppmax](https://uppmax.uu.se/) you can make use of the snakemake SLURM
 profile created by [Per Unneberg](https://github.com/percyfal).
@@ -78,7 +69,7 @@ mkdir profiles
 
 ```
 mkdir envs/cookiecutter
-conda env create -f envs/cookiecutter.yaml -p envs/cookiecutter
+conda env create -f envs/cookiecutter.yml -p envs/cookiecutter
 conda activate envs/cookiecutter
 ```
 

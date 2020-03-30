@@ -3,7 +3,7 @@
 #############
 # NOTE: Paths should not include trailing "/"
 workdir: .
-sample_list: samples/sample_annotation_example.tab
+sample_list: samples/example_sample_list.tsv
 taxdb: resources/taxonomy
 results_path: results
 intermediate_path: results/intermediate
@@ -50,7 +50,7 @@ sortmerna_dbs: ["rfam-5s-database-id98.fasta","rfam-5.8s-database-id98.fasta","s
 # 'paired_in' puts both reads in a pair into the 'rRNA' bin if one of them aligns (i.e. more strict)
 # 'paired_out' puts both reads in the 'other' bin
 sortmerna_paired_strategy: "paired_in"
-sortmerna_params: "--num_alignments 1 -v"
+sortmerna_params: "--num_alignments 1"
 
 ######################
 ### POSTPROCESSING ###
@@ -84,12 +84,19 @@ metaspades_additional_settings: '-k 21,31,41,51,61,71,81,91,101,111,121'
 ################
 ## Annotation ##
 ################
+# tRNAscan-SE
+tRNAscan: True
+
+# Infernal ncRNA detection
+infernal: True
+infernal_threads: 8
+infernal_dbpath: resources/infernal
 
 # Eggnog-mapper
-eggnog: False
+eggnog: True
 
 # PFAM-scan
-pfam: False
+pfam: True
 
 # Resistance Gene Identifier
 rgi: False
@@ -111,11 +118,6 @@ taxonomy_ranks: ["superkingdom","phylum","class","order","family","genus","speci
 taxdb: uniref100
 diamond_threads: 20
 
-# Infernal ncRNA detection
-infernal: False
-infernal_threads: 2
-infernal_dbpath: resources/infernal
-
 ###############
 ### BINNING ###
 ###############
@@ -123,6 +125,9 @@ infernal_dbpath: resources/infernal
 min_contig_length: [2000]
 maxbin: False
 maxbin_threads: 10
+# Marker set to use for maxbin. 40 uses markers universal to both bacteria and
+# archaea. 107 uses markers found in >95% of bacteria.
+maxbin_markerset: 40
 concoct: False
 concoct_threads: 20
 metabat: False
@@ -133,12 +138,6 @@ metabat_threads: 20
 ###############
 bowtie2_threads: 10
 bowtie2_params: "--very-sensitive"
-
-####################################
-### REFERENCE BASED READ MAPPING ###
-####################################
-reference_map: False
-refmap_min_read_count: 50
 
 ######################
 ### CLASSIFICATION ###
@@ -208,4 +207,4 @@ centrifuge_min_read_count: 5000
 #################
 ## MetaPhlAn 2 ##
 #################
-metaphlan2: False
+metaphlan: False

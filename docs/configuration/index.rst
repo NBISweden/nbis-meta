@@ -57,12 +57,10 @@ taxonomic profiling using Centrifuge) do::
 
     snakemake --configfile examples/centrifuge/config.yaml
 
-See more about the examples here: `binning`_, `centrifuge`_,
-`reference-based mapping`_
+See more about the examples here: `binning`_, `centrifuge`_
 
 .. _binning: https://nbis-metagenomic-workflow.readthedocs.io/en/latest/binning/index.html#binning-tutorial
 .. _centrifuge: http://nbis-metagenomic-workflow.readthedocs.io/en/latest/classification/index.html#example-run-with-centrifuge
-.. _reference-based mapping: http://nbis-metagenomic-workflow.readthedocs.io/en/latest/refmap/index.html#example
 
 Using your own data
 -------------------

@@ -1,0 +1,49 @@
+localrules:
+    download_pfam,
+    press_pfam,
+    download_pfam_info
+
+rule download_pfam:
+    output:
+        hmmfile=opj(config["resource_path"],"pfam","Pfam-A.hmm"),
+        datfile=opj(config["resource_path"],"pfam","Pfam-A.hmm.dat"),
+        versionfile=opj(config["resource_path"],"pfam","Pfam-A.version"),
+    params:
+        ftp="ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release"
+    shell:
+        """
+        curl -s -L -o {output.hmmfile}.gz {params.ftp}/Pfam-A.hmm.gz
+        curl -s -L -o {output.datfile}.gz {params.ftp}/Pfam-A.hmm.dat.gz
+        curl -s -L -o {output.versionfile}.gz {params.ftp}/Pfam.version.gz
+
+        gunzip {output.hmmfile}.gz
+        gunzip {output.datfile}.gz
+        gunzip {output.versionfile}.gz
+        """
+
+rule download_pfam_info:
+    output:
+        clanfile=opj(config["resource_path"],"pfam","clan.txt"),
+        info=opj(config["resource_path"],"pfam","Pfam-A.clans.tsv")
+    params:
+        ftp="ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release"
+    shell:
+        """
+        curl -s -L -o {output.clanfile}.gz {params.ftp}/database_files/clan.txt.gz
+        curl -s -L -o {output.info}.gz {params.ftp}/Pfam-A.clans.tsv.gz
+
+        gunzip {output.clanfile}.gz
+        gunzip {output.info}.gz
+        """
+
+rule press_pfam:
+    input:
+        hmmfile=opj(config["resource_path"],"pfam","Pfam-A.hmm")
+    output:
+        expand(opj(config["resource_path"],"pfam","Pfam-A.hmm.h3{suffix}"),
+               suffix=["f","i","m","p"])
+    conda: "../../../envs/annotation.yml"
+    shell:
+        """
+        hmmpress {input.hmmfile}
+        """

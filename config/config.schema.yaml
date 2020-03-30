@@ -140,7 +140,7 @@ properties:
   sortmerna_params:
     type: string
     description: "Additional parameters for sortmerna"
-    default: "--num_alignments 1 -v"
+    default: "--num_alignments 1"
   ## Postprocessing ##
   markduplicates:
     type: boolean
@@ -189,6 +189,23 @@ properties:
     description: Additional settings for Metaspades
     default: "-k 21,31,41,51,61,71,81,91,101,111,121"
   ## Annotation ##
+  tRNAscan:
+    type: boolean
+    description: Indicates whether to run tRNAscan-SE
+    default: true
+  infernal:
+    type: boolean
+    description: Indicates whether to run infernal for rRNA identification
+    default: true
+  infernal_threads:
+    type: integer
+    description: How many threads to use for infernal
+    default: 8
+    minimum: 1
+  infernal_dbpath:
+    type: string
+    description: Where to store infernal database
+    default: resources/infernal
   eggnog:
     type: boolean
     description: Indicates whether to run eggnog-mapper
@@ -234,19 +251,6 @@ properties:
     description: How many threads to use for diamond
     default: 20
     minimum: 1
-  infernal:
-    type: boolean
-    description: Indicates whether to run infernal for nc-rRNA identification
-    default: false
-  infernal_threads:
-    type: integer
-    description: How many threads to use for infernal
-    default: 2
-    minimum: 1
-  infernal_dbpath:
-    type: string
-    description: Where to store infernal database
-    default: resources/infernal
   ## Binning ##
   metabat:
     type: boolean
@@ -256,6 +260,11 @@ properties:
     type: boolean
     description: Indicates whether to run MaxBin2 to bin contigs
     default: false
+  maxbin_markerset:
+    type: integer
+    description: Which marker set to use for Maxbin2 (107=bacteria, 40=bacteria+archaea)
+    default: 40
+    enum: [40, 107]
   concoct:
     type: boolean
     description: Indicates whether to run Concoct to bin contigs
@@ -296,15 +305,6 @@ properties:
     type: string
     description: Parameters to pass to the bowtie2 aligner
     default: "--very-sensitive"
-  ## Reference based read mapping ##
-  reference_map:
-    type: boolean
-    description: Indicates whether to run reference based mapping
-    default: false
-  refmap_min_read_count:
-    type: integer
-    description: Minimum read count for first-step filtering using centrifuge
-    default: 50
   ## Classification ##
   kraken:
     type: boolean
@@ -314,7 +314,7 @@ properties:
     type: string
     description: Pre-built kraken index
     default: "minikraken2_v2_8GB"
-    enum: ["minikraken2_v2_8GB", "minikraken2_v1_8GB"]
+    enum: ['minikraken2_v1_8GB','minikraken2_v2_8GB','16S_Greengenes','16S_RDP','16S_Silva']
   kraken_custom:
     type: string
     description: Path to directory containing a custom built kraken2 index (must contain 'hash.k2d', 'opts.k2d', 'taxo.k2d')
@@ -340,22 +340,10 @@ properties:
     type: string
     default: "superkingdom"
     enum: ["superkingdom", "kingdom", "phylum", "class", "order", "family", "genus", "species"]
-  centrifuge_map_filtered:
-    type: boolean
-    description: Do an additional map of filtered reads back against reference genomes
-    default: false
   centrifuge_min_score:
     type: number
     description: Minimum score for considering centrifuge output
     default: 75
-  sourmash_fraction:
-    type: integer
-    description: How many kmer hashes to compute using sourmash (1 in sourmash_fraction)
-    default: 100
-  sourmash_min_cov:
-    type: number
-    description: Minimum coverage estimated from sourmash (0.1 = 10% of a genome covered by a sample)
-    default: 0.1
   centrifuge_min_read_count:
     type: number
     description: Minimum read count required during pre-filtering with centrifuge
@@ -364,7 +352,7 @@ properties:
     type: integer
     description: How many maximum number of assignments from centrifuge (set to 1 to implement LCA-classification)
     default: 1
-  metaphlan2:
+  metaphlan:
     type: boolean
     description: Indicates whether to run metaphlan2 profiler
     default: false

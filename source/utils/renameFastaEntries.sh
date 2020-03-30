@@ -1,1 +1,0 @@
-awk -v repl=">kraken:taxid|$1|" '{ gsub(/^>/,repl,$0); print $0}' $2

@@ -1,8 +1,0 @@
-name: concoct
-channels:
-  - conda-forge
-  - bioconda
-  - defaults
-dependencies:
-  - python=3.6
-  - concoct=1.0.0

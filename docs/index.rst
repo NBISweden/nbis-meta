@@ -1,45 +1,23 @@
+==========================
 NBIS Metagenomics Workflow
-====================================
+==========================
+A snakemake workflow for preprocessing and analysis of metagenomic
+datasets. Handles single- and/or paired-end data and runs on a local UNIX/LINUX
+laptop, or in a cluster environment.
 
-.. toctree::
-    :maxdepth: 1
-    :caption: Setup
+The source code is available at
+`GitHub <https://github.com/NBISweden/nbis-meta>`_ and is being developed as
+part of the `NBIS <http://nbis.se>`_ bioinformatics infrastructure.
 
-    configuration/index
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Preprocessing
-
-    preprocessing/index
-
-.. toctree::
-    :maxdepth: 1
-    :caption: Read-based
-
-    classification/index
-    refmap/index
-
-.. toctree::
-    :maxdepth: 1
-    :caption: De-novo assembly
-
-    assembly/index
-    annotation/index
-    binning/index
-
-Overview
---------
-This is a snakemake workflow for preprocessing and analysis of metagenomic
-datasets. It can handle single- and paired-end data and can run on a
-local laptop with either Linux or OSX, or in a cluster environment.
-
-The source code is available at `GitHub <https://github.com/NBISweden/nbis-meta>`_ and
-is being developed as part of the `NBIS <http://nbis.se>`_ bioinformatics infrastructure.
 
 Installation
-------------
+============
+
+From GitHub
+-----------
+
 **1. Clone the repository**
+
 Checkout the latest version of this repository (to your current directory)::
 
     git clone git@github.com:NBISweden/nbis-meta.git
@@ -50,20 +28,19 @@ Change directory::
     cd nbis-meta
 
 **2. Install the required software**
-All the software needed to run this workflow is included as a
-`Conda <https://www.anaconda.com/>`_ environment file. See the conda `installation instructions <https://www.anaconda.com/download/>`_
-for how to install conda on your system.
 
-To create the environment :code:`nbis-meta` use the supplied :code:`environment.yaml` file::
+The workflow is structured around a default core set of rules and several
+additional rules that can be set my modifying the config settings. Because of
+this modular structure the software requirements are divided in several conda
+files. This ensures that the size of the software environment is only as big
+as it needs to be for your analysis. However, it also means that snakemake
+**has to be run with the** :code:`--use-conda` **flag**.
 
-    mkdir envs/nbis-meta
-    conda env create -f environment.yaml -p envs/nbis-meta
+The bare-minimum requirements for starting the workflow can be installed with
+the :code:`environment.yml` file::
 
-Next, add this directory to the envs_dirs in your conda config (this is to simplify
-activation of the environment and so that the full path of the
-environment installation isn't shown in your bash prompt)::
+    conda env create -f environment.yml
 
-    conda config --add envs_dirs $(pwd)/envs/
 
 Activate the environment using::
 
@@ -71,7 +48,55 @@ Activate the environment using::
 
 **You are now ready to start using the workflow!**
 
+To run the workflow on some example data simply type::
+
+    snakemake --use-conda -j 4 -p
+
+From Docker
+-----------
+
+You can also pull the latest Docker image which has all the code and
+requirements needed to run the workflow::
+
+    docker pull nbisweden/nbis-meta:latest
+
+To run a container with the image and get an interactive shell, run::
+
+    docker run --rm -it -v $(pwd):/analysis nbisweden/nbis-meta:latest /bin/bash
+
 .. note::
-    If you plan on using the workflow in a cluster environment running the SLURM workload manager (such as Uppmax) you
-    should configure the workflow with the SLURM snakemake profile.
+    If you plan on using the workflow in a cluster environment running the
+    SLURM workload manager (such as Uppmax) you should configure the workflow
+    with the SLURM snakemake profile.
     `See the documentation <https://nbis-metagenomic-workflow.readthedocs.io/en/latest/configuration/index.html#how-to-run-on-uppmax-hebbe-snic-resources>`_.
+
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Setup
+    :hidden:
+
+    configuration/index
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Preprocessing
+    :hidden:
+
+    preprocessing/index
+
+.. toctree::
+    :maxdepth: 1
+    :caption: Read-based classification
+    :hidden:
+
+    classification/index
+
+.. toctree::
+    :maxdepth: 1
+    :caption: De-novo assembly
+    :hidden:
+
+    assembly/index
+    annotation/index
+    binning/index

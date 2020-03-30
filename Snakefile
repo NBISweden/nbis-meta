@@ -1,9 +1,10 @@
 from snakemake.utils import min_version, validate
 from snakemake.exceptions import WorkflowError
-min_version("4.4.0")
+min_version("5.10.0")
+import gzip as gz
+from Bio import SeqIO
 
 # Snakemake workflow for various types of metagenomics analyses.
-# See documentation at https://bitbucket.org/scilifelab-lts/nbis-meta
 
 def parse_validation_error(e):
     instance = ""
@@ -40,59 +41,53 @@ pipeline_report = config["pipeline_config_file"]
 inputs = [pipeline_report]
 # Download and format databases for annotation
 db_input = []
-include: "source/workflow/DB"
+include: "source/workflow/db.smk"
 inputs += db_input
 # Preprocess raw input (if no preprocessing, just produce the sample report for raw data)
 preprocess_input = []
-include: "source/workflow/Preprocess"
+include: "source/workflow/preprocess.smk"
 inputs += preprocess_input
 # Assemble
 assembly_input = []
 annotation_input = []
 binning_input = []
 if config["assembly"]:
-    include: "source/workflow/Assembly"
+    include: "source/workflow/assembly.smk"
     inputs += assembly_input
     # Rule sets that depend on de-novo assembly
     # Annotate
     if config["annotation"]:
-        include: "source/workflow/Annotation"
+        include: "source/workflow/annotation.smk"
         inputs += annotation_input
     # Binning
     if config["maxbin"] or config["concoct"] or config["metabat"]:
-        include: "source/workflow/Binning"
+        include: "source/workflow/binning.smk"
         inputs += binning_input
 # Kraken
 kraken_input = []
 kraken_db_input = []
 if config["kraken"]:
     # Download and process kraken datatbase
-    include: "source/workflow/KrakenDB"
+    include: "source/workflow/kraken_db.smk"
     # Kraken classify samples
-    include: "source/workflow/KrakenClassify"
+    include: "source/workflow/kraken.smk"
     inputs += kraken_input + kraken_db_input
 # Metaphlan2
 metaphlan_input = []
 metaphlan_db_input = []
-if config["metaphlan2"]:
-    include: "source/workflow/Metaphlan2DB"
-    include: "source/workflow/Metaphlan2Classify"
+if config["metaphlan"]:
+    include: "source/workflow/metaphlan_db.smk"
+    include: "source/workflow/metaphlan.smk"
     inputs += metaphlan_input + metaphlan_db_input
 # Centrifuge
 centrifuge_input = []
 centrifuge_db_input = []
 if config["centrifuge"]:
-    include: "source/workflow/CentrifugeDB"
-    include: "source/workflow/CentrifugeClassify"
+    include: "source/workflow/centrifuge_db.smk"
+    include: "source/workflow/centrifuge.smk"
     inputs += centrifuge_input + centrifuge_db_input
-# Reference-based mapping
-map_input = []
-if config["reference_map"]:
-    # Use centrifuge to download genomes for reference mapping
-    # So set run_centrifuge to True
-    config["centrifuge"] = True
-    include: "source/workflow/Map"
-    inputs += map_input
+if config["centrifuge"] or config["kraken"] or config["metaphlan"]:
+    include: "source/rules/Classify/krona.smk"
 
 ###########
 ## RULES ##
@@ -130,15 +125,11 @@ rule kraken_classify:
     input: pipeline_report, preprocess_input, kraken_input
 
 # metaphlan2
-rule metaphlan2_db:
+rule metaphlan_db:
     input: metaphlan_db_input
-rule metaphlan2_classify:
+rule metaphlan_classify:
     input: pipeline_report, preprocess_input, metaphlan_db_input, metaphlan_input
 
 # binning
 rule binning:
     input: pipeline_report, preprocess_input, assembly_input, binning_input
-
-# Reference based database
-rule refmap:
-    input: pipeline_report, centrifuge_db_input, preprocess_input, map_input
