@@ -9,11 +9,14 @@ SHELL ["/bin/bash", "-c"]
 # Set workdir
 WORKDIR /analysis
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl && apt-get clean
+
 # Add environment file
 COPY environment.yml .
 
 # Install environment into base
-RUN conda env update -n base -f environment.yml && conda clean -tipsy
+RUN conda env update -n base -f environment.yml && conda clean -a
 
 # Add workflow
 RUN mkdir envs
@@ -24,4 +27,4 @@ COPY source source
 COPY config.yaml Snakefile ./
 
 # Run workflow
-CMD snakemake --use-conda -p
+ENTRYPOINT ["snakemake", "--use-conda"]
