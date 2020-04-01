@@ -181,10 +181,12 @@ else:
         shell:
             """
             rm -rf {params.tmp}
-            
-            # Get input strings
-            R1=$(cat {input.R1})
-            R2=$(cat {input.R2})
+            # Only use paired-end if present
+            if [ -s {input.R1} ]; then
+                R1=$(cat {input.R1})
+                R2=$(cat {input.R2})
+                paired="-1 $R1 -2 $R2"
+            fi
             # Only use single-end if present
             se=$(cat {input.se})
             if [ -s {input.se} ]; then
@@ -196,8 +198,7 @@ else:
             # Run Megahit
             megahit \
                 -t {threads} \
-                -1 $R1 \
-                -2 $R2 \
+                $paired \
                 $single \
                 -o {params.tmp} \
                 {params.additional_settings} \
