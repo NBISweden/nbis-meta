@@ -102,17 +102,14 @@ if config["metaspades"]:
             """
             # Create directories
             mkdir -p {params.tmp}
-            # Only use paired-end if present
-            if [ -s {input.R1} ]; then
-                paired="-1 {input.R1} -2 {input.R2}"
-            fi
             # Only use single-end if present
             if [ -s {input.se} ]; then
                 single="-s {input.se}"
             fi
             metaspades.py \
                 -t {threads} \
-                $paired \
+                -1 {input.R1} \
+                -2 {input.R2} \
                 $single \
                 -o {params.tmp} >/dev/null 2>&1
             
