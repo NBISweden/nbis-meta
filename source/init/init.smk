@@ -224,28 +224,31 @@ rule write_config:
                     items.append("")
                 fh_out.write(" - {}: version {}, build {} {}\n".format(items[0], items[1], items[2], items[3]))
 
-rule download_examples:
+rule download_synthetic:
     """
-    Use sra-tools to download the BMock12 Mock Community-12, Illumina.
-    Subsample using seqtk
+    Download pre-made synthetic metagenome from Zenodo
     """
     output:
-        temp("examples/data/SRR8073716_1.fastq"),
-        temp("examples/data/SRR8073716_2.fastq")
+        R1 = temp("examples/data/synthetic_1.fastq.gz"),
+        R2 = temp("examples/data/synthetic_2.fastq.gz")
+    params:
+        tar = "examples/data/synthetic.tar.gz",
+        url = "https://zenodo.org/record/3737112/files/synthetic.tar.gz?download=1"
     conda:
         "../../envs/examples.yml"
     shell:
          """
-         fastq-dump \
-            -X 1000000 \
-            --split-3 \
-            -O examples/data \
-            SRR8073716
+         curl -L -s -o {params.tar} {params.url}
+         tar -C examples/data/ -xf {params.tar}
+         rm {params.tar}
          """
 
-rule split_examples:
+rule generate_examples:
+    """
+    Use seqtk to subsample the synthetic metagenome into examples
+    """
     input:
-        "examples/data/SRR8073716_{i}.fastq"
+        "examples/data/synthetic_{i}.fastq.gz"
     output:
         "examples/data/{sample}_{s}_R{i}.fastq.gz"
     conda:
