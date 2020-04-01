@@ -111,7 +111,7 @@ rule aggregate_logs:
         filtlogs=get_filt_logs,
         fastqc=get_fastqc_files
     output:
-        touch(opj(config["report_path"],"multiqc_input","flag"))
+        touch(temp(opj(config["report_path"],"multiqc_input","flag")))
     params:
         output_dir=opj(config["report_path"],"multiqc_input")
     run:
@@ -132,6 +132,7 @@ rule samples_qc_report:
         opj(config["report_path"],"samples_report.html"),
         opj(config["report_path"],"samples_report_data",
             "multiqc_general_stats.txt")
+    log: opj(config["report_path"], "multiqc.log")
     shadow:
         "shallow"
     params:
@@ -147,6 +148,6 @@ rule samples_qc_report:
             -c {params.config} \
             -n samples_report.html \
             -o {params.output_dir} \
-            $(dirname {input})
+            $(dirname {input}) >{log} 2>{log}
         rm -r {params.input_dir}
         """

@@ -505,6 +505,7 @@ rule download_phix:
         curl \
             -L \
             -o {output[0]}.gz \
+            -s \
             {params.url_base}/GCF_000819615.1_ViralProj14015_genomic.fna.gz
         gunzip {output[0]}.gz
         """
