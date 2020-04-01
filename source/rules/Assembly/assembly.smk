@@ -114,7 +114,7 @@ if config["metaspades"]:
                 -t {threads} \
                 $paired \
                 $single \
-                -o {params.tmp}
+                -o {params.tmp} >/dev/null 2>&1
             
             # If set to keep intermediate contigs, move to intermediate folder before deleting
             if [ "{config[metaspades_keep_intermediate]}" == "True" ]; then
