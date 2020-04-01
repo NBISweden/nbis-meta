@@ -45,7 +45,7 @@ def rename_records(f, fh, i):
 ############
 
 if config["metaspades"]:
-    rule generate_metaspades_input_list:
+    rule generate_metaspades_input:
         """Generate input files for use with Metaspades"""
         input:
             lambda wildcards: get_all_group_files(wildcards.group)
@@ -65,11 +65,13 @@ if config["metaspades"]:
                         files[pair].append(assemblyGroups[wildcards.group][sample][run][pair][0])
             # Rename and concatenate reads (required for Metaspades)
             with open(output.R1, 'w') as fh1, open(output.R2, 'w') as fh2, open(output.se, 'w') as fhse:
-                for i, f in enumerate(files["R1"]):
+                i = 0
+                for f in files["R1"]:
                     f2=files["R2"][i]
                     fh1=rename_records(f, fh1, i)
                     fh2=rename_records(f2, fh2, i)
-                for i, f in enumerate(files["se"], start=i+1):
+                    i+=1
+                for i, f in enumerate(files["se"], start=i):
                     fhse=rename_records(f, fhse, i)
 
     rule run_metaspades:
@@ -100,16 +102,17 @@ if config["metaspades"]:
             """
             # Create directories
             mkdir -p {params.tmp}
+            # Only use paired-end if present
+            if [ -s {input.R1} ]; then
+                paired="-1 {input.R1} -2 {input.R2}"
+            fi
             # Only use single-end if present
             if [ -s {input.se} ]; then
                 single="-s {input.se}"
-            else
-                single=""
             fi
             metaspades.py \
                 -t {threads} \
-                -1 {input.R1} \
-                -2 {input.R2} \
+                $paired \
                 $single \
                 -o {params.tmp}
             
