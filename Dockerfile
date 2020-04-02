@@ -27,7 +27,7 @@ COPY source source
 COPY config.yaml Snakefile ./
 
 # Run workflow
-ENTRYPOINT ["snakemake", "--use-conda"]
+ENTRYPOINT ["snakemake", "--use-conda", "-j", "1"]
 
 # Run a terminal
 CMD /bin/bash
