@@ -190,20 +190,6 @@ centrifuge_min_score: 75
 # Specify a taxonomic rank to summarize the database at (total sequences and total size).
 centrifuge_summarize_rank: superkingdom
 
-centrifuge_map_filtered: False
-
-# Fraction of kmer hashes to compute using sourmash
-# The number of hashes is 1 in <hash_fraction>
-sourmash_fraction: 100
-
-# Minimum coverage estimated from sourmash (0.1 corresponds to 10% of a genome covered by a sample)
-sourmash_min_cov: 0.1
-
-# Filtering of genomes
-# Set minimum read count required during the pre-filtering step to include a genome for downstream analysis
-# Note that this is not uniquely classified reads
-centrifuge_min_read_count: 5000
-
 #################
 ## MetaPhlAn 2 ##
 #################
