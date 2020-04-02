@@ -20,15 +20,18 @@ def parse_validation_error(e):
     return
 
 shell.prefix("")
-configfile: "config.yaml"
-# Handle cases where user does not enter min_contig_length as an array
-if type(config["min_contig_length"]) != list:
-    config["min_contig_length"] = [config["min_contig_length"]]
+if os.path.exists("config.yaml"):
+    configfile: "config.yaml"
 try:
     validate(config, "config/config.schema.yaml")
 except WorkflowError as e:
     parse_validation_error(e)
     sys.exit()
+
+# Handle cases where user does not enter min_contig_length as an array
+if type(config["min_contig_length"]) != list:
+    config["min_contig_length"] = [config["min_contig_length"]]
+
 workdir: config["workdir"]
 
 # First load init file to set up samples and variables
