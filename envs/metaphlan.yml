@@ -6,5 +6,4 @@ dependencies:
   - conda-forge::python=2.7.15
   - metaphlan2=2.7.7
   - humann2=2.8.1
-  - panphlan=1.2
   - conda-forge::glpk=4.65 # humann2 requirement not installed by default
