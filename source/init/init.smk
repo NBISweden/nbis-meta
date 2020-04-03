@@ -18,14 +18,18 @@ def is_pe(d):
         return True
     return False
 
-def get_all_files(samples, dir, suffix=""):
+def get_all_files(samples, dir, suffix="", nested=False):
     files=[]
     for sample in samples:
         for run in samples[sample].keys():
-            if is_pe(samples[sample][run]):
-                files.append(opj(dir, "{}_{}_pe{}".format(sample,run,suffix)))
+            if nested:
+                d = "{}/{}_{}".format(dir,sample,run)
             else:
-                files.append(opj(dir, "{}_{}_se{}".format(sample,run,suffix)))
+                d = "{}".format(dir)
+            if is_pe(samples[sample][run]):
+                files.append(opj(d, "{}_{}_pe{}".format(sample,run,suffix)))
+            else:
+                files.append(opj(d, "{}_{}_se{}".format(sample,run,suffix)))
     return files
 
 ###########################################################
