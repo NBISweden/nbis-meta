@@ -3,29 +3,25 @@ localrules:
     metaphlan2krona,
     all_metaphlan2_to_krona,
     merge_metaphlan2,
-    metaphlan2_heatmap,
-    metaphlan2graphlan,
-    graphlan_annotate
 
-rule metaphlan2_pe:
+rule metaphlan_pe:
     input:
-        R1=opj(config["intermediate_path"],"preprocess",
+        R1 = opj(config["intermediate_path"],"preprocess",
                  "{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
-        R2=opj(config["intermediate_path"],"preprocess",
+        R2 = opj(config["intermediate_path"],"preprocess",
                  "{sample}_{run}_R2"+PREPROCESS+".fastq.gz"),
-        db=expand(opj(config["resource_path"],"metaphlan2",
-                        "mpa_v20_m200.{index}.bt2"), index=range(1,5))
+        db = expand(opj(config["resource_path"], "metaphlan",
+                                "mpa_v20_m200.{s}.bt2"),
+                   s = ["1","2","3","4","rev.1","rev.2"])
     output:
-        opj(config["results_path"],"metaphlan2",
-            "{sample}_{run}_pe.mp2.stats"),
-        opj(config["results_path"],"metaphlan2",
-            "{sample}_{run}_pe.mp2.out"),
-        temp(opj(config["results_path"],"metaphlan2",
-                 "{sample}_{run}_pe.mp2.out.krona")),
-        opj(config["results_path"],"metaphlan2",
-            "{sample}_{run}_pe.bowtie2.bz2")
+        opj(config["results_path"],"metaphlan","{sample}_{run}",
+            "{sample}_{run}_pe.profile")
+    log:
+        opj(config["results_path"],"metaphlan","{sample}_{run}",
+            "{sample}_{run}_pe.log")
     params:
-        bowtie2db=opj(config["resource_path"],"metaphlan2")
+        bt2 = opj(config["results_path"],"metaphlan","{sample}_{run}","bt2"),
+        dir = opj(config["resource_path"], "metaphlan")
     conda:
         "../../../envs/metaphlan.yml"
     threads: 10
@@ -33,37 +29,29 @@ rule metaphlan2_pe:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     shell:
         """
-        metaphlan2.py {input.R1},{input.R2} --min_alignment_len 50 \
-            --bt2_ps very-sensitive -t rel_ab_w_read_stats \
-            --bowtie2db {params.bowtie2db} --bowtie2out {output[3]} \
+        metaphlan2.py \
+            {input.R1},{input.R2} \
+            --bowtie2db {params.dir} \
+            --bt2_ps very-sensitive \
+            -t rel_ab \
+            --bowtie2out {params.bt2} \
+            --no_map \
             --nproc {threads} \
-            --input_type fastq > {output[0]}
-        # Create the simple mp2 output
-        grep "#SampleID" {output[0]} > {output[1]}
-        egrep -v "clade_name|estimated" {output[0]} | cut -f1,2 >> {output[1]}
-        # Create krona-compatible output
-        grep "#SampleID" {output[0]} > {output[2]}
-        grep "t__" {output[0]} | cut -f1,2 >> {output[2]}
+            --input_type multifastq \
+            -o {output[0]} > {log} 2>&1
         """
 
-rule metaphlan2_se:
+rule metaphlan_se:
     input:
         se=opj(config["intermediate_path"],"preprocess",
-                 "{sample}_{run}_se"+PREPROCESS+".fastq.gz"),
-        db=expand(opj(config["resource_path"],"metaphlan2",
-                        "mpa_v20_m200.{index}.bt2"), index=range(1,5))
+                 "{sample}_{run}_se"+PREPROCESS+".fastq.gz")
     output:
-        opj(config["results_path"],"metaphlan2",
-            "{sample}_{run}_se.mp2.stats"),
-        opj(config["results_path"],"metaphlan2",
-            "{sample}_{run}_se.mp2.out"),
-        temp(opj(config["results_path"],"metaphlan2",
-                 "{sample}_{run}_se.mp2.out.krona")),
-        opj(config["results_path"],"metaphlan2",
-            "{sample}_{run}_se.bowtie2.bz2")
-    params:
-        bowtie2db=opj(config["resource_path"],"metaphlan2")
-    conda: 
+        opj(config["results_path"],"metaphlan","{sample}_{run}",
+            "{sample}_{run}_se.profile")
+    log:
+        opj(config["results_path"],"metaphlan","{sample}_{run}",
+            "{sample}_{run}_se.log")
+    conda:
         "../../../envs/metaphlan.yml"
     threads: 10
     resources:
@@ -71,16 +59,12 @@ rule metaphlan2_se:
     shell:
         """
         metaphlan2.py \
-            {input.se} --min_alignment_len 50 \
-            --bt2_ps very-sensitive --bowtie2db {params.bowtie2db} \
-            -t rel_ab_w_read_stats --bowtie2out {output[3]} \
-            --nproc {threads} --input_type fastq > {output[0]}
-        # Create the simple mp2 output
-        grep "#SampleID" {output[0]} > {output[1]}
-        egrep -v "clade_name|estimated" {output[0]} | cut -f1,2 >> {output[1]}
-        # Create krona-compatible output
-        grep "#SampleID" {output[0]} > {output[2]}
-        grep "t__" {output[0]} | cut -f1,2 >> {output[2]}
+            {input.se} \
+            --bt2_ps very-sensitive \
+            -t rel_ab \
+            --nproc {threads} \
+            --input_type fastq \
+            -o {output[0]} >{log} 2>&1
         """
 
 ########################
@@ -145,66 +129,13 @@ rule all_metaphlan2_to_krona:
 ####################
 rule merge_metaphlan2:
     input:
-        get_all_files(samples, opj(config["results_path"],"metaphlan2"),".mp2.out")
+        get_all_files(samples, opj(config["results_path"],"metaphlan"),
+                                ".profile", nested=True)
     output:
-        opj(config["report_path"],"metaphlan2","metaphlan2.merged.out")
+        opj(config["report_path"],"metaphlan","metaphlan.merged.tsv")
     conda: 
         "../../../envs/metaphlan.yml"
     shell:
         """
         merge_metaphlan_tables.py {input} | sed 's/_[ps]e.mp2//g' > {output[0]}
-        """
-
-rule metaphlan2_heatmap:
-    #TODO: Due to deprecated matplotlib properties and incompatible conda
-    #conda versions this rule needs to be updated with proper plotting
-    input:
-        opj(config["report_path"],"metaphlan2","metaphlan2.merged.out")
-    output:
-        touch(opj(config["report_path"],"metaphlan2","metaphlan2.heatmap.png"))
-    shell:
-        """
-        """
-
-rule metaphlan2graphlan:
-    input:
-        opj(config["report_path"],"metaphlan2","metaphlan2.merged.out")
-    output:
-        temp(opj(config["report_path"],"metaphlan2","metaphlan2.tree.txt")),
-        temp(opj(config["report_path"],"metaphlan2","metaphlan2.annot.txt"))
-    conda:
-        "../../../envs/graphlan.yml"
-    shell:
-        """
-        export2graphlan.py \
-            --skip_rows 1,2 -i {input[0]} --tree {output[0]} \
-            --annotation {output[1]} \
-            --most_abundant 100 --abundance_threshold 1 \
-            --least_biomarkers 10 --annotations 5,6 \
-            --external_annotations 7 --min_clade_size 1
-        """
-
-rule graphlan_annotate:
-    input:
-        opj(config["report_path"],"metaphlan2","metaphlan2.tree.txt"),
-        opj(config["report_path"],"metaphlan2","metaphlan2.annot.txt")
-    output:
-        temp(opj(config["report_path"],"metaphlan2","metaphlan2.abundance.xml"))
-    conda: 
-        "../../../envs/graphlan.yml"
-    shell:
-        """
-        graphlan_annotate.py --annot {input[1]} {input[0]} {output[0]}
-        """
-
-rule graphlan:
-    input:
-        opj(config["report_path"],"metaphlan2","metaphlan2.abundance.xml")
-    output:
-        opj(config["report_path"],"metaphlan2","metaphlan2.graph.png")
-    conda: 
-        "../../../envs/graphlan.yml"
-    shell:
-        """
-        graphlan.py --dpi 300 {input[0]} {output[0]}
         """
