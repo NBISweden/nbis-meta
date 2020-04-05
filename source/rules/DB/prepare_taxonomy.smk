@@ -26,18 +26,22 @@ rule tango_download_taxonomy:
 rule krona_taxonomy:
     output:
         opj(config["resource_path"],"krona","taxonomy.tab")
+    log:
+        opj(config["resource_path"],"krona","taxonomy.log")
     params:
         taxdir=opj(config["resource_path"],"krona")
     conda:
         "../../../envs/krona.yml"
     shell:
         """
-        ktUpdateTaxonomy.sh {params.taxdir}
+        ktUpdateTaxonomy.sh {params.taxdir} >{log} 2>&1
         """
 
 rule tango_download:
     output:
         fasta = temp(opj(config["resource_path"], "{db}", "{db}.fasta.gz"))
+    log:
+        opj(config["resource_path"], "{db}", "tango_download.log")
     params:
         dldir = opj(config["resource_path"], "{db}"),
         taxdir = opj(config["resource_path"], "taxonomy")
@@ -46,19 +50,21 @@ rule tango_download:
     shell:
         """
         tango download {wildcards.db} --tmpdir $TMPDIR \
-            -d {params.dldir} -t {params.taxdir} --skip_idmap
+            -d {params.dldir} -t {params.taxdir} --skip_idmap >{log} 2>&1
         """
 
 rule tango_download_nr_idmap:
     output:
         idmap = opj(config["resource_path"], "nr", "prot.accession2taxid.gz")
+    log:
+        opj(config["resource_path"], "nr", "tango_download_idmap.log")
     params:
         dldir = opj(config["resource_path"], "nr")
     conda:
         "../../../envs/tango.yml"
     shell:
         """
-        tango download idmap -d {params.dldir}
+        tango download idmap -d {params.dldir} > {log} 2>&1
         """
 
 rule tango_format_uniref:
@@ -67,13 +73,17 @@ rule tango_format_uniref:
     output:
         fasta = opj(config["resource_path"], "{db}", "{db}.reformat.fasta.gz"),
         idmap = opj(config["resource_path"], "{db}", "prot.accession2taxid.gz")
+    log:
+        opj(config["resource_path"], "{db}", "tango_format.log")
     params:
         tmpdir = config["scratch_path"]
     conda:
         "../../../envs/tango.yml"
     shell:
         """
-        tango format -m {output.idmap} --tmpdir {params.tmpdir} {input.fasta} {output.fasta}
+        tango format \
+            -m {output.idmap} --tmpdir {params.tmpdir} \
+            {input.fasta} {output.fasta} > {log} 2>&1
         """
 
 rule tango_format_nr:
@@ -81,13 +91,17 @@ rule tango_format_nr:
         fasta = opj(config["resource_path"], "nr", "nr.fasta.gz")
     output:
         fasta = opj(config["resource_path"], "nr", "nr.reformat.fasta.gz")
+    log:
+        opj(config["resource_path"], "nr", "tango_format.log")
     params:
         tmpdir = config["scratch_path"]
     conda:
         "../../../envs/tango.yml"
     shell:
         """
-        tango format --tmpdir {params.tmpdir} {input.fasta} {output.fasta}
+        tango format \
+            --tmpdir {params.tmpdir} 
+            {input.fasta} {output.fasta} > {log} 2>&1
         """
 
 rule tango_update:
@@ -111,6 +125,8 @@ rule tango_build:
         idmap = opj(config["resource_path"], "{db}", "prot.accession2taxid.gz")
     output:
         opj(config["resource_path"],"{db}","diamond.dmnd")
+    log:
+        opj(config["resource_path"], "{db}", "diamond.dmnd")
     threads: config["diamond_threads"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*10
