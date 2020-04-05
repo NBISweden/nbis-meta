@@ -71,6 +71,9 @@ rule tango_assign_orfs:
         # Merge dataframes
         orf_tax_df=pd.merge(gff_df, tax_df, left_on="contig",
                             right_index=True, how="outer")
+        # When using 'outer' merging there may be contigs with no called ORF
+        # but with a tax assignment. Drop these contigs.
+        orf_tax_df = orf_tax_df.loc[orf_tax_df["id"]==orf_tax_df["id"]]
         # Set Unclassified for NA values
         orf_tax_df.fillna("Unclassified", inplace=True)
         # Set index to ORF ids
