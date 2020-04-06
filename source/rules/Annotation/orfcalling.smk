@@ -66,6 +66,9 @@ rule infernal:
     output:
         opj(config["results_path"],"annotation","{group}",
             "final_contigs.cmscan")
+    log:
+        opj(config["results_path"],"annotation","{group}",
+            "infernal.log")
     params:
         db=opj(config["infernal_dbpath"],"Rfam.rRNA.cm")
     threads: config["infernal_threads"]
@@ -85,7 +88,7 @@ rule infernal:
             --fmt 2 \
             --clanin {input.cl} \
             {params.db} \
-            {input.fastafile} > /dev/null
+            {input.fastafile} > /dev/null 2>{log}
         """
 
 def parse_cmout(f):
