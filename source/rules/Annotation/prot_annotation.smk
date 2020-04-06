@@ -38,7 +38,7 @@ rule emapper_homology_search:
             --temp_dir {params.tmpdir} \
             --output_dir {params.tmpdir} \
             --data_dir {params.resource_dir} \
-            2>{log}
+            >{log} 2>&1
         mv {params.tmp_out}.emapper.seed_orthologs {output[0]}
         rm -rf {params.tmpdir}
         """
@@ -79,7 +79,7 @@ if config["runOnUppMax"] == "yes":
                 -o {params.out} \
                 --data_dir /dev/shm/$SLURM_JOB_ID \
                 --usemem \
-                2>{log}
+                >{log} 2>&1
             rm -rf /dev/shm/$SLURM_JOB_ID
             """
 else:
@@ -113,7 +113,7 @@ else:
                 -o {params.out} \
                 --data_dir {params.resource_dir} \
                 --usemem \
-                2>{log}
+                >{log} 2>&1
             """
 
 rule parse_ko_annotations:
@@ -151,6 +151,8 @@ rule pfam_scan:
                suffix=["f","i","m","p"])
     output:
         opj(config["results_path"],"annotation","{group}","{group}.pfam.out")
+    log:
+        opj(config["results_path"],"annotation","{group}","{group}.pfam.log")
     conda:
         "../../../envs/annotation.yml"
     params:
@@ -167,6 +169,7 @@ rule pfam_scan:
             -dir {params.dir} \
             -outfile {params.tmp_out} \
             -cpu {threads}
+            >{log} 2>&1
         mv {params.tmp_out} {output[0]}
         """
 
@@ -208,6 +211,8 @@ rule run_rgi:
     output:
         json=opj(config["results_path"],"annotation","{group}","rgi.out.json"),
         txt=opj(config["results_path"],"annotation","{group}","rgi.out.txt")
+    log:
+        opj(config["results_path"],"annotation","{group}","rgi.log")
     params:
         out=opj(config["results_path"],"annotation","{group}","rgi.out"),
         settings=config["rgi_params"]
@@ -218,6 +223,7 @@ rule run_rgi:
         runtime=lambda wildcards,attempt: attempt**2*60
     shell:
         """
-        rgi load --card_json {input.db} --local
-        rgi main -i {input.faa} -o {params.out} -n {threads} {params.settings}
+        rgi load --card_json {input.db} --local > {log} 2>&1
+        rgi main -i {input.faa} -o {params.out} \
+            -n {threads} {params.settings} >>{log} 2>>{log}
         """
