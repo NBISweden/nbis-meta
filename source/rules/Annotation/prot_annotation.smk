@@ -157,7 +157,7 @@ rule pfam_scan:
         dir=opj(config["resource_path"],"pfam"),
         tmp_out=opj(os.path.expandvars(config["scratch_path"]),
                     "{group}.pfam.out")
-    threads: 10
+    threads: 2
     resources:
         runtime=lambda wildcards,attempt: attempt**2*60*4
     shell:
