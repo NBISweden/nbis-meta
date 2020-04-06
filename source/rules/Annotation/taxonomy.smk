@@ -15,6 +15,8 @@ rule tango_search:
     threads: config["diamond_threads"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*10
+    conda:
+        "../../../envs/tango.yml
     shell:
         """
         tango search {params.tango_params} \
@@ -38,6 +40,8 @@ rule tango_assign:
     threads: 4
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*6
+    conda:
+        "../../../envs/tango.yml
     shell:
          """
          tango assign \
