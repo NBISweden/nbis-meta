@@ -8,6 +8,8 @@ rule tango_search:
     output:
         opj(config["results_path"],"annotation","{group}",
             "final_contigs.{db}.tsv.gz".format(db=config["taxdb"]))
+    log:
+        opj(config["results_path"],"annotation","{group}", "tango_search.log")
     params:
         tmpdir=config["scratch_path"],
         tango_params=config["tango_params"],
@@ -19,11 +21,9 @@ rule tango_search:
         "../../../envs/tango.yml"
     shell:
         """
-        tango search {params.tango_params} \
-            -p {threads} \
-            --tmpdir {params.tmpdir} \
-            -l {params.min_len} \
-            {input.fasta} {input.db} {output[0]}
+        tango search {params.tango_params} -p {threads} \
+            --tmpdir {params.tmpdir} -l {params.min_len} \
+            {input.fasta} {input.db} {output[0]} >{log} 2>&1
         """
 
 rule tango_assign:
@@ -34,6 +34,9 @@ rule tango_assign:
     output:
         opj(config["results_path"],"annotation","{group}","taxonomy",
             "final_contigs.{db}.taxonomy.tsv".format(db=config["taxdb"]))
+    log:
+        opj(config["results_path"],"annotation","{group}","taxonomy",
+            "tango_assign.log")
     params:
         taxonomy_ranks=config["taxonomy_ranks"],
         taxdir=opj(config["resource_path"],"taxonomy")
