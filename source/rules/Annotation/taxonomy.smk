@@ -47,14 +47,9 @@ rule tango_assign:
         "../../../envs/tango.yml"
     shell:
          """
-         tango assign \
-            --top 5 \
-            -e 0.001 \
-            -p {threads} \
-            -m rank_lca \
-            --reportranks {params.taxonomy_ranks} \
-            -t {params.taxdir} \
-            {input[0]} {output[0]}
+         tango assign --top 5 -e 0.001 -p {threads} -m rank_lca \
+            --reportranks {params.taxonomy_ranks} -t {params.taxdir} \
+            {input[0]} {output[0]} > {log} 2>&1
          """
 
 rule tango_assign_orfs:
