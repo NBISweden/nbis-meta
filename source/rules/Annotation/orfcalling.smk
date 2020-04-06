@@ -47,12 +47,8 @@ rule trnascan:
     shell:
         """
         tRNAscan-SE \
-            -G \
-            -b {output.bed} \
-            -o {output.file} \
-            -a {output.fasta} \
-            --thread {threads} {input} \
-            2>{log}            
+            -G -b {output.bed} -o {output.file} -a {output.fasta} \
+            --thread {threads} {input} >{log} 2>&1            
         """
 
 
