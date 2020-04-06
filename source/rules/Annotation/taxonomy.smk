@@ -16,7 +16,7 @@ rule tango_search:
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*10
     conda:
-        "../../../envs/tango.yml
+        "../../../envs/tango.yml"
     shell:
         """
         tango search {params.tango_params} \
@@ -41,7 +41,7 @@ rule tango_assign:
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*6
     conda:
-        "../../../envs/tango.yml
+        "../../../envs/tango.yml"
     shell:
          """
          tango assign \
