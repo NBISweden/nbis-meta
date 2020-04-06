@@ -179,10 +179,10 @@ rule sum_to_taxa:
     input:
         tax=opj(config["results_path"],"annotation","{group}","taxonomy",
             "orfs.{db}.taxonomy.tsv".format(db=config["taxdb"])),
-        count=opj(config["results_path"],"annotation","{group}","fc.count.tab"),
+        count=opj(config["results_path"],"annotation","{group}","fc.raw.tab"),
         norm=opj(config["results_path"],"annotation","{group}","fc.tpm.tab")
     output:
-        count=opj(config["results_path"],"annotation","{group}","taxonomy","tax.count.tab"),
+        count=opj(config["results_path"],"annotation","{group}","taxonomy","tax.raw.tab"),
         norm=opj(config["results_path"],"annotation","{group}","taxonomy","tax.tpm.tab")
     run:
         header=["protein","superkingdom", "phylum","class","order","family","genus","species"]
