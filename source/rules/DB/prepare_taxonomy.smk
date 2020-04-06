@@ -126,7 +126,7 @@ rule tango_build:
     output:
         opj(config["resource_path"],"{db}","diamond.dmnd")
     log:
-        opj(config["resource_path"], "{db}", "diamond.dmnd")
+        opj(config["resource_path"], "{db}", "diamond.log")
     threads: config["diamond_threads"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*10
@@ -136,6 +136,7 @@ rule tango_build:
          """
          tango build \
             -d {output[0]} \
-            -p {threads} {input.fasta} {input.idmap} {input.nodes} 
+            -p {threads} {input.fasta} \
+            {input.idmap} {input.nodes} >{log} 2>&1 
          """
 
