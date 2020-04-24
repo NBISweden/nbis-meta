@@ -9,6 +9,7 @@ properties:
   sample_list:
     type: string
     description: Sample information file
+    default: "samples/example_sample_list.tsv"
   taxdb:
     type: string
     description: Directory to store taxonomy information
@@ -62,16 +63,16 @@ properties:
   trimmomatic_se_adapter:
     type: string
     description: What adapter type to trim from single end libraries with trimmomatic
-    default: TruSeq3-Se
+    default: TruSeq3-SE
     enum: ["TruSeq2-SE", "TruSeq3-SE"]
   pe_adapter_params:
     type: string
     description: Trimmomatic parameters for trimming adapters on paired-end samples
-    default: 2:30:15
+    default: "2:30:15"
   se_adapter_params:
     type: string
     description: Trimmomatic parameters for trimming adapters on single-end samples
-    default: 2:30:15
+    default: "2:30:15"
   pe_pre_adapter_params:
     type: string
     description: Trimmomatic parameters for trimming prior to adapter removal on paired-end samples
@@ -99,6 +100,7 @@ properties:
   rev_adapter_sequence:
     type: string
     description: Reverse adapter sequence to trim with cutadapt
+    default: ""
   cutadapt_error_rate:
     type: number
     default: 0.1
