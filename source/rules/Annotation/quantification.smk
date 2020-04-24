@@ -121,27 +121,6 @@ rule normalize_featurecount:
             --sampleName {params.s}
         """
 
-def get_fc_files(wildcards, file_type):
-    g=wildcards.group
-    files=[]
-    for sample in assemblyGroups[g].keys():
-        for run in assemblyGroups[g][sample].keys():
-            if "se" in assemblyGroups[g][sample][run].keys():
-                files.append(opj(config["results_path"],"assembly",g,"mapping",sample+"_"+run+"_se.fc.{}.tab".format(file_type)))
-            else:
-                files.append(opj(config["results_path"],"assembly",g,"mapping",sample+"_"+run+"_pe.fc.{}.tab".format(file_type)))
-    return files
-
-def concat_files(files, gff_df):
-    df=pd.DataFrame()
-    for f in files:
-        _df=pd.read_csv(f, index_col=0, sep="\t")
-        df=pd.concat([df,_df], axis=1)
-    df=pd.merge(df, gff_df, left_index=True, right_on="gene_id")
-    df.drop("gene_id", axis=1, inplace=True)
-    df.set_index("orf", inplace=True)
-    return df
-
 rule aggregate_featurecount:
     """Aggregates feature count files and performs TPM normalization"""
     input:
