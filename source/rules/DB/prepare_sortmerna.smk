@@ -5,8 +5,7 @@ rule download_rRNA_database:
     output:
         opj(config["resource_path"],"rRNA_databases","{file}.fasta")
     params:
-        url="https://raw.githubusercontent.com/biocore/sortmerna/master/data"
-            "/rRNA_databases/{file}.fasta"
+        url="https://raw.githubusercontent.com/biocore/sortmerna/master/data/rRNA_databases/{file}.fasta"
     shell:
          """
          curl -L -o {output[0]} {params.url}
