@@ -87,28 +87,6 @@ rule infernal:
             {input.fastafile} > /dev/null 2>{log}
         """
 
-def parse_cmout(f):
-    with open(f) as fh:
-        lines = []
-        idnums = {}
-        for i, line in enumerate(fh):
-            if line[0] == "#": continue
-            line = line.rstrip()
-            line = line.rsplit()
-            indices = [1,2,3,5,9,10,11,14,16,17]
-            target_name, target_accession, query, clan, start, end, strand, gc, score, evalue = [line[x] for x in indices]
-            try:
-                idnum = idnums[query]
-            except KeyError:
-                idnum = 0
-                idnums[query] = idnum
-            this_idnum = idnum+1
-            idnums[query] = this_idnum
-            attributes = ["ID="+query+"ncRNA_"+str(this_idnum),"Name="+target_name,"Accession="+target_accession,"Clan="+clan,"GC="+gc,"E-value="+evalue]
-            # seqid, source, type, start, end, score, strand, phase, attributes
-            gffline = " ".join([query,"cmscan","ncRNA",start,end,score,strand,".",";".join(attributes)])
-            lines.append(gffline)
-    return lines
 
 rule infernal_update_gff:
     input:
@@ -123,8 +101,9 @@ rule infernal_update_gff:
         for line in lines:
             feature = gffutils.feature.feature_from_line(line, strict = False, dialect = gffutils.constants.dialect)
             features.append(feature)
-        gffdb = gffutils.create_db(input.gff, (input.gff)+".db", force=True)
+        gffdb = gffutils.create_db(input.gff, "{}.db".format(input.gff),
+                                   force=True)
         gffdb.update(features)
         with open(output.gff, 'w') as fh:
             for feature in gffdb.all_features():
-                fh.write(str(feature)+"\n")
+                fh.write("{}\n".format(str(feature)))
