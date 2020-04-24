@@ -358,5 +358,10 @@ properties:
     type: boolean
     description: Indicates whether to run metaphlan2 profiler
     default: false
+  ## Examples
+  example_dataset_size:
+    type: integer
+    description: Number of reads to subsample into separate example files
+    default: 100000
 type: object
 required: [sample_list]
