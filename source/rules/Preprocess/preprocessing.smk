@@ -10,22 +10,6 @@ localrules:
     fastuniq_se,
     avg_seq_length
 
-def link(target,link_name):
-    target_abs = os.path.abspath(target)
-    link_abs = os.path.abspath(link_name)
-    shell("ln -s {target_abs} {link_abs}")
-
-def get_interleaved(sample,runID):
-    files = []
-    if "interleaved" in samples[sample][runID].keys():
-        inter = samples[sample][runID]["interleaved"]
-        R1 = samples[sample][runID]["R1"]
-        R2 = samples[sample][runID]["R2"]
-        files.append(inter)
-    else:
-        files.append("")
-    return files
-
 rule deinterleave_fastq:
     input:
         lambda wildcards: get_interleaved(wildcards.sample,wildcards.run)
@@ -100,19 +84,6 @@ rule sortmerna_merge_fastq:
         rm {params.R1_unzipped} {params.R2_unzipped}
         """
 
-def get_sortmerna_ref_string(path, s):
-    """
-    Constructs the SortMeRNA --ref string
-
-    :param path: Resource path from config
-    :param s: Sortmerna databases from config
-    :return: STRING,STRING formatted string
-    """
-    files=["{p}/rRNA_databases/{db}".format(p=path, db=db)
-           for db in config["sortmerna_dbs"]]
-    ref_string =":".join(
-        ["{},{}".format(f,f) for f in files])
-    return ref_string
 
 rule sortmerna_fastq_pe:
     """Run SortMeRNA on paired end input"""
@@ -342,30 +313,11 @@ rule sortmerna_link_se:
     run:
         link(input.se, output.se)
 
-def get_trimmomatic_string(seq_type):
-    """
-    Generates trimsetting string for Trimmomatic
-
-    :param seq_type: PE or SE depending on sequencing type
-    :return: trimsettings string
-    """
-    trim_adapters=config["trim_adapters"]
-    adapter_fasta_dir="$CONDA_PREFIX/share/trimmomatic/adapters"
-    adapter="{}/{}.fa".format(adapter_fasta_dir,
-                            config["trimmomatic_{}_adapter".format(seq_type)])
-    adapter_params=config["{}_adapter_params".format(seq_type)]
-    pre_adapter_params=config["{}_pre_adapter_params".format(seq_type)]
-    post_adapter_params=config["{}_post_adapter_params".format(seq_type)]
-    trimsettings=pre_adapter_params
-    if trim_adapters:
-        trimsettings+=" ILLUMINACLIP:"+adapter+":"+adapter_params
-    trimsettings+=" "+post_adapter_params
-    return trimsettings
 
 rule trimmomatic_pe:
     input:
         R1=opj(config["intermediate_path"],"preprocess",
-            "{sample}_{run}_R1"+preprocess_suffices["trimming"]+".fastq.gz"),
+            "{sample}_{run}_R1{p}"+preprocess_suffices["trimming"]+".fastq.gz"),
         R2=opj(config["intermediate_path"],"preprocess",
             "{sample}_{run}_R2"+preprocess_suffices["trimming"]+".fastq.gz")
     output:
