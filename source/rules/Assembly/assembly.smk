@@ -4,42 +4,6 @@ localrules:
     assembly_stats,
     samtools_flagstat
 
-#############
-# Functions #
-#############
-
-def get_all_group_files(g):
-  files=[]
-  for sample in assemblyGroups[g].keys():
-    for run in assemblyGroups[g][sample].keys():
-      for pair in assemblyGroups[g][sample][run].keys():
-        files.append(assemblyGroups[g][sample][run][pair][0])
-  return files
-
-def get_bamfiles(g):
-  files=[]
-  for sample in assemblyGroups[g].keys():
-    for run in assemblyGroups[g][sample].keys():
-      if "R2" in assemblyGroups[g][sample][run].keys():
-        files.append(opj(config["results_path"],"assembly",g,"mapping",sample+"_"+run+"_pe"+POSTPROCESS+".bam"))
-      else:
-        files.append(opj(config["results_path"],"assembly",g,"mapping",sample+"_"+run+"_se"+POSTPROCESS+".bam"))
-  return files
-
-def rename_records(f, fh, i):
-    """
-    Prepends a number to read ids
-
-    :param f: Input fastq file (gzipped)
-    :param fh: Output filehandle
-    :param i: File index to prepend to reads
-    :return: Output filehandle
-    """
-    for record in SeqIO.parse(gz.open(f, 'rt'), 'fastq'):
-        record.id="{}_{}".format(i, record.id)
-        SeqIO.write(record, fh, "fastq")
-    return fh
-
 ############
 # Assembly #
 ############
