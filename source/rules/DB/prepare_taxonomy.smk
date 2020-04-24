@@ -7,15 +7,16 @@ localrules:
 
 rule tango_download_taxonomy:
     output:
-        opj(config["resource_path"],"taxonomy","taxonomy.sqlite"),
-        opj(config["resource_path"],"taxonomy","taxdump.tar.gz"),
-        opj(config["resource_path"],"taxonomy","nodes.dmp"),
-        opj(config["resource_path"],"taxonomy","names.dmp"),
-        opj(config["resource_path"],"taxonomy","taxonomy.sqlite.traverse.pkl")
+        sqlite = opj(config["resource_path"], "taxonomy", "taxonomy.sqlite"),
+        taxdump = opj(config["resource_path"], "taxonomy", "taxdump.tar.gz"),
+        nodes = opj(config["resource_path"], "taxonomy", "nodes.dmp"),
+        names = opj(config["resource_path"], "taxonomy", "names.dmp"),
+        pkl = opj(config["resource_path"], "taxonomy",
+                  "taxonomy.sqlite.traverse.pkl")
     log:
         opj(config["resource_path"],"taxonomy","tango.log")
     params:
-        taxdir=opj(config["resource_path"],"taxonomy")
+        taxdir = lambda w, output: os.path.dirname(output.sqlite)
     conda:
         "../../../envs/tango.yml"
     shell:
@@ -25,11 +26,11 @@ rule tango_download_taxonomy:
 
 rule krona_taxonomy:
     output:
-        opj(config["resource_path"],"krona","taxonomy.tab")
+        tab = opj(config["resource_path"],"krona","taxonomy.tab")
     log:
         opj(config["resource_path"],"krona","taxonomy.log")
     params:
-        taxdir=opj(config["resource_path"],"krona")
+        taxdir = lambda w, output: os.path.dirname(output.tab)
     conda:
         "../../../envs/krona.yml"
     shell:
@@ -43,14 +44,14 @@ rule tango_download:
     log:
         opj(config["resource_path"], "{db}", "tango_download.log")
     params:
-        dldir = opj(config["resource_path"], "{db}"),
-        taxdir = opj(config["resource_path"], "taxonomy")
+        dldir = lambda w, output: os.path.dirname(output.fasta),
+        tmpdir = "$TMPDIR"
     conda:
         "../../../envs/tango.yml"
     shell:
         """
-        tango download {wildcards.db} --tmpdir $TMPDIR \
-            -d {params.dldir} -t {params.taxdir} --skip_idmap >{log} 2>&1
+        tango download {wildcards.db} --tmpdir {params.tmpdir} \
+            -d {params.dldir} --skip_idmap >{log} 2>{log}
         """
 
 rule tango_download_nr_idmap:
@@ -59,7 +60,7 @@ rule tango_download_nr_idmap:
     log:
         opj(config["resource_path"], "nr", "tango_download_idmap.log")
     params:
-        dldir = opj(config["resource_path"], "nr")
+        dldir = lambda w, output: os.path.dirname(output.idmap)
     conda:
         "../../../envs/tango.yml"
     shell:
