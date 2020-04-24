@@ -328,7 +328,8 @@ rule assembly_stats:
         sizedist_result=pd.DataFrame()
         for f in input:
             print("Generating stats for {}".format(f))
-            name=f.split("/")[-2]
+            p = Path(f)
+            name = p.parent.name
             contig_lengths=assembly_stats.store_lengths(f)
             stat_df=assembly_stats.generate_stat_df(contig_lengths)
             size_dist=assembly_stats.size_distribute(contig_lengths)
