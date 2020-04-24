@@ -317,7 +317,7 @@ rule sortmerna_link_se:
 rule trimmomatic_pe:
     input:
         R1=opj(config["intermediate_path"],"preprocess",
-            "{sample}_{run}_R1{p}"+preprocess_suffices["trimming"]+".fastq.gz"),
+            "{sample}_{run}_R1"+preprocess_suffices["trimming"]+".fastq.gz"),
         R2=opj(config["intermediate_path"],"preprocess",
             "{sample}_{run}_R2"+preprocess_suffices["trimming"]+".fastq.gz")
     output:
