@@ -16,6 +16,8 @@ rule deinterleave_fastq:
     output:
         R1=opj(config["intermediate_path"],"deinterleaved","{sample}_{run}_R1.fastq.gz"),
         R2=opj(config["intermediate_path"],"deinterleaved","{sample}_{run}_R2.fastq.gz")
+    log:
+        opj(config["intermediate_path"],"deinterleaved","{sample}_{run}.log")
     params:
         script="source/utils/deinterleave_fastq.sh",
         tmp_r1=opj(os.path.expandvars(config["scratch_path"]),"{sample}_{run}_R1.fastq.gz"),
@@ -26,8 +28,7 @@ rule deinterleave_fastq:
         for item in input:
             if not item:
                 continue
-            shell("echo {params.script} {item} {params.tmp_r1} {params.tmp_r2} compress")
-            shell("{params.script} {item} {params.tmp_r1} {params.tmp_r2} compress")
+            shell("{params.script} {item} {params.tmp_r1} {params.tmp_r2} compress > {log} 2>&1")
             shell("mv {params.tmp_r1} {output.R1}")
             shell("mv {params.tmp_r2} {output.R2}")
 
