@@ -109,14 +109,26 @@ rule tango_update:
     input:
         idmap = opj(config["resource_path"], "{db}", "prot.accession2taxid.gz")
     output:
-        flag = touch(opj(config["resource_path"], "{db}", "updated"))
-    run:
-        import os
-        if os.path.exists(opj(config["resource_path"], wildcards.db, "idmap.tsv.gz")):
-            idfile = opj(config["resource_path"], wildcards.db, "idmap.tsv.gz")
-            newfile = "{}.new.gz".format((input.idmap).rstrip(".gz"))
-            shell("tango update {input.idmap} {idfile} {newfile}")
-            shell("mv {newfile} {input.idmap}")
+        idmap = opj(config["resource_path"], "{db}",
+                    "prot.accession2taxid.update.gz")
+    log:
+        opj(config["resource_path"], "{db}", "tango_update.log")
+    conda:
+        "../../../envs/tango.yml"
+    params:
+        dir = lambda w, output: os.path.dirname(output.idmap)
+    shell:
+        """
+        # If an idmap file is available, use it to create an updated idmap file
+        if [ -e {params.dir}/idmap.tsv.gz ] ; then
+            tango update {input.idmap} {params.dir}/idmap.tsg.gz \
+                {output.idmap} > {log} 2>&1
+        # Otherwise, just create a symlink
+        else
+            cd {params.dir}
+            ln -s $(basename {input.idmap}) $(basename {output.idmap})
+        fi            
+        """
 
 rule tango_build:
     input:
@@ -135,9 +147,6 @@ rule tango_build:
         "../../../envs/tango.yml"
     shell:
          """
-         tango build \
-            -d {output[0]} \
-            -p {threads} {input.fasta} \
+         tango build -d {output} -p {threads} {input.fasta} \
             {input.idmap} {input.nodes} >{log} 2>&1 
          """
-
