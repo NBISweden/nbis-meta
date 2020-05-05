@@ -282,7 +282,9 @@ def concat_files(files, gff_df):
 wildcard_constraints:
     run="\d+",
     pair="se|R[12]",
-    seq_type="[sp]e"
+    seq_type="[sp]e",
+    group="\w+",
+    l="\d+"
 
 # Validate and get default settings from schema
 try:
