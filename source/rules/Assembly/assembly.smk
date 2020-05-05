@@ -109,6 +109,9 @@ else:
                             "{group}","input_2")),
             se=temp(opj(config["results_path"],"assembly",
                             "{group}","input_se"))
+        log:
+            opj(config["results_path"],"assembly",
+                            "{group}","input_list.log")
         run:
             files={"R1": [], "R2": [], "se": []}
             for sample in assemblyGroups[wildcards.group].keys():
