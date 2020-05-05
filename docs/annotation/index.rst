@@ -1,15 +1,22 @@
 Annotation of coding sequences
 ==============================
 
-This section deals with how to annotate protein sequences predicted on
-assembled contigs.
+The workflow will call genes on assembled contigs and annotate these using
+various tools and databases.
+
+Eggnog-mapper
+-------------
+
 
 Protein family annotation
 -------------------------
 Annotation of predicted protein coding sequences is performed using the tools
-`eggnog-mapper <https://github.com/jhcepas/eggnog-mapper>`_
-`pfam_scan <https://www.ebi.ac.uk/Tools/pfa/pfamscan/>`_ (using the latest version of the PFAM database) and
-`rgi <https://github.com/arpcard/rgi>`_ (Resistance Gene Identifier).
+
+- `eggnog-mapper <https://github.com/jhcepas/eggnog-mapper>`_
+- `pfam_scan <https://www.ebi.ac.uk/Tools/pfa/pfamscan/>`_ (using the latest
+version of the PFAM database) and
+- `rgi <https://github.com/arpcard/rgi>`_ (Resistance Gene Identifier).
+
 
 :code:`eggnog:` Set to True in order to annotate coding sequences with eggnog-mapper.
 This also adds annotations for KEGG orthologs, modules and pathways.
