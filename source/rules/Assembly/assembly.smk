@@ -153,6 +153,8 @@ else:
                 R1=$(cat {input.R1})
                 R2=$(cat {input.R2})
                 paired="-1 $R1 -2 $R2"
+            else
+                paired=""
             fi
             # Only use single-end if present
             se=$(cat {input.se})
