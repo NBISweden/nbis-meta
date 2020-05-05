@@ -1,47 +1,11 @@
-from snakemake.utils import min_version, validate
-from snakemake.exceptions import WorkflowError
-min_version("5.10.0")
-import gzip as gz
-from Bio import SeqIO
-
 # Snakemake workflow for various types of metagenomics analyses.
-
-def parse_validation_error(e):
-    instance = ""
-    print("ERROR VALIDATING CONFIG FILE")
-    for item in str(e).split("\n"):
-        item = item.replace('"','')
-        if "ValidationError:" in item:
-            print(item)
-        if item[0:11] == "On instance":
-            instance = item.replace("On instance['", "INCORRECT CONFIG AT: ")
-            instance = instance.replace("']:","")
-            print(instance)
-    return
-
-shell.prefix("")
-if os.path.exists("config.yaml"):
-    configfile: "config.yaml"
-try:
-    validate(config, "config/config.schema.yaml")
-except WorkflowError as e:
-    parse_validation_error(e)
-    sys.exit()
-
-# Handle cases where user does not enter min_contig_length as an array
-if type(config["min_contig_length"]) != list:
-    config["min_contig_length"] = [config["min_contig_length"]]
-
-workdir: config["workdir"]
-
-# First load init file to set up samples and variables
-include: "source/init/init.smk"
-pipeline_report = config["pipeline_config_file"]
+include: "source/rules/common.smk"
+include: "source/rules/examples.smk"
 
 #############
 ## Targets ##
 #############
-inputs = [pipeline_report]
+inputs = []
 # Download and format databases for annotation
 db_input = []
 include: "source/workflow/db.smk"
@@ -105,34 +69,34 @@ rule db:
 
 # preprocess target rule
 rule preprocess:
-    input: pipeline_report, preprocess_input
+    input: preprocess_input
 
 # assembly target rule
 rule assembly:
-    input: pipeline_report, preprocess_input, assembly_input
+    input: preprocess_input, assembly_input
 
 # annotation target rule
 rule annotation:
-    input: pipeline_report, preprocess_input, db_input, assembly_input, annotation_input
+    input: preprocess_input, db_input, assembly_input, annotation_input
 
 # centrifuge
 rule centrifuge_db:
     input: centrifuge_db_input
 rule centrifuge_classify:
-    input: pipeline_report, preprocess_input, centrifuge_input
+    input: preprocess_input, centrifuge_input
 
 # kraken
 rule kraken_db:
     input: kraken_db_input
 rule kraken_classify:
-    input: pipeline_report, preprocess_input, kraken_input
+    input: preprocess_input, kraken_input
 
 # metaphlan2
 rule metaphlan_db:
     input: metaphlan_db_input
 rule metaphlan_classify:
-    input: pipeline_report, preprocess_input, metaphlan_db_input, metaphlan_input
+    input: preprocess_input, metaphlan_db_input, metaphlan_input
 
 # binning
 rule binning:
-    input: pipeline_report, preprocess_input, assembly_input, binning_input
+    input: preprocess_input, assembly_input, binning_input
