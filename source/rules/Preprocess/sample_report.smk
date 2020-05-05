@@ -21,7 +21,7 @@ rule fastqc:
         "../../../envs/preprocess.yml"
     shell:
         """
-        fastqc -q --noextract -o {params.results_path} {input} >{log} 2>&1
+        fastqc -q --noextract -o {params.dir} {input} >{log} 2>&1
         """
 
 rule aggregate_logs:
