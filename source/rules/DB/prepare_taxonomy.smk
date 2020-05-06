@@ -110,7 +110,8 @@ rule tango_update:
         idmap = opj(config["resource_path"], "{db}", "prot.accession2taxid.gz")
     output:
         idmap = opj(config["resource_path"], "{db}",
-                    "prot.accession2taxid.update.gz")
+                    "prot.accession2taxid.update.gz"),
+        flag = touch(opj(config["resource_path"], "{db}","updated"))
     log:
         opj(config["resource_path"], "{db}", "tango_update.log")
     conda:
