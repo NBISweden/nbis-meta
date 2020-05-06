@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: CI
 
 on:
   push:
@@ -13,7 +13,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag nbis-meta:$(date +%s)
-    - name: Run the Docker image
-      run: docker run --rm nbis-meta:$(date +%s) --config kraken=True sortmerna=True concoct=True maxbin=True metabat=True -np
+    - uses: s-weigand/setup-conda@v1
+    - name: Install the conda environment
+      run: conda env update -n base -f environment.yml
