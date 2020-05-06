@@ -22,7 +22,7 @@ if config["pfam"]:
     db_input.append(opj(config["resource_path"],"pfam","Pfam-A.clans.tsv"))
 if config["sortmerna"]:
     for f in config["sortmerna_dbs"]:
-        db_input.append(opj(config["resource_path"],"rRNA_databases","{}.idx.stats".format(f)))
+        db_input.append(opj(config["resource_path"],"rRNA_databases","{}.stats".format(f)))
 if config["rgi"]:
     db_input.append(opj(config["resource_path"], "card", "card.json"))
 
