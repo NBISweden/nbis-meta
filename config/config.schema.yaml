@@ -100,7 +100,7 @@ properties:
   rev_adapter_sequence:
     type: string
     description: Reverse adapter sequence to trim with cutadapt
-    default: ""
+    default: "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
   cutadapt_error_rate:
     type: number
     default: 0.1
