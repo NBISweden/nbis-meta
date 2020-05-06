@@ -15,11 +15,12 @@ rule download_rRNA_database:
 
 rule index_db:
     input:
-        fasta=opj(config["resource_path"],"rRNA_databases","{file}")
+        fasta=opj(config["resource_path"],"rRNA_databases","{file}.fasta")
     output:
         expand(opj(config["resource_path"],"rRNA_databases",
-            "{{file}}.{suffix}"), suffix=["bursttrie_0.dat","kmer_0.dat",
-                                              "pos_0.dat","stats"])
+            "{{file}}.fasta.{suffix}"), suffix=["bursttrie_0.dat",
+                                                    "kmer_0.dat",
+                                                    "pos_0.dat","stats"])
     log:
         opj(config["resource_path"], "rRNA_databases", "{file}.index.log")
     resources:
