@@ -418,7 +418,9 @@ rule cutadapt_pe:
         R1log=opj(config["intermediate_path"],"preprocess",
             "{sample}_{run}_R1"+preprocess_suffices["trimming"]+".cutadapt.log"),
         R2log=opj(config["intermediate_path"],"preprocess",
-            "{sample}_{run}_R2"+preprocess_suffices["trimming"]+".cutadapt.log")
+            "{sample}_{run}_R2"+preprocess_suffices["trimming"]+".cutadapt.log"),
+        err = opj(config["intermediate_path"],"preprocess",
+            "{sample}_{run}_R2"+preprocess_suffices["trimming"]+".cutadapt.err")
     params:
         adapter=config["adapter_sequence"],
         rev_adapter=config["rev_adapter_sequence"],
@@ -437,7 +439,7 @@ rule cutadapt_pe:
             -o {output.fastq1} \
             -p {output.fastq2} \
             -j {threads} \
-            {input.R1} {input.R2} > {log.R1log}
+            {input.R1} {input.R2} > {log.R1log} 2>{log.err}
         cp {log.R1log} {log.R2log}
         """
 
