@@ -20,5 +20,11 @@ jobs:
       run: snakemake --use-conda -j 4 --config fastuniq=True kraken=True eggnog=True taxonomic_annotation=True rgi=True pfam=True metabat=True maxbin=True concoct=True checkm=True centrifuge=True -np
     - name: Preprocess
       run: snakemake --use-conda -j 4 -p preprocess
-    - name: Assembly
-      run: snakemake --use-conda -j 4 -p assembly
+    - name: Cutadapt
+      run: snakemake --use-conda -j 4 --config trimmomatic=False cutadapt=True -p preprocess
+    - name: Sortmerna
+      run: snakemake --use-conda -j 4 --config sortmerna=True -p preprocess
+    - name: Metaspades
+      run: snakemake --use-conda --config results_path=results/metaspades metaspades=True -j 4 -p assembly
+    - name: Megahit
+      run: snakemake --use-conda --config results_path=results/megahit megahit=True -j 4 -p assembly
