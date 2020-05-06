@@ -69,6 +69,8 @@ if config["metaspades"]:
             # Only use single-end if present
             if [ -s {input.se} ]; then
                 single="-s {input.se}"
+            else
+                single=""
             fi
             metaspades.py \
                 -t {threads} \
