@@ -16,3 +16,5 @@ jobs:
     - uses: s-weigand/setup-conda@v1
     - name: Install the conda environment
       run: conda env update -n base -f environment.yml
+    - name: Dry run
+      run: snakemake --use-conda -np
