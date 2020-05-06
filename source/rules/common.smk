@@ -390,7 +390,6 @@ if config["centrifuge"]:
     # If not, use prebuilt default
     else:
         config["centrifuge_index_path"]="resources/classify_db/centrifuge/{}".format(config["centrifuge_prebuilt"])
-    config_params.append((" - Read classifier","Centrifuge"))
     # Set centrifuge index config variables
     config['centrifuge_dir']=os.path.dirname(config['centrifuge_index_path'])
     config['centrifuge_base']=os.path.basename(config['centrifuge_index_path'])
