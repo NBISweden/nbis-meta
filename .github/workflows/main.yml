@@ -1,21 +1,19 @@
-# This is a basic workflow to help you get started with Actions
+name: Docker Image CI
 
-name: CI
-
-# Controls when the action will run.
 on:
   push:
-    branches: 
+    branches:
       - develop
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
+
   build:
+
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v2.1.0
-    - uses: snakemake/snakemake-github-action@v1.6.1
-      with:
-        directory: .test
-        snakefile: Snakefile
-        args: "--cores 1 --use-conda -n"
+    - uses: actions/checkout@v2
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag nbis-meta:$(date +%s)
+    - name: Run the Docker image
+      run: docker run --rm nbis-meta:$(date +%s) --config kraken=True sortmerna=True concoct=True maxbin=True metabat=True -np
