@@ -17,4 +17,8 @@ jobs:
     - name: Install the conda environment
       run: conda env update -n base -f environment.yml
     - name: Dry run
-      run: snakemake --use-conda -np
+      run: snakemake --use-conda -j 4 --config fastuniq=True kraken=True eggnog=True taxonomic_annotation=True rgi=True pfam=True metabat=True maxbin=True concoct=True checkm=True centrifuge=True -np
+    - name: Preprocess
+      run: snakemake --use-conda -j 4 -p preprocess
+    - name: Assembly
+      run: snakemake --use-conda -j 4 -p assembly
