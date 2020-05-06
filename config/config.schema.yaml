@@ -29,7 +29,7 @@ properties:
   scratch_path:
     type: string
     description: Local storage path
-    default: $TMPDIR
+    default: "temp"
   resource_path:
     type: string
     description: Path to store resource files (databases etc)
