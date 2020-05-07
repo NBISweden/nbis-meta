@@ -109,9 +109,7 @@ rule tango_update:
     input:
         idmap = opj(config["resource_path"], "{db}", "prot.accession2taxid.gz")
     output:
-        idmap = opj(config["resource_path"], "{db}",
-                    "prot.accession2taxid.update.gz"),
-        flag = touch(opj(config["resource_path"], "{db}","updated"))
+        idmap = opj(config["resource_path"], "{db}", "prot.accession2taxid.update.gz")
     log:
         opj(config["resource_path"], "{db}", "tango_update.log")
     conda:
@@ -133,10 +131,9 @@ rule tango_update:
 
 rule tango_build:
     input:
-        flag = opj(config["resource_path"], "{db}", "updated"),
         fasta = opj(config["resource_path"], "{db}", "{db}.reformat.fasta.gz"),
         nodes = opj(config["resource_path"],"taxonomy","nodes.dmp"),
-        idmap = opj(config["resource_path"], "{db}", "prot.accession2taxid.gz")
+        idmap = opj(config["resource_path"], "{db}", "prot.accession2taxid.update.gz")
     output:
         opj(config["resource_path"],"{db}","diamond.dmnd")
     log:
