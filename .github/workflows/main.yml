@@ -22,7 +22,7 @@ jobs:
     - name: Dry run
       run: snakemake --use-conda -j 4 --config fastuniq=True kraken=True eggnog=True taxonomic_annotation=True rgi=True pfam=True metabat=True maxbin=True concoct=True checkm=True centrifuge=True -np
     - name: Preprocess
-      run: snakemake --use-conda -j 4 -p preprocess && rm -r results
+      run: snakemake --config example_dataset_size=10000 --use-conda -j 4 -p preprocess && rm -r results
     - name: Cutadapt
       run: snakemake --use-conda -j 4 --config trimmomatic=False cutadapt=True -p preprocess && rm -r results
     - name: Sortmerna
