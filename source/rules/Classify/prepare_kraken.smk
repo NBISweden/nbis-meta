@@ -14,7 +14,8 @@ rule download_kraken_build:
         dir = lambda w, output: os.path.dirname(output[0]),
         tar = opj(config["scratch_path"],
                 "{base}.tgz".format(base=config["kraken_prebuilt"])),
-        url = get_kraken_index_url(config),
+        url = get_kraken_index_url(config["kraken_prebuilt"]),
+        db_version = get_kraken_index_url(config["kraken_prebuilt"], version=True),
         tmpdir = opj(config["scratch_path"],"kraken_db")
     shell:
          """
@@ -22,7 +23,8 @@ rule download_kraken_build:
          curl -L -o {params.tar} {params.url} > {log} 2>&1
          tar -C {params.tmpdir} -xf {params.tar}
          mv {params.tmpdir}/*/* {params.dir}
-         rm -r {params.tar} {params.tmpdir}  
+         rm -r {params.tar} {params.tmpdir}
+         echo {params.db_version} > {params.dir}/version
          """
 
 rule kraken_build_standard:
