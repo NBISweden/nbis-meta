@@ -427,7 +427,8 @@ def get_kraken_index_url(kraken_prebuilt, version=False):
     """
     Downloads latest prebuilt kraken index
 
-    :param config: config dictionary
+    :param kraken_prebuilt: prebuilt version
+    :param version: Return db version on True
     :return: url text string
     """
     import subprocess
@@ -452,6 +453,8 @@ def get_kraken_index_url(kraken_prebuilt, version=False):
     # Build a DataFrame and sort by version
     df = pd.DataFrame({'type': types, 'version': versions, 'file': files})
     df = df.sort_values("version", ascending=False)
+    if df.shape[0] == 0:
+        return ""
     f = df.loc[df.type==kraken_prebuilt].head(1)["file"].values[0]
     if version:
         return os.path.splitext(f)[0]
