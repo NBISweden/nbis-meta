@@ -10,14 +10,14 @@ properties:
     type: string
     description: Sample information file
     default: "samples/example_sample_list.tsv"
-  taxdb:
-    type: string
-    description: Directory to store taxonomy information
-    default: resources/taxonomy
   results_path:
     type: string
     description: Main results directory
     default: results
+  report_path:
+    type: string
+    description: Path to store report files
+    default: results/report
   intermediate_path:
     type: string
     description: Intermediate results path
@@ -29,19 +29,11 @@ properties:
   scratch_path:
     type: string
     description: Local storage path
-    default: "temp"
+    default: temp
   resource_path:
     type: string
     description: Path to store resource files (databases etc)
     default: resources
-  report_path:
-    type: string
-    description: Path to store report files
-    default: results/report
-  pipeline_config_file:
-    type: string
-    description: File with run information
-    default: results/pipeline_config.txt
   ## PREPROCESSING ##
   trimmomatic:
     type: boolean
@@ -312,11 +304,15 @@ properties:
     type: boolean
     description: Indicates whether to run kraken
     default: false
+  kraken_standard_db:
+    type: boolean
+    description: Set to True to build the standard kraken database
+    default: false
   kraken_prebuilt:
     type: string
     description: Pre-built kraken index
-    default: "minikraken2_v2_8GB"
-    enum: ['minikraken2_v1_8GB','minikraken2_v2_8GB','16S_Greengenes','16S_RDP','16S_Silva']
+    default: "minikraken_8GB"
+    enum: ['minikraken_8GB','16S_Greengenes','16S_RDP','16S_Silva']
   kraken_custom:
     type: string
     description: Path to directory containing a custom built kraken2 index (must contain 'hash.k2d', 'opts.k2d', 'taxo.k2d')
