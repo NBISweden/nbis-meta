@@ -9,7 +9,7 @@ rule download_checkm:
         tar = lambda wildcards, output: opj(os.path.dirname(output.db), "checkm_data.tar.gz"),
         dir = lambda wildcards, output: os.path.dirname(output.db)
     conda:
-        "../../../envs/checkm.yaml"
+        "../../../envs/checkm.yml"
     shell:
         """
         # Download
@@ -33,7 +33,7 @@ rule checkm_lineage_wf:
         opj(config["results_path"], "binning", "{binner}", "{group}", "{l}", "checkm",
             "checkm.log")
     conda:
-        "../../../envs/checkm.yaml"
+        "../../../envs/checkm.yml"
     threads: 10
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60
@@ -72,7 +72,7 @@ rule checkm_qa:
         opj(config["results_path"], "binning", "{binner}", "{group}", "{l}", "checkm",
                   "qa.log")
     conda:
-        "../../../envs/checkm.yaml"
+        "../../../envs/checkm.yml"
     params:
         dir = lambda wildcards, output: os.path.dirname(output.tsv)
     shell:
@@ -103,7 +103,7 @@ rule checkm_coverage:
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60
     conda:
-        "../../../envs/checkm.yaml"
+        "../../../envs/checkm.yml"
     shell:
         """
         bins=$(wc -l {input.tsv} | cut -f1 -d ' ')
@@ -124,7 +124,7 @@ rule checkm_profile:
     log:
         opj(config["results_path"], "binning", "{binner}", "{group}", "{l}", "checkm", "checkm_profile.log")
     conda:
-        "../../../envs/checkm.yaml"
+        "../../../envs/checkm.yml"
     shell:
         """
         bins=$(wc -l {input.stats} | cut -f1 -d ' ')
