@@ -307,7 +307,7 @@ def concat_files(files, gff_df):
 
 ## Kraken functions
 
-def get_kraken_index_url(config):
+def get_kraken_index_url(kraken_prebuilt, version=False):
     """
     Downloads latest prebuilt kraken index
 
@@ -336,7 +336,9 @@ def get_kraken_index_url(config):
     # Build a DataFrame and sort by version
     df = pd.DataFrame({'type': types, 'version': versions, 'file': files})
     df = df.sort_values("version", ascending=False)
-    f = df.loc[df.type==config["kraken_prebuilt"]].head(1)["file"].values[0]
+    f = df.loc[df.type==kraken_prebuilt].head(1)["file"].values[0]
+    if version:
+        return os.path.splitext(f)[0]
     return "{}/{}".format(url_base, f)
 
 ## WORKFLOW SETUP ##
