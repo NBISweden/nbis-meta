@@ -268,8 +268,8 @@ properties:
     description: Minimum contig lengths for binning
     items:
       type: integer
-      minimum: 500
-    default: [2000]
+      minimum: 1500
+    default: [1500]
   metabat_threads:
     type: integer
     description: Number of threads to use for Metabat2
@@ -288,6 +288,14 @@ properties:
   checkm:
     type: boolean
     description: Indicates whether to check bin quality using checkm
+    default: false
+  checkm_reduced_tree:
+    type: boolean
+    description: Set to true to use a reduced pplacer tree for checkm (uses less RAM)
+    default: false
+  gtdbtk:
+    type: boolean
+    description: Indicates whether to run gtdbtk to classify bins phylogenetically
     default: false
   ## Mapping ##
   bowtie2_threads:

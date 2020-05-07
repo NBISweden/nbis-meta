@@ -8,14 +8,14 @@ rule concoct_coverage_table:
         bed=opj(config["results_path"],"assembly","{group}",
                 "final_contigs_cutup.bed")
     output:
-        cov=opj(config["results_path"],"concoct","{group}",
+        cov=opj(config["results_path"],"binning","concoct","{group}",
                 "cov","concoct_inputtable.tsv")
     conda:
         "../../../envs/concoct.yml"
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*2
     params:
-        samplenames=opj(config["results_path"],"concoct",
+        samplenames=opj(config["results_path"],"binning","concoct",
                         "{group}","cov","samplenames"),
         p=POSTPROCESS
     shell:
@@ -38,7 +38,7 @@ rule metabat_coverage:
         bam=get_all_files(samples, opj(config["results_path"],"assembly",
                                        "{group}","mapping"),".bam")
     output:
-        depth=opj(config["results_path"],"metabat","{group}","cov","depth.txt")
+        depth=opj(config["results_path"],"binning","metabat","{group}","cov","depth.txt")
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*2
     conda:

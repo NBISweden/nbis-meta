@@ -12,25 +12,24 @@ rule run_metabat:
     input:
         fa=opj(config["results_path"],"assembly","{group}",
                "final_contigs.fa"),
-        depth=opj(config["results_path"],"metabat","{group}",
+        depth=opj(config["results_path"],"binning","metabat","{group}",
                   "cov","depth.txt")
     output:
-        opj(config["results_path"],"metabat","{group}","{l}","contig_map.tsv")
+        opj(config["results_path"],"binning","metabat","{group}","{l}","contig_map.tsv")
+    log:
+        opj(config["results_path"],"binning","metabat","{group}","{l}","metabat.log")
     conda:
         "../../../envs/metabat.yml"
     threads: config["metabat_threads"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     params:
-        n=opj(config["results_path"],"metabat","{group}","{l}","metabat")
+        n=opj(config["results_path"],"binning","metabat","{group}","{l}","metabat")
     shell:
         """
         metabat2 \
-            -i {input.fa} \
-            -a {input.depth} \
-            -m {wildcards.l} \
-            -t {threads} \
-            -o {params.n}
+            -i {input.fa} -a {input.depth} -m {wildcards.l} -t {threads} \
+            -o {params.n} > {log} 2>&1
         grep '>' {params.n}*.fa | \
             awk -F/ '{{print $NF}}' | \
             sed 's/.fa:>/\t/g' > {output[0]}
@@ -38,13 +37,13 @@ rule run_metabat:
 
 rule metabat_stats:
     input:
-        opj(config["results_path"],"metabat","{group}",
+        opj(config["results_path"],"binning","metabat","{group}",
             "{l}","contig_map.tsv")
     output:
-        opj(config["results_path"],"metabat","{group}",
+        opj(config["results_path"],"binning","metabat","{group}",
             "{l}","summary_stats.tsv")
     params:
-        dir=opj(config["results_path"],"metabat","{group}","{l}"),
+        dir=opj(config["results_path"],"binning","metabat","{group}","{l}"),
         suffix=".fa"
     shell:
         """
@@ -54,39 +53,15 @@ rule metabat_stats:
 
 ## MAXBIN ##
 
-def get_fw_reads(config, p):
-    """
-    MaxBin2 only uses unpaired reads for mapping with bowtie2.
-    Here we iterate over all samples
-    """
-    files=[]
-    for sample in samples.keys():
-        for run in samples[sample].keys():
-            if "R1" in samples[sample][run].keys():
-                f=opj(config["intermediate_path"],"preprocess",
-                        "{sample}_{run}_R1{p}.fastq.gz".format(sample=sample,
-                                                               run=run,
-                                                               p=p))
-            else:
-                f=opj(config["intermediate_path"],"preprocess",
-                      "{sample}_{run}_se{p}.fastq.gz".format(sample=sample,
-                                                             run=run,
-                                                             p=p))
-            files.append(f)
-    reads_string=""
-    for i, f in enumerate(files, start=1):
-        reads_string+="-reads{i} {f} ".format(i=i, f=f)
-    return reads_string
-
 rule run_maxbin:
     input:
         opj(config["results_path"],"assembly","{group}","final_contigs.fa")
     output:
-        opj(config["results_path"],"maxbin","{group}","{l}","{group}.summary")
+        opj(config["results_path"],"binning","maxbin","{group}","{l}","{group}.summary")
     log:
-        opj(config["results_path"],"maxbin","{group}","{l}","maxbin.log")
+        opj(config["results_path"],"binning","maxbin","{group}","{l}","maxbin.log")
     params:
-        dir=opj(config["results_path"],"maxbin","{group}","{l}"),
+        dir=opj(config["results_path"],"binning","maxbin","{group}","{l}"),
         tmp_dir=opj(config["scratch_path"],"{group}","{l}"),
         reads=get_fw_reads(config, PREPROCESS),
         markerset=config["maxbin_markerset"]
@@ -112,12 +87,12 @@ rule run_maxbin:
 
 rule maxbin_stats:
     input:
-        opj(config["results_path"],"maxbin","{group}","{l}","{group}.summary")
+        opj(config["results_path"],"binning","maxbin","{group}","{l}","{group}.summary")
     output:
-        opj(config["results_path"],"maxbin","{group}",
+        opj(config["results_path"],"binning","maxbin","{group}",
             "{l}","summary_stats.tsv")
     params:
-        dir=opj(config["results_path"],"maxbin","{group}","{l}"),
+        dir=opj(config["results_path"],"binning","maxbin","{group}","{l}"),
         suffix=".fasta"
     shell:
         """
@@ -145,17 +120,17 @@ rule concoct_cutup:
 
 rule run_concoct:
     input:
-        cov=opj(config["results_path"],"concoct","{group}",
+        cov=opj(config["results_path"],"binning","concoct","{group}",
                 "cov","concoct_inputtable.tsv"),
         fa=opj(config["results_path"],"assembly","{group}",
                "final_contigs_cutup.fa")
     output:
-        opj(config["results_path"],"concoct","{group}","{l}",
+        opj(config["results_path"],"binning","concoct","{group}","{l}",
             "clustering_gt{l}.csv")
     log:
-        opj(config["results_path"],"concoct","{group}","{l}","log.txt")
+        opj(config["results_path"],"binning","concoct","{group}","{l}","log.txt")
     params:
-        basename=opj(config["results_path"],"concoct","{group}","{l}"),
+        basename=opj(config["results_path"],"binning","concoct","{group}","{l}"),
         length="{l}"
     threads: config["concoct_threads"]
     conda:
@@ -174,12 +149,12 @@ rule run_concoct:
 
 rule merge_cutup:
     input:
-        opj(config["results_path"],"concoct","{group}",
+        opj(config["results_path"],"binning","concoct","{group}",
             "{l}","clustering_gt{l}.csv")
     output:
-        opj(config["results_path"],"concoct","{group}",
+        opj(config["results_path"],"binning","concoct","{group}",
             "{l}","clustering_gt{l}_merged.csv"),
-        opj(config["results_path"],"concoct","{group}",
+        opj(config["results_path"],"binning","concoct","{group}",
             "{l}","clustering_gt{l}_merged.log")
     conda:
         "../../../envs/concoct.yml"
@@ -192,13 +167,13 @@ rule merge_cutup:
 rule extract_fasta:
     input:
         opj(config["results_path"],"assembly","{group}","final_contigs.fa"),
-        opj(config["results_path"],"concoct","{group}",
+        opj(config["results_path"],"binning","concoct","{group}",
             "{l}","clustering_gt{l}_merged.csv")
     output:
-        touch(opj(config["results_path"],"concoct","{group}",
+        touch(opj(config["results_path"],"binning","concoct","{group}",
                   "{l}","fasta","done"))
     params:
-        dir=opj(config["results_path"],"concoct","{group}","{l}","fasta")
+        dir=opj(config["results_path"],"binning","concoct","{group}","{l}","fasta")
     conda:
         "../../../envs/concoct.yml"
     shell:
@@ -208,12 +183,12 @@ rule extract_fasta:
 
 rule concoct_stats:
     input:
-        opj(config["results_path"],"concoct","{group}","{l}","fasta","done")
+        opj(config["results_path"],"binning","concoct","{group}","{l}","fasta","done")
     output:
-        opj(config["results_path"],"concoct","{group}",
+        opj(config["results_path"],"binning","concoct","{group}",
             "{l}","summary_stats.tsv")
     params:
-        dir=opj(config["results_path"],"concoct","{group}","{l}","fasta"),
+        dir=opj(config["results_path"],"binning","concoct","{group}","{l}","fasta"),
         suffix=".fa"
     shell:
         """
