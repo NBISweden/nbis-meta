@@ -23,8 +23,8 @@ if config["checkm"]:
 
 if config["gtdbtk"] and platform.uname().system != "Darwin":
     binning_input.append(opj(config["report_path"], "gtdbtk", "gtdbtk.summary.tsv"))
-    binning_input.append(opj(config["report_path"], "mag_annotation", "tRNA.total.tsv"))
-    binning_input.append(opj(config["report_path"], "mag_annotation", "rRNA.types.tsv"))
+    binning_input.append(opj(config["report_path"], "bin_annotation", "tRNA.total.tsv"))
+    binning_input.append(opj(config["report_path"], "bin_annotation", "rRNA.types.tsv"))
     include: "../rules/Binning/gtdbtk.smk"
     include: "../rules/Binning/annotate_bins.smk"
 

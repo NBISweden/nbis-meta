@@ -10,7 +10,7 @@ rule barrnap:
     log:
         opj(config["results_path"], "binning", "{binner}", "{group}", "{l}", "barrnap", "log")
     conda:
-        "../../../envs/barrnap.yaml"
+        "../../../envs/barrnap.yml"
     params:
         indir = lambda wildcards: get_indir(wildcards),
         gtdbtk_dir = lambda w, input: os.path.dirname(input.gtdbtk)
@@ -47,7 +47,7 @@ rule count_rRNA:
     script:
         "../../../scripts/count_rRNA.py"
 
-rule trnascan:
+rule trnascan_bins:
     """
     Identify tRNA genes in genome bins
     """
@@ -65,7 +65,7 @@ rule trnascan:
         runtime = lambda wildcards, attempt: attempt*30
     threads: 4
     conda:
-        "../../../envs/annotation.yaml"
+        "../../../envs/annotation.yml"
     shell:
         """
         bins=$(wc -l {input.tsv} | cut -f1 -d ' ')

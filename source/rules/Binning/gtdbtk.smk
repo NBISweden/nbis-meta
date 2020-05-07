@@ -34,7 +34,7 @@ rule gtdbtk_classify:
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60
     conda:
-        "../../../envs/gtdbtk.yaml"
+        "../../../envs/gtdbtk.yml"
     shell:
         """
         bins=$(wc -l {input.tsv} | cut -f1 -d ' ')
