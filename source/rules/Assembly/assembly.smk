@@ -47,7 +47,8 @@ if config["metaspades"]:
             se=opj(config["results_path"],"assembly",
                         "{group}","se.fq")
         output:
-            opj(config["results_path"],"assembly","{group}","final_contigs.fa"),
+            opj(config["results_path"],"assembly","{group}","final_contigs.fa")
+        log:
             opj(config["results_path"],"assembly","{group}","spades.log")
         params:
             intermediate_contigs=opj(config["intermediate_path"],"assembly",
@@ -66,6 +67,10 @@ if config["metaspades"]:
             """
             # Create directories
             mkdir -p {params.tmp}
+            # Clean output dir
+            #rm -rf {params.output_dir}/*
+            # Clean temp dir
+            rm -rf {params.tmp}/*
             # Only use single-end if present
             if [ -s {input.se} ]; then
                 single="-s {input.se}"
@@ -73,11 +78,8 @@ if config["metaspades"]:
                 single=""
             fi
             metaspades.py \
-                -t {threads} \
-                -1 {input.R1} \
-                -2 {input.R2} \
-                $single \
-                -o {params.tmp} >/dev/null 2>&1
+                -t {threads} -1 {input.R1} -2 {input.R2} $single \
+                -o {params.tmp} > {log} 2>&1
             
             # If set to keep intermediate contigs, move to intermediate folder before deleting
             if [ "{config[metaspades_keep_intermediate]}" == "True" ]; then
