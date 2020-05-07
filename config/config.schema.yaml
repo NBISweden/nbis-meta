@@ -240,6 +240,10 @@ properties:
     type: string
     description: Protein database to use for taxonomic annotation
     default: "uniref100"
+  sourmash_fraction:
+    type: integer
+    description: Hash fraction to use for sourmash when computing signatures for contigs
+    default: 100
   diamond_threads:
     type: integer
     description: How many threads to use for diamond
