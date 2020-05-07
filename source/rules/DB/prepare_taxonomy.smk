@@ -3,7 +3,8 @@ localrules:
     tango_download,
     tango_download_taxonomy,
     tango_format_nr,
-    tango_format_uniref
+    tango_format_uniref,
+    download_sourmash_db
 
 rule tango_download_taxonomy:
     output:
@@ -148,3 +149,16 @@ rule tango_build:
          tango build -d {output} -p {threads} {input.fasta} \
             {input.idmap} {input.nodes} >{log} 2>&1 
          """
+
+rule download_sourmash_db:
+    output:
+        opj(config["resource_path"], "sourmash", "genbank-k31.lca.json")
+    log:
+        opj(config["resource_path"], "sourmash", "download.log")
+    params:
+        url = "https://osf.io/4f8n3/download"
+    shell:
+        """
+        curl -L -o {output}.gz {params.url} > {log} 2>&1
+        gunzip {output}.gz
+        """
