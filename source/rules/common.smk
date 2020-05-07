@@ -9,6 +9,7 @@ import os
 from os.path import join as opj
 from source.utils.parse_samplelist import parse_samplelist, check_sequencing_type
 
+## Preprocessing functions
 
 def link(target,link_name):
     target_abs = os.path.abspath(target)
@@ -89,6 +90,7 @@ def get_fastqc_files(wildcards):
                             run,pair)))
     return files
 
+
 def get_trim_logs(wildcards):
     """
     Get all trimming logs from Trimmomatic and/or cutadapt
@@ -113,6 +115,7 @@ def get_trim_logs(wildcards):
                     files.append(logfile)
     return files
 
+
 def get_filt_logs(wildcards):
     """
     Get all filter logs from Phix filtering
@@ -134,6 +137,7 @@ def get_filt_logs(wildcards):
                                             preprocess_suffices["phixfilt"]))
             files.append(logfile)
     return files
+
 
 def get_sortmerna_logs(wildcards):
     """
@@ -215,6 +219,7 @@ def filter_metaspades_assemblies(d):
         del d[assembly]
     return d
 
+
 def get_all_group_files(g):
   files=[]
   for sample in assemblyGroups[g].keys():
@@ -222,6 +227,7 @@ def get_all_group_files(g):
       for pair in assemblyGroups[g][sample][run].keys():
         files.append(assemblyGroups[g][sample][run][pair][0])
   return files
+
 
 def get_bamfiles(g):
   files=[]
@@ -232,6 +238,7 @@ def get_bamfiles(g):
       else:
         files.append(opj(config["results_path"],"assembly",g,"mapping",sample+"_"+run+"_se"+POSTPROCESS+".bam"))
   return files
+
 
 def rename_records(f, fh, i):
     """
@@ -297,6 +304,40 @@ def concat_files(files, gff_df):
     df.set_index("orf", inplace=True)
     return df
 
+
+## Kraken functions
+
+def get_kraken_index_url(config):
+    """
+    Downloads latest prebuilt kraken index
+
+    :param config: config dictionary
+    :return: url text string
+    """
+    from ftplib import FTP
+    import re
+    url_base = "ftp://ftp.ccb.jhu.edu/pub/data/kraken2_dbs"
+    ftp = FTP('ftp.ccb.jhu.edu')
+    ftp.login()
+    ftp.cwd('pub/data/kraken2_dbs/')
+    # List all tar archives
+    files = [x for x in ftp.nlst() if ".tgz" in x]
+    # Figure out versions
+    versions = []
+    types = []
+    for t in ["_".join(x.split("_")[0:2]) for x in files]:
+        if t == "minikraken_8GB":
+            types.append(t)
+            versions.append("")
+            continue
+        v = re.search("\d+.*", t.split("_")[-1]).group()
+        types.append(t.replace(v, ""))
+        versions.append(v)
+    # Build a DataFrame and sort by version
+    df = pd.DataFrame({'type': types, 'version': versions, 'file': files})
+    df = df.sort_values("version", ascending=False)
+    f = df.loc[df.type==config["kraken_prebuilt"]].head(1)["file"].values[0]
+    return "{}/{}".format(url_base, f)
 
 ## WORKFLOW SETUP ##
 
@@ -412,7 +453,7 @@ if config["centrifuge"]:
         config["centrifuge_index_path"]=config["centrifuge_custom"]
     # If not, use prebuilt default
     else:
-        config["centrifuge_index_path"]="resources/classify_db/centrifuge/{}".format(config["centrifuge_prebuilt"])
+        config["centrifuge_index_path"]="resources/centrifuge/centrifuge/{}".format(config["centrifuge_prebuilt"])
     # Set centrifuge index config variables
     config['centrifuge_dir']=os.path.dirname(config['centrifuge_index_path'])
     config['centrifuge_base']=os.path.basename(config['centrifuge_index_path'])
@@ -422,9 +463,11 @@ if config["kraken"]:
     custom=expand(opj(config["kraken_custom"], "{n}.k2d"), n=["hash","opts","taxo"])
     if list(set(os.path.exists(x) for x in custom))[0]:
         config["kraken_index_path"]=config["kraken_custom"]
-    # If not, use prebuilt default
+    # If not, use prebuilt or standard
+    elif config["kraken_standard_db"]:
+        config["kraken_index_path"] = opj(config["resource_path"],"kraken","standard")
     else:
-        config["kraken_index_path"]="resources/classify_db/{}".format(config["kraken_prebuilt"])
+        config["kraken_index_path"] = opj(config["resource_path"],"kraken","prebuilt", config["kraken_prebuilt"])
     if config["kraken_reduce_memory"]:
         config["kraken_params"]="--memory-mapping"
     else:
