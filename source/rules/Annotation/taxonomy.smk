@@ -1,4 +1,4 @@
-localrules: tango_assign_orfs
+localrules: tango_assign_orfs, download_sourmash_db, sourmash_compute, merge_tango_sourmash
 
 rule tango_search:
     input:
@@ -33,7 +33,7 @@ rule tango_assign:
         opj(config["resource_path"],"taxonomy","taxonomy.sqlite")
     output:
         opj(config["results_path"],"annotation","{group}","taxonomy",
-            "final_contigs.{db}.taxonomy.tsv".format(db=config["taxdb"]))
+            "tango.{db}.taxonomy.tsv".format(db=config["taxdb"]))
     log:
         opj(config["results_path"],"annotation","{group}","taxonomy",
             "tango_assign.log")
@@ -52,10 +52,69 @@ rule tango_assign:
             {input[0]} {output[0]} > {log} 2>&1
          """
 
+## Sourmash rules
+
+rule sourmash_compute:
+    input:
+        opj(config["results_path"],"assembly","{group}", "final_contigs.fa")
+    output:
+        opj(config["results_path"],"assembly","{group}", "final_contigs.fa.sig")
+    log:
+        opj(config["results_path"],"assembly","{group}", "sourmash_compute.log")
+    conda:
+        "../../../envs/sourmash.yml"
+    params:
+        frac = config["sourmash_fraction"]
+    shell:
+        """
+        sourmash compute --singleton --scaled {params.frac} \
+            -k 31 -o {output} {input} > {log} 2>&1
+        """
+
+rule sourmash_classify:
+    input:
+        sig = opj(config["results_path"],"assembly","{group}",
+                 "final_contigs.fa.sig"),
+        db = opj(config["resource_path"], "sourmash", "genbank-k31.lca.json")
+    output:
+        csv = opj(config["results_path"], "annotation", "{group}", "taxonomy",
+                  "sourmash.taxonomy.csv")
+    log:
+        opj(config["results_path"], "annotation", "{group}", "taxonomy",
+            "sourmash.log")
+    params:
+        frac = config["sourmash_fraction"]
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*30
+    conda:
+        "../../../envs/sourmash.yml"
+    shell:
+        """
+        sourmash lca classify --db {input.db} --scaled {params.frac} \
+            --query {input.sig} -o {output.csv} > {log} 2>&1
+        """
+
+rule merge_tango_sourmash:
+    input:
+        smash = opj(config["results_path"], "annotation", "{group}",
+                    "taxonomy", "sourmash.taxonomy.csv"),
+        tango = opj(config["results_path"],"annotation","{group}",
+                    "taxonomy", "tango.{db}.taxonomy.tsv".format(db=config["taxdb"]))
+    output:
+        tax = opj(config["results_path"],"annotation","{group}","taxonomy",
+        "final_contigs.taxonomy.tsv")
+    log:
+        opj(config["results_path"],"annotation","{group}","taxonomy","merge.log")
+    shell:
+        """
+        python source/utils/tango_mash.py \
+            {input.smash} {input.tango} > {output.tax} 2>{log}
+        """
+
 rule tango_assign_orfs:
     input:
         tax=opj(config["results_path"],"annotation","{group}","taxonomy",
-            "final_contigs.{db}.taxonomy.tsv".format(db=config["taxdb"])),
+            "final_contigs.taxonomy.tsv"),
         gff=opj(config["results_path"],"annotation","{group}",
                 "final_contigs.gff")
     output:
