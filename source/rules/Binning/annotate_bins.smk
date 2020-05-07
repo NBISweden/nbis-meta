@@ -108,7 +108,7 @@ rule aggregate_bin_annot:
                binner = get_binners(config),
                group = assemblyGroups.keys(),
                l = config["min_contig_length"])
-    output
+    output:
         trna = opj(config["report_path"], "bin_annotation", "tRNA.total.tsv"),
         rrna = opj(config["report_path"], "bin_annotation", "rRNA.types.tsv")
     run:
