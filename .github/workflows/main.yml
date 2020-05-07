@@ -21,8 +21,6 @@ jobs:
       run: conda env update -n base -f environment.yml
     - name: Dry run
       run: snakemake --use-conda -j 4 --config fastuniq=True kraken=True eggnog=True taxonomic_annotation=True rgi=True pfam=True metabat=True maxbin=True concoct=True checkm=True centrifuge=True -np
-    - name: Install conda envs
-      run: snakemake --use-conda -j 4 --config fastuniq=True kraken=True eggnog=True taxonomic_annotation=True rgi=True pfam=True metabat=True maxbin=True concoct=True checkm=True centrifuge=True --create-envs-only -p
     - name: Preprocess
       run: snakemake --config example_dataset_size=10000 --use-conda -j 4 -p preprocess && rm -r results
     - name: Cutadapt
@@ -35,3 +33,5 @@ jobs:
       run: snakemake --use-conda --config megahit=True -j 4 -p assembly
     - name: Binning
       run: snakemake --use-conda --config metabat=True concoct=True maxbin=True -j 4 -p binning
+    - name: Kraken
+      run: snakemake --use-conda --config kraken=True kraken_prebuilt=16S_Greengenes -j 4 -p kraken_classify
