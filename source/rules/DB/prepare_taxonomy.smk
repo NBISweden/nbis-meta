@@ -101,7 +101,7 @@ rule tango_format_nr:
     shell:
         """
         tango format \
-            --tmpdir {params.tmpdir} 
+            --tmpdir {params.tmpdir} \
             {input.fasta} {output.fasta} > {log} 2>&1
         """
 
