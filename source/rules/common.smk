@@ -194,6 +194,27 @@ def get_sortmerna_ref_string(path, s):
 
 ## Assembly functions
 
+def filter_metaspades_assemblies(d):
+    """
+    This function removes assemblies that contain only single-end samples
+
+    :param d: Assembly group dictionary
+    :return: Dictionary containing only assemblies with at least 1 paired sample
+    """
+    se_only = []
+    for assembly in d.keys():
+        i = 0
+        for sample in d[assembly].keys():
+            for runID in d[assembly][sample].keys():
+                if is_pe(d[assembly][sample][runID]):
+                    i+=1
+                    break
+        if i == 0:
+            se_only.append(assembly)
+    for assembly in se_only:
+        del d[assembly]
+    return d
+
 def get_all_group_files(g):
   files=[]
   for sample in assemblyGroups[g].keys():
@@ -364,10 +385,12 @@ if os.path.isfile(config["sample_list"]):
     # Check that sequencing_type matches with all files in the input if
     seq_type = check_sequencing_type(samples)
     config["seq_type"] = seq_type
-
     if len(assemblyGroups) > 0 and config["assembly"]:
         if config["metaspades"]:
             assembler = "metaspades"
+            # Check that there are no single-end only assemblies
+            # that Metaspades won't be able to run
+            assemblyGroups = filter_metaspades_assemblies(assemblyGroups)
         else:
             assembler = "megahit"
         # Add information on binning
