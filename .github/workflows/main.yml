@@ -10,14 +10,11 @@ on:
       - master
 
 jobs:
-
-  test_small:
-
+  test:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-
     steps:
     - uses: actions/checkout@v2
     - uses: s-weigand/setup-conda@v1
@@ -36,19 +33,7 @@ jobs:
     - name: Megahit
       run: snakemake --use-conda --config megahit=True -j 4 -p assembly
     - name: Kraken
-      run: snakemake --use-conda --config kraken=True kraken_reduce_memory=True kraken_prebuilt=16S_Greengenes -j 4 -p kraken_classify
-
-  test_extended:
-
-    runs-on: ${{ matrix.os }}
-      strategy:
-        matrix:
-          os: [ubuntu-latest, macos-latest]
-    steps:
-    - uses: actions/checkout@v2
-    - uses: s-weigand/setup-conda@v1
-    - name: Install the conda environment
-      run: conda env update -n base -f environment.yml
+      run: snakemake --use-conda --config kraken=True kraken_reduce_memory=True kraken_prebuilt=16S_Greengenes -j 4 -p kraken_classify && rm -r examples/data results/
     - name: Preprocess
       run: snakemake --config example_dataset_size=1000000 --use-conda -j 4 -p preprocess
     - name: Binning
