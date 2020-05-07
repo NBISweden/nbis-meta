@@ -254,6 +254,122 @@ def rename_records(f, fh, i):
         SeqIO.write(record, fh, "fastq")
     return fh
 
+## Binning functions
+
+def get_fw_reads(config, p):
+    """
+    MaxBin2 only uses unpaired reads for mapping with bowtie2.
+    Here we iterate over all samples
+    """
+    files=[]
+    for sample in samples.keys():
+        for run in samples[sample].keys():
+            if "R1" in samples[sample][run].keys():
+                f=opj(config["intermediate_path"],"preprocess",
+                        "{sample}_{run}_R1{p}.fastq.gz".format(sample=sample,
+                                                               run=run,
+                                                               p=p))
+            else:
+                f=opj(config["intermediate_path"],"preprocess",
+                      "{sample}_{run}_se{p}.fastq.gz".format(sample=sample,
+                                                             run=run,
+                                                             p=p))
+            files.append(f)
+    reads_string=""
+    for i, f in enumerate(files, start=1):
+        reads_string+="-reads{i} {f} ".format(i=i, f=f)
+    return reads_string
+
+
+def get_indir(wildcards):
+    """
+    Get directory containing bin fasta sequences based on binner used.
+    :param wildcards: wildcards used
+    :return: fasta directory
+    """
+    indir = opj(config["results_path"], "binning", wildcards.binner, wildcards.group,
+                   wildcards.l)
+    if wildcards.binner == "concoct":
+        return opj(indir, "fasta")
+    return indir
+
+
+def get_tree_settings(config):
+    """
+    Return checkm parameter based on tree settings
+
+    :param config:
+    :return:
+    """
+    if config["checkm_reduced_tree"]:
+        return "-r"
+    return ""
+
+
+def get_binners(config):
+    """
+    Return a list of binners used
+    :param config:
+    :return:
+    """
+    binners = []
+    if config["metabat"]:
+        binners.append("metabat")
+    if config["concoct"]:
+        binners.append("concoct")
+    if config["maxbin"]:
+        binners.append("maxbin")
+    return binners
+
+
+def get_fields(f):
+    """
+    Extract assembly, binner and length fields from file path
+    :param f: Input file
+    :return:
+    """
+    items = f.split("/")
+    return items[-3], items[-4], items[-5]
+
+
+def assign_fields(x, l, group, binner):
+    """
+    Assign assembly, binner and length fields
+    :param x: pandas DataFrame
+    :param l: minimum contig length used
+    :param group: assembly group
+    :param binner: binner used
+    :return: updated pandas DataFrame
+    """
+    rows = x.shape[0]
+    x = x.assign(binner=pd.Series([binner]*rows, index=x.index))
+    x = x.assign(min_contig_length=pd.Series([l]*rows, index=x.index))
+    x = x.assign(assembly=pd.Series([group]*rows, index=x.index))
+    return x
+
+
+def concatenate(input):
+    """
+    Concatenate bin info dataframes
+    :param input:
+    :return:
+    """
+    df = pd.DataFrame()
+    for i, f in enumerate(input):
+        l, group, binner = get_fields(f)
+        _df = pd.read_csv(f, sep="\t", index_col=0)
+        rows = _df.shape[0]
+        if rows == 0:
+            continue
+        _df = assign_fields(_df, l, group, binner)
+        if i == 0:
+            df = _df.copy()
+        else:
+            _df = _df.loc[:,df.columns]
+            df = pd.concat([df, _df])
+    return df
+
+
 ## Annotation functions
 
 def parse_cmout(f):
@@ -314,14 +430,14 @@ def get_kraken_index_url(kraken_prebuilt, version=False):
     :param config: config dictionary
     :return: url text string
     """
-    from ftplib import FTP
+    import subprocess
     import re
     url_base = "ftp://ftp.ccb.jhu.edu/pub/data/kraken2_dbs"
-    ftp = FTP('ftp.ccb.jhu.edu')
-    ftp.login()
-    ftp.cwd('pub/data/kraken2_dbs/')
+    r = subprocess.run(["curl", "ftp://ftp.ccb.jhu.edu/pub/data/kraken2_dbs/"],
+                       capture_output=True)
+    _files = [x.split(" ")[-1] for x in r.stdout.decode().split("\n")]
     # List all tar archives
-    files = [x for x in ftp.nlst() if ".tgz" in x]
+    files = [x for x in _files if ".tgz" in x]
     # Figure out versions
     versions = []
     types = []
@@ -440,6 +556,9 @@ if os.path.isfile(config["sample_list"]):
         binning=False
         if config["maxbin"] or config["concoct"] or config["metabat"]:
             binning=True
+        if not binning:
+            config["checkm"] = False
+            config["gtdbtk"] = False
 else:
     print("Could not read the sample list file, wont be able to run the "
           "pipeline, tried {}".format(config["sample_list"]))
