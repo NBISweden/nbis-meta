@@ -280,11 +280,11 @@ properties:
     type: boolean
     description: Indicates whether to run MaxBin2 to bin contigs
     default: false
-    maxbin_markerset:
-      type: integer
-      description: Which marker set to use for Maxbin2 (107=bacteria, 40=bacteria+archaea)
-      default: 40
-      enum: [40, 107]
+  maxbin_markerset:
+    type: integer
+    description: Which marker set to use for Maxbin2 (107=bacteria, 40=bacteria+archaea)
+    default: 40
+    enum: [40, 107]
   maxbin_threads:
     type: integer
     description: Number of threads to use for MaxBin2
