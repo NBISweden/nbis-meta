@@ -1,21 +1,45 @@
-# This is a basic workflow to help you get started with Actions
-
 name: CI
 
-# Controls when the action will run.
 on:
   push:
-    branches: 
-      - develop
+    branches:
+      - master
+    paths:
+      - '!README.md'
+      - '!LICENSE.md'
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '!README.md'
+      - '!LICENSE.md'
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
-    - uses: actions/checkout@v2.1.0
-    - uses: snakemake/snakemake-github-action@v1.6.1
-      with:
-        directory: .test
-        snakefile: Snakefile
-        args: "--cores 1 --use-conda -n"
+    - uses: actions/checkout@v2
+    - uses: s-weigand/setup-conda@v1
+    - name: Install the conda environment
+      run: conda env update -n base -f environment.yml
+    - name: Dry run
+      run: snakemake --use-conda -j 4 --config fastuniq=True kraken=True eggnog=True taxonomic_annotation=True rgi=True pfam=True metabat=True concoct=True checkm=True gtdbtk=True centrifuge=True -np
+    - name: Cutadapt
+      run: snakemake --config example_dataset_size=10000 trimmomatic=False cutadapt=True --use-conda -j 4 -p preprocess && rm -r results
+    - name: Trimmomatic
+      run: snakemake --use-conda -j 4 -p preprocess && rm -r results/report
+    - name: Sortmerna
+      run: snakemake --use-conda -j 4 --config sortmerna=True -p preprocess
+    - name: Metaspades
+      run: snakemake --use-conda --config metaspades=True -j 4 -p assembly && rm -r results/assembly && rm -r results/report
+    - name: Megahit
+      run: snakemake --use-conda --config megahit=True -j 4 -p assembly
+    - name: Kraken
+      run: snakemake --use-conda --config kraken=True kraken_reduce_memory=True kraken_prebuilt=16S_Greengenes -j 4 -p kraken_classify && rm -r examples/data results/
+    - name: Preprocess
+      run: snakemake --config example_dataset_size=1000000 --use-conda -j 4 -p preprocess
+    - name: Binning
+      run: snakemake --use-conda --config metabat=True concoct=True -j 4 -p binning
