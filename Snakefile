@@ -2,9 +2,7 @@
 include: "source/rules/common.smk"
 include: "source/rules/examples.smk"
 
-#############
-## Targets ##
-#############
+# Targets
 inputs = []
 # Download and format databases for annotation
 db_input = []
@@ -18,7 +16,7 @@ inputs += preprocess_input
 assembly_input = []
 annotation_input = []
 binning_input = []
-if config["assembly"]:
+if config["megahit"] or config["metaspades"]:
     include: "source/workflow/assembly.smk"
     inputs += assembly_input
     # Rule sets that depend on de-novo assembly
