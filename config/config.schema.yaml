@@ -293,6 +293,19 @@ properties:
     type: boolean
     description: Indicates whether to check bin quality using checkm
     default: false
+  checkm_taxonomy_wf:
+    type: boolean
+    description: Run checkm taxonomy wf instead of lineage wf for bin QC
+    default: false
+  checkm_rank:
+    type: string
+    description: Rank to use for checkm taxonomy wf
+    default: "life"
+    enum: ["life","domain","phylum","class","order","family","genus","species"]
+  checkm_taxon:
+    type: string
+    description: Taxon to use for checkm taxonomy wf
+    default: "Prokaryote"
   checkm_reduced_tree:
     type: boolean
     description: Set to true to use a reduced pplacer tree for checkm (uses less RAM)
