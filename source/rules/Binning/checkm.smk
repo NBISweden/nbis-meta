@@ -20,6 +20,11 @@ rule download_checkm:
         checkm data setRoot {params.dir} > {log} 2>&1
         """
 
+if config["checkm_taxonomy_wf"]:
+    ruleorder: checkm_taxonomy_wf > checkm_lineage_wf
+else:
+    ruleorder:  checkm_lineage_wf > checkm_taxonomy_wf
+
 rule checkm_lineage_wf:
     input:
         db = opj(config["resource_path"], "checkm", ".dmanifest"),
@@ -56,6 +61,45 @@ rule checkm_lineage_wf:
                 > {log} 2>&1
         fi
         """
+
+rule checkm_taxonomy_wf:
+    input:
+        db = opj(config["resource_path"], "checkm", ".dmanifest"),
+        tsv = opj(config["results_path"], "binning", "{binner}", "{group}", "{l}", "summary_stats.tsv")
+    output:
+        tsv = opj(config["results_path"], "binning", "{binner}", "{group}", "{l}", "checkm",
+                  "genome_stats.tsv"),
+        ms = opj(config["results_path"], "binning", "{binner}", "{group}", "{l}", "checkm",
+                  "lineage.ms")
+    log:
+        opj(config["results_path"], "binning", "{binner}", "{group}", "{l}", "checkm",
+            "checkm.log")
+    conda:
+        "../../../envs/checkm.yml"
+    threads: 10
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
+    params:
+        suff = 'fa',
+        indir = lambda wildcards: get_indir(wildcards),
+        outdir = lambda wildcards, output: os.path.dirname(output.tsv),
+        rank = config["checkm_rank"],
+        taxon = config["checkm_taxon"]
+    shell:
+        """
+        bins=$(wc -l {input.tsv} | cut -f1 -d ' ')
+        if [ $bins == 0 ] ; then
+            echo "NO BINS FOUND" > {output.tsv}
+            touch {output.ms}
+        else
+            checkm taxonomy_wf -t {threads} -x {params.suff} -q \
+                --tab_table -f {output.tsv} \
+                {params.rank} {params.taxon} {params.indir} {params.outdir} \
+                > {log} 2>&1
+        fi
+        ln -s {params.taxon}.ms {output.ms}
+        """
+
 
 rule checkm_qa:
     """
