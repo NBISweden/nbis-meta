@@ -4,4 +4,4 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - metabat2=2.15
+  - metabat2=2.14
