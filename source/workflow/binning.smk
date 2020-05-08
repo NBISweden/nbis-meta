@@ -16,7 +16,7 @@ if config["metabat"]:
                             group=assemblyGroups.keys(),
                             l=config["min_contig_length"]) # Metabat has a minlength of 1500
 
-if config["checkm"]:
+if config["checkm"] and platform.uname().system != "Darwin":
     binning_input.append(opj(config["report_path"], "checkm", "checkm.stats.tsv"))
     binning_input.append(opj(config["report_path"], "checkm", "checkm.profiles.tsv"))
     include: "../rules/Binning/checkm.smk"
