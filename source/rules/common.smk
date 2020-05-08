@@ -590,7 +590,7 @@ if config["centrifuge"]:
         config["centrifuge_index_path"]=config["centrifuge_custom"]
     # If not, use prebuilt default
     else:
-        config["centrifuge_index_path"]="resources/centrifuge/centrifuge/{}".format(config["centrifuge_prebuilt"])
+        config["centrifuge_index_path"]="resources/centrifuge/{}".format(config["centrifuge_prebuilt"])
     # Set centrifuge index config variables
     config['centrifuge_dir']=os.path.dirname(config['centrifuge_index_path'])
     config['centrifuge_base']=os.path.basename(config['centrifuge_index_path'])
