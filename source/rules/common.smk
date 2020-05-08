@@ -421,7 +421,21 @@ def concat_files(files, gff_df):
     return df
 
 
-## Kraken functions
+## Read classification functions
+
+def get_centrifuge_index_url(config):
+    url_base="ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data"
+    d={'nt_2018_2_12': 'nt_2018_2_12.tar.gz',
+         'nt_2018_3_3': 'nt_2018_3_3.tar.gz',
+         'p+h+v': 'p+h+v.tar.gz',
+         'p_compressed+h+v': 'p_compressed+h+v.tar.gz',
+         'p_compressed_2018_4_15': 'p_compressed_2018_4_15.tar.gz'}
+    try:
+        url="{}/{}".format(url_base, d[config["centrifuge_base"]])
+    except KeyError:
+        url=""
+    return url
+
 
 def get_kraken_index_url(kraken_prebuilt, version=False):
     """
@@ -491,9 +505,11 @@ else:
 
 # Check whether to set annotation downstream of assembly
 if config["pfam"] or config["taxonomic_annotation"] or config["infernal"] or config["eggnog"] or config["rgi"]:
-    config["annotation"]=True
+    config["annotation"] = True
     #if True also assume the user wants assembly
-    config["assembly"]=True
+    config["assembly"] = True
+    if not config["megahit"] and not config["metaspades"]:
+        config["megahit"] = True
 else:
     config["annotation"]=False
 
@@ -547,14 +563,11 @@ if os.path.isfile(config["sample_list"]):
     # Check that sequencing_type matches with all files in the input if
     seq_type = check_sequencing_type(samples)
     config["seq_type"] = seq_type
-    if len(assemblyGroups) > 0 and config["assembly"]:
+    if len(assemblyGroups) > 0:
         if config["metaspades"]:
-            assembler = "metaspades"
             # Check that there are no single-end only assemblies
             # that Metaspades won't be able to run
             assemblyGroups = filter_metaspades_assemblies(assemblyGroups)
-        else:
-            assembler = "megahit"
         # Add information on binning
         binning=False
         if config["maxbin"] or config["concoct"] or config["metabat"]:
