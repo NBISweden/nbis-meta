@@ -11,9 +11,9 @@ rule tango_search:
     log:
         opj(config["results_path"],"annotation","{group}", "tango_search.log")
     params:
-        tmpdir=config["scratch_path"],
-        tango_params=config["tango_params"],
-        min_len=config["taxonomy_min_len"]
+        tmpdir = config["scratch_path"],
+        min_len = config["taxonomy_min_len"],
+        settings = config["tango_search_params"]
     threads: config["diamond_threads"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*10
@@ -21,7 +21,7 @@ rule tango_search:
         "../../../envs/tango.yml"
     shell:
         """
-        tango search {params.tango_params} -p {threads} \
+        tango search {params.settings} -p {threads} \
             --tmpdir {params.tmpdir} -l {params.min_len} \
             {input.fasta} {input.db} {output[0]} >{log} 2>&1
         """
@@ -38,8 +38,9 @@ rule tango_assign:
         opj(config["results_path"],"annotation","{group}","taxonomy",
             "tango_assign.log")
     params:
-        taxonomy_ranks=config["taxonomy_ranks"],
-        taxdir=opj(config["resource_path"],"taxonomy")
+        taxonomy_ranks = config["taxonomy_ranks"],
+        taxdir = opj(config["resource_path"],"taxonomy"),
+        settings = config["tango_assign_params"]
     threads: 4
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*6
@@ -47,7 +48,7 @@ rule tango_assign:
         "../../../envs/tango.yml"
     shell:
          """
-         tango assign --top 5 -e 0.001 -p {threads} -m rank_lca \
+         tango assign {params.settings} -p {threads} -m rank_lca \
             --reportranks {params.taxonomy_ranks} -t {params.taxdir} \
             {input[0]} {output[0]} > {log} 2>&1
          """
