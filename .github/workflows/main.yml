@@ -4,10 +4,15 @@ on:
   push:
     branches:
       - master
-      - develop
+    paths:
+      - '!README.md'
+      - '!LICENSE.md'
   pull_request:
     branches:
       - master
+    paths:
+      - '!README.md'
+      - '!LICENSE.md'
 
 jobs:
   test:
