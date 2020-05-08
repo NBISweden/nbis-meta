@@ -21,7 +21,7 @@ jobs:
     - name: Install the conda environment
       run: conda env update -n base -f environment.yml
     - name: Dry run
-      run: snakemake --use-conda -j 4 --config fastuniq=True kraken=True eggnog=True taxonomic_annotation=True rgi=True pfam=True metabat=True maxbin=True concoct=True checkm=True gtdbtk=True centrifuge=True -np
+      run: snakemake --use-conda -j 4 --config fastuniq=True kraken=True eggnog=True taxonomic_annotation=True rgi=True pfam=True metabat=True concoct=True checkm=True gtdbtk=True centrifuge=True -np
     - name: Cutadapt
       run: snakemake --config example_dataset_size=10000 trimmomatic=False cutadapt=True --use-conda -j 4 -p preprocess && rm -r results
     - name: Trimmomatic
@@ -37,4 +37,4 @@ jobs:
     - name: Preprocess
       run: snakemake --config example_dataset_size=1000000 --use-conda -j 4 -p preprocess
     - name: Binning
-      run: snakemake --use-conda --config metabat=True concoct=True maxbin=True -j 4 -p binning
+      run: snakemake --use-conda --config metabat=True concoct=True -j 4 -p binning

@@ -1,10 +1,10 @@
 binning_input = []
 
-if config["maxbin"]:
-    binning_input += expand(opj(config["results_path"],
-                                "binning", "maxbin","{group}","{l}","summary_stats.tsv"),
-                            group=assemblyGroups.keys(),
-                            l=config["min_contig_length"])
+#if config["maxbin"]:
+#    binning_input += expand(opj(config["results_path"],
+#                                "binning", "maxbin","{group}","{l}","summary_stats.tsv"),
+#                            group=assemblyGroups.keys(),
+#                            l=config["min_contig_length"])
 if config["concoct"] and platform.uname().system != "Darwin":
     binning_input += expand(opj(config["results_path"],
                                 "binning", "concoct","{group}","{l}","summary_stats.tsv"),
