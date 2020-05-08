@@ -23,10 +23,9 @@ RUN mkdir envs
 COPY config config
 COPY envs/*.yml envs/
 COPY samples samples
+COPY scripts scripts
 COPY source source
 COPY config.yaml Snakefile ./
 
 # Run workflow
-ENTRYPOINT ["snakemake", "--use-conda"]
-
-CMD ["-j", "1"]
+ENTRYPOINT ["snakemake", "--use-conda", "-j", "1"]
