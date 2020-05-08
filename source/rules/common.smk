@@ -423,6 +423,16 @@ def concat_files(files, gff_df):
 
 ## Read classification functions
 
+def get_krona_input(samples, classifier):
+    input_string=""
+    files = get_all_files(samples,opj(config["results_path"],
+                                    classifier),".kreport")
+    for f in files:
+        sample_run=os.path.basename(f).replace("_pe.kreport","").replace("_se.kreport","")
+        input_string+=" {},{}".format(f,sample_run)
+    return input_string
+
+
 def get_centrifuge_index_url(config):
     url_base="ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data"
     d={'nt_2018_2_12': 'nt_2018_2_12.tar.gz',

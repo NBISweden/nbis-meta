@@ -21,16 +21,6 @@ rule classifier2krona:
             {input[0]},{wildcards.sample}_{wildcards.run}
         """
 
-def get_krona_input(samples, classifier):
-    input_string=""
-    files = get_all_files(samples,opj(config["results_path"],
-                                    classifier),".kreport")
-    for f in files:
-        sample_run=os.path.basename(f).replace("_pe.kreport","").replace("_se.kreport","")
-        input_string+=" {},{}".format(f,sample_run)
-    return input_string
-
-
 rule all2krona:
     input:
         f=get_all_files(samples,opj(config["results_path"],
@@ -40,6 +30,8 @@ rule all2krona:
         t=opj("resources","krona","taxonomy.tab")
     output:
         opj(config["report_path"],"{classifier}","{classifier}.krona.html")
+    log:
+        opj(config["report_path"],"{classifier}","{classifier}.krona.log")
     params:
         tax="resources/krona",
         input_string=get_krona_input(samples, "{classifier}")
@@ -48,5 +40,6 @@ rule all2krona:
     shell:
          """
          ktImportTaxonomy \
-            -t 5 -m 3 -tax {params.tax} -o {output[0]} {params.input_string}
+            -t 5 -m 3 -tax {params.tax} -o {output[0]} \
+            {params.input_string} > {log} 2>&1
          """
