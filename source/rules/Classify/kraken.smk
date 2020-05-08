@@ -12,6 +12,8 @@ rule kraken_pe:
     output:
         opj(config["results_path"],"kraken","{sample}_{run}_pe.out"),
         opj(config["results_path"],"kraken","{sample}_{run}_pe.kreport")
+    log:
+        opj(config["results_path"],"kraken","{sample}_{run}_pe.log")
     threads: 10
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*10
@@ -25,7 +27,7 @@ rule kraken_pe:
         kraken2 \
             {params.mem} --db {params.db} --output {output[0]} \
             --report {output[1]} --gzip-compressed \
-            --threads {threads} --paired {input.R1} {input.R2}
+            --threads {threads} --paired {input.R1} {input.R2} > {log} 2>&1
         """
 
 rule kraken_se:
@@ -37,6 +39,8 @@ rule kraken_se:
     output:
         opj(config["results_path"],"kraken","{sample}_{run}_se.out"),
         opj(config["results_path"],"kraken","{sample}_{run}_se.kreport")
+    log:
+        opj(config["results_path"],"kraken","{sample}_{run}_se.log")
     threads: 10
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*10
@@ -50,5 +54,5 @@ rule kraken_se:
         kraken2 \
             {params.mem} --db {params.db} --output {output[0]} \
             --report {output[1]} --gzip-compressed \
-            --threads {threads} {input.se}
+            --threads {threads} {input.se} > {log} 2>&1
         """
