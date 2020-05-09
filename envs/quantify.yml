@@ -1,0 +1,10 @@
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8.1
+  - subread=2.0.0
+  - samtools=1.9
+  - picard=2.21.9
+  - bowtie2=2.4.1

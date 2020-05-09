@@ -1,0 +1,7 @@
+name: sourmash
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - sourmash=3.3.0

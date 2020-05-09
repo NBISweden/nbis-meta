@@ -1,0 +1,11 @@
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - python=2.7.15
+  - prodigal=2.6.3
+  - pfam_scan=1.6
+  - eggnog-mapper=2.0.1
+  - infernal=1.1.2
+  - trnascan-se=2.0.5

@@ -1,211 +1,183 @@
-#############
-### PATHS ###
-#############
-# NOTE: Paths should not include trailing "/"
+## PATHS
 workdir: .
-sample_list: samples/sample_annotation_example.tab
-taxdb: resources/taxonomy
+# Sample information file
+sample_list: samples/example_sample_list.tsv
+# Main folder for results
 results_path: results
+# Subfolder for report files
+report_path: results/report
+# Path to store intermediate files
 intermediate_path: results/intermediate
+# Temporary paths
 temp_path: temp
 scratch_path: temp
+# Path to store resource files
 resource_path: resources
-report_path: results/report
-pipeline_config_file: results/pipeline_config.txt
 
-#####################
-### PREPROCESSING ###
-#####################
-# trimmomatic
+## PREPROCESSING
+# Run Fastqc on preprocessed reads?
+fastqc: True
+# Run Trimmomatic?
 trimmomatic: True
-trimmomatic_home: ""
+# Also trim adapters (in addition to quality trimming)?
 trim_adapters: True
-# trimmomatic_adapter select from TruSeq2, TruSeq3 and NexteraPE
-# trimmomatic adapter, select from: NexteraPE-PE, TruSeq2-PE, TruSeq2-SE, TruSeq3-PE, TruSeq3-PE-2, TruSeq3-SE
+# Adapter type to trim from paired end libraries with trimmomatic
+# ["NexteraPE-PE", "TruSeq2-PE", "TruSeq3-PE", "TruSeq3-PE-2"]
 trimmomatic_pe_adapter: "TruSeq3-PE-2"
+# Adapter type to trim from single end libraries with trimmomatic
+# ["TruSeq2-SE", "TruSeq3-SE"]
 trimmomatic_se_adapter: "TruSeq3-SE"
+# Trimmomatic parameters for trimming adapters on paired-end samples
 pe_adapter_params: "2:30:15"
+# Trimmomatic parameters for trimming adapters on single-end samples
 se_adapter_params: "2:30:15"
+# Trimmomatic parameters for trimming prior to adapter removal on paired-end samples
 pe_pre_adapter_params: ""
+# Trimmomatic parameters for trimming after adapter removal on paired-end samples
 pe_post_adapter_params: "LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:31"
+# Trimmomatic parameters for trimming prior to adapter removal on single-end samples
 se_pre_adapter_params: ""
+# Trimmomatic parameters for trimming after adapter removal on single-end samples
 se_post_adapter_params: "LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:31"
-# cutadapt
+
+# Run cutadapt? (runs instead of Trimmomatic if True)
 cutadapt: False
-adapter_sequence: AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC # Adapter sequence for trimming. Shown here is for Illumina TruSeq Universal Adapter.
+# Adapter sequence to trim with cutadapt
+# Shown here is for Illumina TruSeq Universal Adapter.
+adapter_sequence: AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC
+# Reverse adapter sequence to trim with cutadapt
 rev_adapter_sequence: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT
+# Maximum allowed error rate as value between 0 and 1 (no. of errors divided by length of matching region)
 cutadapt_error_rate: 0.1 #Maximum allowed error rate as value between 0 and 1
-# fastuniq
+
+# Run fastuniq (removes duplicates from paired-end samples)
 fastuniq: False
-# filter phiX
+# Filter samples against the phiX genome?
 phix_filter: True
-# SortMeRNA
+# Run SortMeRNA to identify (and filter) rRNA sequences
 sortmerna: False
-# Sortmerna produces files with reads aligning to rRNA ('rRNA' extension) and not aligning to rRNA ('non_rRNA') extension
+# Sortmerna produces files with reads aligning to rRNA ('rRNA' extension)
+# and not aligning to rRNA ('non_rRNA') extension
 # Which reads should be used for downstream analyses
 sortmerna_keep: 'non_rRNA'
 # Remove filtered reads (i.e. the reads NOT specified in 'keep:')
 sortmerna_remove_filtered: False
+# Databases to use for rRNA identification
 sortmerna_dbs: ["rfam-5s-database-id98.fasta","rfam-5.8s-database-id98.fasta","silva-arc-16s-id95.fasta","silva-arc-23s-id98.fasta","silva-bac-16s-id90.fasta","silva-bac-23s-id98.fasta","silva-euk-18s-id95.fasta","silva-euk-28s-id98.fasta"]
-# 'paired_in' puts both reads in a pair into the 'rRNA' bin if one of them aligns (i.e. more strict)
-# 'paired_out' puts both reads in the 'other' bin
+# Put both paired reads into rRNA bin (paired_in) or both reads in other bin (paired_out)
 sortmerna_paired_strategy: "paired_in"
-sortmerna_params: "--num_alignments 1 -v"
+# Additional parameters for sortmerna
+sortmerna_params: "--num_alignments 1"
 
-######################
-### POSTPROCESSING ###
-######################
-# Whether the picard tool MarkDuplicates should be run to remove duplicates after mapping.
-# Set to False if doing metatranscriptomics.
+## POSTPROCESSING
+# Run MarkDuplicates to remove duplicates post mapping
 markduplicates: True
-picard_jar: ""
-picard_path: ""
 
-################
-### Assembly ###
-################
-assembly: True
+## ASSEMBLY
+# Number of threads to use for assembler
 assembly_threads: 20
-
-## Megahit settings
+# Run Megahit assembler?
+megahit: True
+# Keep intermediate contigs from Megahit?
 megahit_keep_intermediate: False
-# To use the 'Megahit ep k21-k91' setting from the CAMI paper (Sczyrba et al 2017) set
-# additional_settings: to '--min-contig-len 300 --prune-level 3'
+# Additional settings for Megahit
 megahit_additional_settings: '--min-contig-len 300 --prune-level 3'
-
-## Metaspades settings
-# In order to use metaspades you have to explicitly set metaspades: True otherwise the workflow will only use
-# the Megahit assembler
+# Use Metaspades instead of Megahit for assembly?
 metaspades: False
-metaspades_keep_intermediate: True
+# Keep intermediate contigs from Metaspades?
+metaspades_keep_intermediate: False
+# Keep corrected reads produced during Metaspades assembly?
 metaspades_keep_corrected: True
+# Additional settings for Metaspades
 metaspades_additional_settings: '-k 21,31,41,51,61,71,81,91,101,111,121'
 
-################
-## Annotation ##
-################
-
-# Eggnog-mapper
-eggnog: False
-
-# PFAM-scan
-pfam: False
-
-# Resistance Gene Identifier
+## ANNOTATION
+# Run tRNAscan-SE?
+tRNAscan: True
+# Run infernal for rRNA identification?
+infernal: True
+# Threads to use for infernal
+infernal_threads: 8
+# Where to store infernal database
+infernal_dbpath: resources/infernal
+# Run eggnog-mapper?
+eggnog: True
+# Run PFAM-scan?
+pfam: True
+# Run Resistance gene identifier?
 rgi: False
-# Parameters for the rgi software
+# Parameters for rgi
 rgi_params: "-a diamond --local --clean --input_type protein"
-
-# Run taxonomic annotation of assembled contigs
-taxonomic_annotation: False
-# Skip contigs shorter than taxonomy_min_len
+# Run taxonomic annotation of assembled contigs (using tango + sourmash)?
+taxonomic_annotation: True
+# Minimum length of contigs to use for taxonomic annotation
 taxonomy_min_len: 500
-# Additional parameters to tango assigner
-tango_params: "--evalue 0.001 --top 5"
+# Parameters for tango search
+tango_search_params: "--evalue 0.01 --top 10"
+# Parameters for tango assigner
+tango_assign_params: "--evalue 0.001 --top 5"
 # Ranks to report taxonomy for
 taxonomy_ranks: ["superkingdom","phylum","class","order","family","genus","species"]
-# Protein database to use.
-# Choose between uniref50, uniref90, uniref100 and nr for taxdb.
-# If supplying your own (formatted with tango), then the diamond.dmnd file needs to be located under
-# <resource_path>/<taxdb>/diamond.dmnd
+# Protein database to use for taxonomic assignments
+# Choose between uniref50, uniref90, uniref100 and nr.
 taxdb: uniref100
+# Threads to use for diamond
 diamond_threads: 20
 
-# Infernal ncRNA detection
-infernal: False
-infernal_threads: 2
-infernal_dbpath: resources/infernal
-
-###############
-### BINNING ###
-###############
-# Minimum length of contigs to use for binning. Enter more values to run binning multiple times.
-min_contig_length: [2000]
-maxbin: False
-maxbin_threads: 10
-concoct: False
-concoct_threads: 20
+## BINNING
+# Minimum length of contigs to use for binning.
+# Enter more values to run binning multiple times.
+min_contig_length: [1500]
+# Run Metabat2 binner
 metabat: False
+# Threads for Metabat2
 metabat_threads: 20
+# Run CONCOCT binner
+concoct: False
+# Threads for concoct
+concoct_threads: 20
+# Run Checkm to assess quality of bins?
+checkm: False
+# Run checkm taxonomy wf instead of lineage wf for bin QC
+checkm_taxonomy_wf: False
+# Rank to use for checkm taxonomy wf
+checkm_rank: life
+# Taxon to use for checkm taxnomy wf
+checkm_taxon: Prokaryote
+# Use a reduced pplacer tree for checkm (uses less RAM)
+checkm_reduced_tree: False
+# Run gtdbtk to classify bins phylogenetically
+gtdbtk: False
 
-###############
-### MAPPING ###
-###############
+## MAPPING
 bowtie2_threads: 10
 bowtie2_params: "--very-sensitive"
 
-####################################
-### REFERENCE BASED READ MAPPING ###
-####################################
-reference_map: False
-refmap_min_read_count: 50
-
-######################
-### CLASSIFICATION ###
-######################
-# Path to where the classifier (Kraken/Centrifuge/Kaiju) database will be stored. If possible, this
-# should be on a fast disk.
-classifier_db_path: resources/classify_db
-
-##############
-### KRAKEN ###
-##############
+## CLASSIFY READS
+# Run kraken2 read classifier?
 kraken: False
-
-# Prebuilt index to download for kraken2.
-# Choose from:
-# - 'minikraken2_v1_8GB' (Database built from the refseq bacteria, archaea, and viral libraries.)
-# - 'minikraken2_v2_8GB' (Database built from the Refseq bacteria, archaea, and viral libraries and the GRCh38 human genome)
-kraken_prebuilt: 'minikraken2_v2_8GB'
-
-# Specify a custom built kraken2 index to use instead of the prebuilt.
-# Give the path to the directory containing the 'hash.k2d', 'opts.k2d' and 'taxo.k2d' files
+# Generate the standard kraken database?
+kraken_standard_db: False
+# Download a prebuilt kraken2 database from the CCB servers
+# Choose from 'minikraken_8GB','16S_Greengenes','16S_RDP','16S_Silva'
+kraken_prebuilt: "minikraken_8GB"
+# Specify a path to an existing kraken2 database
 kraken_custom: ""
-
 # Run kraken2 in '--memory-mapping' mode which avoids loading database into RAM and uses less memory
 kraken_reduce_memory: False
-
-###################
-### Centrifuge  ###
-###################
+# Run centrifuge to classify reads
 centrifuge: False
-
-# Prebuilt index to download from ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data
+# Download a prebuilt centrifuge index to download from CCB servers
 # Choose from "p+h+v", "nt_2018_2_12", "nt_2018_3_3", "p_compressed+h+v", "p_compressed_2018_4_15"
 centrifuge_prebuilt: 'p_compressed+h+v'
-
-# Specify a custom built centrifuge index to use instead of the prebuilt
-# Exclude the '.*.cf' suffix
+# Specify a path to an existing centrifuge database
 centrifuge_custom: ""
-
+# Minimum score for classifications by centrifuge.
+# Because centrifuge doesn't have a filtering algorithm, we use this min_score to filter results.
+centrifuge_min_score: 75
 # Maximum number of assignments per read
 # By default this is set to 5 in centrifuge, increase to show more specific assignments
 # Set to 1 to implement LCA-classification as in Kraken
 centrifuge_max_assignments: 1
-
-# Minimum score for classifications by centrifuge.
-# Because centrifuge doesn't have a filtering algorithm, we use this min_score to filter results.
-centrifuge_min_score: 75
-
-# Summarize at rank
-# Specify a taxonomic rank to summarize the database at (total sequences and total size).
-centrifuge_summarize_rank: superkingdom
-
-centrifuge_map_filtered: False
-
-# Fraction of kmer hashes to compute using sourmash
-# The number of hashes is 1 in <hash_fraction>
-sourmash_fraction: 100
-
-# Minimum coverage estimated from sourmash (0.1 corresponds to 10% of a genome covered by a sample)
-sourmash_min_cov: 0.1
-
-# Filtering of genomes
-# Set minimum read count required during the pre-filtering step to include a genome for downstream analysis
-# Note that this is not uniquely classified reads
-centrifuge_min_read_count: 5000
-
-#################
-## MetaPhlAn 2 ##
-#################
-metaphlan2: False
+# Run metaphlan2 profiler?
+metaphlan: False

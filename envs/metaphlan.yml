@@ -1,0 +1,9 @@
+channels:
+  - conda-forge
+  - biobakery
+  - bioconda
+  - defaults
+dependencies:
+  - conda-forge::python=2.7.15=h8e446fc_1011_cpython
+  - bioconda::metaphlan2=2.7.7=py27h24bf2e0_4
+  - biobakery::humann2=2.8.1=py27_0

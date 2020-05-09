@@ -47,7 +47,7 @@ def parse_samplelist(f, config, PREPROCESS):
 
         # Handling of paired and/or single end sequence files
         # If the sample annotation file has a 'pair' column, add the read files as 'R1' and 'R2'
-        if "pair" in df.columns:
+        if "pair" in df.columns and df.iloc[i]["pair"]:
             R2 = df.iloc[i]["pair"]
             r2 = True
             samples[sample][runID]["R1"] = R1

@@ -1,0 +1,6 @@
+channels:
+  - bioconda
+  - defaults
+dependencies:
+  - krona=2.7.1
+  - make=4.2.1

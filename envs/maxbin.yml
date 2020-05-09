@@ -1,0 +1,5 @@
+channels:
+   - bioconda
+dependencies:
+  - maxbin2=2.2.7
+  - perl-lwp-simple=6.15

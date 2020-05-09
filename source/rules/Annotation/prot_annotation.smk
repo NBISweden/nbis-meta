@@ -1,0 +1,229 @@
+localrules: parse_ko_annotations,parse_pfam
+############################
+## Add EGGNOG annotations ##
+############################
+rule emapper_homology_search:
+    input:
+        opj(config["results_path"],"annotation","{group}",
+            "final_contigs.faa"),
+        opj(config["resource_path"],"eggnog-mapper","eggnog.db")
+    output:
+        opj(config["results_path"],"annotation","{group}",
+            "{group}.emapper.seed_orthologs")
+    params:
+        resource_dir=opj(config["resource_path"],"eggnog-mapper"),
+        out="{group}",
+        tmpdir=opj(os.path.expandvars(config["scratch_path"]),
+                   "{group}-eggnog"),
+        tmp_out=opj(os.path.expandvars(config["scratch_path"]),
+                    "{group}-eggnog","{group}"),
+        flags="-m diamond --no_annot --no_file_comments"
+    log:
+        opj(config["results_path"],"annotation","{group}",
+            "{group}.emapper.seed_orthologs.log")
+    conda:
+        "../../../envs/annotation.yml"
+    threads: 10
+    resources:
+        runtime=lambda wildcards,attempt: attempt**2*60*4
+    shell:
+        """
+        # Create temporary output dir
+        mkdir -p {params.tmpdir}
+        emapper.py \
+            {params.flags} \
+            --cpu {threads} \
+            -i {input[0]} \
+            -o {params.out} \
+            --temp_dir {params.tmpdir} \
+            --output_dir {params.tmpdir} \
+            --data_dir {params.resource_dir} \
+            >{log} 2>&1
+        mv {params.tmp_out}.emapper.seed_orthologs {output[0]}
+        rm -rf {params.tmpdir}
+        """
+
+if config["runOnUppMax"] == "yes":
+    rule emapper_annotate_hits_uppmax:
+        """Copy EGGNOG db into memory before running annotations"""
+        input:
+            opj(config["results_path"],"annotation","{group}",
+                "{group}.emapper.seed_orthologs")
+        output:
+            opj(config["results_path"],"annotation","{group}",
+                "{group}.emapper.annotations")
+        params:
+            resource_dir=opj(config["resource_path"],"eggnog-mapper"),
+            tmpdir=opj(os.path.expandvars(config["scratch_path"]),
+                       "{group}-eggnog"),
+            out=opj(config["results_path"],"annotation","{group}","{group}"),
+            flags="--no_file_comments"
+        log:
+            opj(config["results_path"],"annotation","{group}",
+                 "{group}.emapper.annotations.log")
+        conda:
+            "../../../envs/annotation.yml"
+        message: "Annotating hits table for {wildcards.group}"
+        threads: 10
+        resources:
+            runtime=lambda wildcards,attempt: attempt**2*60
+        shell:
+            """
+            #Copy eggnog.db
+            mkdir -p /dev/shm/$SLURM_JOB_ID
+            cp {params.resource_dir}/eggnog.db /dev/shm/$SLURM_JOB_ID
+            emapper.py \
+                {params.flags} \
+                --cpu {threads} \
+                --annotate_hits_table {input[0]} \
+                -o {params.out} \
+                --data_dir /dev/shm/$SLURM_JOB_ID \
+                --usemem \
+                >{log} 2>&1
+            rm -rf /dev/shm/$SLURM_JOB_ID
+            """
+else:
+    rule emapper_annotate_hits:
+        input:
+            opj(config["results_path"],"annotation","{group}",
+                "{group}.emapper.seed_orthologs")
+        output:
+            opj(config["results_path"],"annotation","{group}",
+                "{group}.emapper.annotations")
+        params:
+            resource_dir=opj(config["resource_path"],"eggnog-mapper"),
+            tmpdir=opj(os.path.expandvars(config["scratch_path"]),
+                       "{group}-eggnog"),
+            out=opj(config["results_path"],"annotation","{group}","{group}"),
+            flags="--no_file_comments"
+        log:
+            opj(config["results_path"],"annotation","{group}",
+                 "{group}.emapper.annotations.log")
+        conda:
+            "../../../envs/annotation.yml"
+        threads: 10
+        resources:
+            runtime=lambda wildcards,attempt: attempt**2*60
+        shell:
+            """
+            emapper.py \
+                {params.flags} \
+                --cpu {threads} \
+                --annotate_hits_table {input[0]} \
+                -o {params.out} \
+                --data_dir {params.resource_dir} \
+                --usemem \
+                >{log} 2>&1
+            """
+
+rule parse_ko_annotations:
+    input:
+        annotations=opj(config["results_path"],"annotation","{group}","{group}.emapper.annotations"),
+        ko2ec=opj(config["resource_path"],"kegg","kegg_ko2ec.tsv"),
+        ko2path=opj(config["resource_path"],"kegg","kegg_ko2pathways.tsv"),
+        #ko2module=opj(config["resource_path"],"kegg","kegg_ko2modules.tsv"),
+        kos=opj(config["resource_path"],"kegg","kegg_kos.tsv"),
+        modules=opj(config["resource_path"],"kegg","kegg_modules.tsv"),
+        pathways=opj(config["resource_path"],"kegg","kegg_pathways.tsv")
+    output:
+        expand(opj(config["results_path"],"annotation","{{group}}","{db}.parsed.tab"),
+            db=["enzymes","pathways","modules","kos"])
+    params:
+        outbase=opj(config["results_path"],"annotation","{group}"),
+        resource_dir=opj(config["resource_path"],"kegg"),
+        src=opj("source","utils","eggnog-parser.py")
+    shell:
+        """
+        python {params.src} \
+            parse \
+            {params.resource_dir} \
+            {input.annotations} \
+            {params.outbase}
+        """
+
+##########
+## PFAM ##
+##########
+rule pfam_scan:
+    input:
+        opj(config["results_path"],"annotation","{group}","final_contigs.faa"),
+        expand(opj(config["resource_path"],"pfam","Pfam-A.hmm.h3{suffix}"),
+               suffix=["f","i","m","p"])
+    output:
+        opj(config["results_path"],"annotation","{group}","{group}.pfam.out")
+    log:
+        opj(config["results_path"],"annotation","{group}","{group}.pfam.log")
+    conda:
+        "../../../envs/annotation.yml"
+    params:
+        dir=opj(config["resource_path"],"pfam"),
+        tmp_out=opj(os.path.expandvars(config["scratch_path"]),
+                    "{group}.pfam.out")
+    threads: 2
+    resources:
+        runtime=lambda wildcards,attempt: attempt**2*60*4
+    shell:
+        """
+        pfam_scan.pl \
+            -fasta {input[0]} \
+            -dir {params.dir} \
+            -outfile {params.tmp_out} \
+            -cpu {threads}
+            >{log} 2>&1
+        mv {params.tmp_out} {output[0]}
+        """
+
+rule parse_pfam:
+    input:
+        opj(config["results_path"],"annotation","{group}","{group}.pfam.out"),
+        opj(config["resource_path"],"pfam","clan.txt"),
+        opj(config["resource_path"],"pfam","Pfam-A.clans.tsv")
+    output:
+        opj(config["results_path"],"annotation","{group}","pfam.parsed.tab")
+    run:
+        import pandas as pd
+        annot=pd.read_csv(input[0],comment="#",header=None,sep=" +",usecols=[0,5,7,14],
+            names=["orf","pfam","pfam_type","pfam_clan"])
+        clans=pd.read_csv(input[1],header=None,names=["clan","clan_name"],usecols=[0,3],sep="\t")
+        info=pd.read_csv(input[2],header=None,names=["pfam","clan","pfam_name"],usecols=[0,1,4],sep="\t")
+        # Strip suffix for pfams
+        annot.loc[:,"pfam"]=[x.split(".")[0] for x in annot.pfam]
+        # Select unique orf->pfam mappings
+        # TODO: This masks multiple occurrences of domains on the same orf. Figure out if this is wanted or not.
+        # Merge with pfam info and clan info
+        annot=annot.groupby(["orf","pfam"]).first().reset_index()
+        annot=pd.merge(annot,info,left_on="pfam",right_on="pfam")
+        annot=pd.merge(annot,clans,left_on="clan",right_on="clan",how="left")
+        annot.fillna("No_clan",inplace=True)
+        annot=annot.loc[:,["orf","pfam","pfam_name","clan","clan_name"]]
+        annot.sort_values("orf",inplace=True)
+        # Write to file
+        annot.to_csv(output[0],sep="\t",index=False)
+
+################################
+## Resistance Gene Identifier ##
+################################
+
+rule run_rgi:
+    input:
+        faa=opj(config["results_path"],"annotation","{group}","final_contigs.faa"),
+        db=opj(config["resource_path"],"card","card.json")
+    output:
+        json=opj(config["results_path"],"annotation","{group}","rgi.out.json"),
+        txt=opj(config["results_path"],"annotation","{group}","rgi.out.txt")
+    log:
+        opj(config["results_path"],"annotation","{group}","rgi.log")
+    params:
+        out=opj(config["results_path"],"annotation","{group}","rgi.out"),
+        settings=config["rgi_params"]
+    conda:
+        "../../../envs/rgi.yml"
+    threads: 10
+    resources:
+        runtime=lambda wildcards,attempt: attempt**2*60
+    shell:
+        """
+        rgi load --card_json {input.db} --local > {log} 2>&1
+        rgi main -i {input.faa} -o {params.out} \
+            -n {threads} {params.settings} >>{log} 2>>{log}
+        """
