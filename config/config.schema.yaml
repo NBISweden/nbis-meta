@@ -89,7 +89,7 @@ properties:
   adapter_sequence:
     type: string
     description: Adapter sequence to trim with cutadapt
-    default: "AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC"
+    default: "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA"
   rev_adapter_sequence:
     type: string
     description: Reverse adapter sequence to trim with cutadapt
