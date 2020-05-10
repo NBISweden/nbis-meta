@@ -43,7 +43,7 @@ metaphlan_db_input = []
 if config["metaphlan"]:
     include: "source/workflow/metaphlan_db.smk"
     include: "source/workflow/metaphlan.smk"
-    inputs += [metaphlan_input] + metaphlan_db_input
+    inputs += metaphlan_input + metaphlan_db_input
 # Centrifuge
 centrifuge_input = []
 centrifuge_db_input = []
