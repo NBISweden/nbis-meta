@@ -1,6 +1,4 @@
 # Workflow module for the Metaphlan2 classifier
-metaphlan_input = get_all_files(samples,
-                                opj(config["results_path"],"metaphlan"),
-                                ".profile", nested=True)
+metaphlan_input = opj(config["report_path"], "metaphlan", "metaphlan.tsv")
 
 include: "../rules/Classify/metaphlan.smk"
