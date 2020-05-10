@@ -1,5 +1,7 @@
 localrules:
-    merge_metaphlan
+    merge_metaphlan,
+    metaphlan2krona_table,
+    metaphlan2krona
 
 rule metaphlan_pe:
     input:
@@ -11,13 +13,10 @@ rule metaphlan_pe:
                     index = config["metaphlan_index"],
                     s = ["1","2","3","4","rev.1","rev.2"])
     output:
-        tsv = opj(config["results_path"],"metaphlan","{sample}_{run}",
-            "{sample}_{run}_pe.tsv"),
-        bt2 = opj(config["results_path"],"metaphlan","{sample}_{run}",
-            "{sample}_{run}_pe.bt2")
+        tsv = opj(config["results_path"],"metaphlan", "{sample}_{run}_pe.tsv"),
+        bt2 = opj(config["results_path"],"metaphlan", "{sample}_{run}_pe.bt2")
     log:
-        opj(config["results_path"],"metaphlan","{sample}_{run}",
-            "{sample}_{run}_pe.log")
+        opj(config["results_path"],"metaphlan", "{sample}_{run}_pe.log")
     params:
         dir = opj(config["resource_path"], "metaphlan")
     conda:
@@ -40,11 +39,9 @@ rule metaphlan_se:
                     index = config["metaphlan_index"],
                     s = ["1","2","3","4","rev.1","rev.2"])
     output:
-        tsv = opj(config["results_path"],"metaphlan","{sample}_{run}",
-            "{sample}_{run}_se.tsv")
+        tsv = opj(config["results_path"],"metaphlan", "{sample}_{run}_se.tsv")
     log:
-        opj(config["results_path"],"metaphlan","{sample}_{run}",
-            "{sample}_{run}_se.log")
+        opj(config["results_path"],"metaphlan", "{sample}_{run}_se.log")
     params:
         dir = opj(config["resource_path"], "metaphlan")
     conda:
@@ -60,8 +57,7 @@ rule metaphlan_se:
 
 rule merge_metaphlan:
     input:
-        get_all_files(samples, opj(config["results_path"], "metaphlan"),
-                      suffix=".tsv", nested=True)
+        get_all_files(samples, opj(config["results_path"], "metaphlan"), ".tsv")
     output:
         opj(config["report_path"], "metaphlan", "metaphlan.tsv")
     conda:
@@ -70,3 +66,32 @@ rule merge_metaphlan:
         """
         merge_metaphlan_tables.py {input} > {output}
         """
+
+rule metaphlan2krona_table:
+    input:
+        opj(config["results_path"],"metaphlan", "{sample}_{run}_{seq_type}.tsv")
+    output:
+        temp(opj(config["results_path"],"metaphlan",
+                 "{sample}_{run}_{seq_type}.krona"))
+    script:
+        "../../../scripts/metaphlan2krona.py"
+
+rule metaphlan2krona:
+    input:
+        files = get_all_files(samples, opj(config["results_path"], "metaphlan"), ".krona"),
+        db = opj(config["resource_path"], "krona", "taxonomy.tab")
+    output:
+        opj(config["report_path"], "metaphlan", "metaphlan.html")
+    log:
+        opj(config["report_path"], "metaphlan", "krona.log")
+    conda:
+        "../../../envs/krona.yml"
+    params:
+        input_string = lambda w, input: metaphlan_krona_string(input.files),
+        dbdir = lambda w, input: os.path.dirname(input.db)
+    shell:
+        """
+        ktImportTaxonomy -t 1 -m 2 -o {output} -tax {params.dbdir} \
+            {params.input_string} > {log} 2>&1
+        """
+
