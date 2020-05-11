@@ -183,3 +183,5 @@ centrifuge_max_assignments: 1
 metaphlan: False
 # Version of the metaphlan database to use
 metaphlan_index: "mpa_v30_CHOCOPhlAn_201901"
+# What rank to summarize and plot a clustermap of metaphlan output
+metaphlan_plot_rank: "genus"
