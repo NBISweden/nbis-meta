@@ -374,6 +374,16 @@ properties:
     type: boolean
     description: Indicates whether to run metaphlan2 profiler
     default: false
+  metaphlan_index:
+    type: string
+    description: What version of the metaphlan database to use
+    default: "mpa_v30_CHOCOPhlAn_201901"
+    enum: ["mpa_v30_CHOCOPhlAn_201901"]
+  metaphlan_plot_rank:
+    type: string
+    description: What rank to summarize and plot a clustermap of metaphlan output
+    default: "genus"
+    enum: ["superkingdom","phylum","class","order","family","genus","species"]
 
   ## EXAMPLES
   example_dataset_size:

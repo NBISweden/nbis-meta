@@ -179,5 +179,9 @@ centrifuge_min_score: 75
 # By default this is set to 5 in centrifuge, increase to show more specific assignments
 # Set to 1 to implement LCA-classification as in Kraken
 centrifuge_max_assignments: 1
-# Run metaphlan2 profiler?
+# Run metaphlan profiler?
 metaphlan: False
+# Version of the metaphlan database to use
+metaphlan_index: "mpa_v30_CHOCOPhlAn_201901"
+# What rank to summarize and plot a clustermap of metaphlan output
+metaphlan_plot_rank: "genus"

@@ -484,6 +484,20 @@ def get_kraken_index_url(kraken_prebuilt, version=False):
         return os.path.splitext(f)[0]
     return "{}/{}".format(url_base, f)
 
+
+def metaphlan_krona_string(input):
+    """
+    Returns the input string (<file1>,<name1> ... <fileN>,<nameN>) for krona
+    :param input: krona-ready metaphlan tables
+    :return: krona-formatted input string
+    """
+    s = []
+    for f in input:
+        name = os.path.basename(f).replace("_pe.krona", "").replace("_se.krona", "")
+        s.append("{},{}".format(f, name))
+    return " ".join(s)
+
+
 ## WORKFLOW SETUP ##
 
 wildcard_constraints:

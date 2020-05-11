@@ -1,8 +1,8 @@
 localrules:
-    metaphlan2kronatext,
+    merge_metaphlan,
+    metaphlan2krona_table,
     metaphlan2krona,
-    all_metaphlan2_to_krona,
-    merge_metaphlan2,
+    plot_metaphlan
 
 rule metaphlan_pe:
     input:
@@ -10,17 +10,15 @@ rule metaphlan_pe:
                  "{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
         R2 = opj(config["intermediate_path"],"preprocess",
                  "{sample}_{run}_R2"+PREPROCESS+".fastq.gz"),
-        db = expand(opj(config["resource_path"], "metaphlan",
-                                "mpa_v20_m200.{s}.bt2"),
-                   s = ["1","2","3","4","rev.1","rev.2"])
+        db = expand(opj(config["resource_path"], "metaphlan", "{index}.{s}.bt2"),
+                    index = config["metaphlan_index"],
+                    s = ["1","2","3","4","rev.1","rev.2"])
     output:
-        opj(config["results_path"],"metaphlan","{sample}_{run}",
-            "{sample}_{run}_pe.profile")
+        tsv = opj(config["results_path"],"metaphlan", "{sample}_{run}_pe.tsv"),
+        bt2 = opj(config["results_path"],"metaphlan", "{sample}_{run}_pe.bt2")
     log:
-        opj(config["results_path"],"metaphlan","{sample}_{run}",
-            "{sample}_{run}_pe.log")
+        opj(config["results_path"],"metaphlan", "{sample}_{run}_pe.log")
     params:
-        bt2 = opj(config["results_path"],"metaphlan","{sample}_{run}","bt2"),
         dir = opj(config["resource_path"], "metaphlan")
     conda:
         "../../../envs/metaphlan.yml"
@@ -29,113 +27,85 @@ rule metaphlan_pe:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     shell:
         """
-        metaphlan2.py \
-            {input.R1},{input.R2} \
-            --bowtie2db {params.dir} \
-            --bt2_ps very-sensitive \
-            -t rel_ab \
-            --bowtie2out {params.bt2} \
-            --no_map \
-            --nproc {threads} \
-            --input_type multifastq \
-            -o {output[0]} > {log} 2>&1
+        metaphlan {input.R1},{input.R2} --bowtie2db {params.dir} --add_viruses \
+            --force --nproc {threads} --input_type fastq -o {output.tsv} \
+             --bowtie2out {output.bt2} > {log} 2>&1
         """
 
 rule metaphlan_se:
     input:
-        se=opj(config["intermediate_path"],"preprocess",
-                 "{sample}_{run}_se"+PREPROCESS+".fastq.gz")
+        se = opj(config["intermediate_path"],"preprocess",
+                 "{sample}_{run}_se"+PREPROCESS+".fastq.gz"),
+        db = expand(opj(config["resource_path"], "metaphlan", "{index}.{s}.bt2"),
+                    index = config["metaphlan_index"],
+                    s = ["1","2","3","4","rev.1","rev.2"])
     output:
-        opj(config["results_path"],"metaphlan","{sample}_{run}",
-            "{sample}_{run}_se.profile")
+        tsv = opj(config["results_path"],"metaphlan", "{sample}_{run}_se.tsv"),
+        bt2 = opj(config["results_path"],"metaphlan", "{sample}_{run}_se.bt2")
     log:
-        opj(config["results_path"],"metaphlan","{sample}_{run}",
-            "{sample}_{run}_se.log")
+        opj(config["results_path"],"metaphlan", "{sample}_{run}_se.log")
+    params:
+        dir = opj(config["resource_path"], "metaphlan")
     conda:
         "../../../envs/metaphlan.yml"
     threads: 10
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     shell:
-        """
-        metaphlan2.py \
-            {input.se} \
-            --bt2_ps very-sensitive \
-            -t rel_ab \
-            --nproc {threads} \
-            --input_type fastq \
-            -o {output[0]} >{log} 2>&1
+        """       
+        metaphlan {input.se} --bowtie2db {params.dir} --add_viruses --force \
+            --nproc {threads} --input_type fastq -o {output.tsv} \
+             --bowtie2out {output.bt2} > {log} 2>&1
         """
 
-########################
-## Create Krona plots ##
-########################
-rule metaphlan2kronatext:
+rule merge_metaphlan:
     input:
-        opj(config["results_path"],"metaphlan2",
-            "{sample}_{run}_{seq_type}.mp2.out.krona")
+        get_all_files(samples, opj(config["results_path"], "metaphlan"), ".tsv")
     output:
-        temp(opj(config["results_path"],"metaphlan2",
-                 "{sample}_{run}_{seq_type}.mp2.krona"))
-    conda: 
+        opj(config["report_path"], "metaphlan", "metaphlan.tsv")
+    conda:
         "../../../envs/metaphlan.yml"
     shell:
         """
-        metaphlan2krona.py -p {input[0]} -k {output[0]}
+        merge_metaphlan_tables.py {input} > {output}
         """
+
+rule metaphlan2krona_table:
+    input:
+        opj(config["results_path"],"metaphlan", "{sample}_{run}_{seq_type}.tsv")
+    output:
+        temp(opj(config["results_path"],"metaphlan",
+                 "{sample}_{run}_{seq_type}.krona"))
+    script:
+        "../../../scripts/metaphlan2krona.py"
 
 rule metaphlan2krona:
     input:
-        opj(config["results_path"],"metaphlan2",
-            "{sample}_{run}_{seq_type}.mp2.krona")
+        files = get_all_files(samples, opj(config["results_path"], "metaphlan"), ".krona"),
+        db = opj(config["resource_path"], "krona", "taxonomy.tab")
     output:
-        opj(config["results_path"],"metaphlan2",
-            "{sample}_{run}_{seq_type}.mp2.html")
+        opj(config["report_path"], "metaphlan", "metaphlan.html")
+    log:
+        opj(config["report_path"], "metaphlan", "krona.log")
     conda:
         "../../../envs/krona.yml"
-    shell:
-        """
-        ktImportText \
-            {input[0]},{wildcards.sample}_{wildcards.run} -o {output[0]}
-        """
-
-def get_mp_input_string(samples):
-    input_string=""
-    files=get_all_files(samples,opj(config["results_path"],
-                                    "metaphlan2"),".mp2.krona")
-    for f in files:
-        sample_run=os.path.basename(f).replace("_pe.mp2.krona","").replace("_se.mp2.krona","")
-        input_string+=" {},{}".format(f,sample_run)
-    return input_string
-
-rule all_metaphlan2_to_krona:
-    """Combined krona plot for all samples"""
-    input:
-        f=get_all_files(samples, opj(config["results_path"],"metaphlan2"),".mp2.krona"),
-        h=get_all_files(samples, opj(config["results_path"],"metaphlan2"),".mp2.html")
-    output:
-        opj(config["report_path"], "metaphlan2", "metaphlan2.krona.html")
     params:
-        input_string=get_mp_input_string(samples)
-    conda:
-        "../../../envs/krona.yml"
+        input_string = lambda w, input: metaphlan_krona_string(input.files),
+        dbdir = lambda w, input: os.path.dirname(input.db)
     shell:
         """
-        ktImportText {params.input_string} -o {output[0]}
+        ktImportTaxonomy -t 1 -m 2 -o {output} -tax {params.dbdir} \
+            {params.input_string} > {log} 2>&1
         """
 
-####################
-## Merge and plot ##
-####################
-rule merge_metaphlan2:
+rule plot_metaphlan:
     input:
-        get_all_files(samples, opj(config["results_path"],"metaphlan"),
-                                ".profile", nested=True)
+        opj(config["report_path"], "metaphlan", "metaphlan.tsv")
     output:
-        opj(config["report_path"],"metaphlan","metaphlan.merged.tsv")
-    conda: 
-        "../../../envs/metaphlan.yml"
-    shell:
-        """
-        merge_metaphlan_tables.py {input} | sed 's/_[ps]e.mp2//g' > {output[0]}
-        """
+        opj(config["report_path"], "metaphlan", "metaphlan.pdf")
+    conda:
+        "../../../envs/plotting.yml"
+    params:
+        rank = config["metaphlan_plot_rank"]
+    notebook:
+        "../../../notebooks/metaphlan.py.ipynb"
