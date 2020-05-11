@@ -1,7 +1,8 @@
 localrules:
     merge_metaphlan,
     metaphlan2krona_table,
-    metaphlan2krona
+    metaphlan2krona,
+    plot_metaphlan
 
 rule metaphlan_pe:
     input:
@@ -26,8 +27,8 @@ rule metaphlan_pe:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     shell:
         """
-        metaphlan {input.R1},{input.R2} --bowtie2db {params.dir} \
-            --nproc {threads} --input_type fastq -o {output.tsv} \
+        metaphlan {input.R1},{input.R2} --bowtie2db {params.dir} --add_viruses \
+            --force --nproc {threads} --input_type fastq -o {output.tsv} \
              --bowtie2out {output.bt2} > {log} 2>&1
         """
 
@@ -39,7 +40,8 @@ rule metaphlan_se:
                     index = config["metaphlan_index"],
                     s = ["1","2","3","4","rev.1","rev.2"])
     output:
-        tsv = opj(config["results_path"],"metaphlan", "{sample}_{run}_se.tsv")
+        tsv = opj(config["results_path"],"metaphlan", "{sample}_{run}_se.tsv"),
+        bt2 = opj(config["results_path"],"metaphlan", "{sample}_{run}_se.bt2")
     log:
         opj(config["results_path"],"metaphlan", "{sample}_{run}_se.log")
     params:
@@ -51,8 +53,9 @@ rule metaphlan_se:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     shell:
         """       
-        metaphlan {input.se} --bowtie2db {params.dir} \
-            --nproc {threads} --input_type fastq -o {output.tsv} > {log} 2>&1
+        metaphlan {input.se} --bowtie2db {params.dir} --add_viruses --force \
+            --nproc {threads} --input_type fastq -o {output.tsv} \
+             --bowtie2out {output.bt2} > {log} 2>&1
         """
 
 rule merge_metaphlan:
@@ -95,3 +98,14 @@ rule metaphlan2krona:
             {params.input_string} > {log} 2>&1
         """
 
+rule plot_metaphlan:
+    input:
+        opj(config["report_path"], "metaphlan", "metaphlan.tsv")
+    output:
+        opj(config["report_path"], "metaphlan", "metaphlan.pdf")
+    conda:
+        "../../../envs/plotting.yml"
+    params:
+        rank = config["metaphlan_plot_rank"]
+    notebook:
+        "../../../notebooks/metaphlan.py.ipynb"
