@@ -509,7 +509,7 @@ wildcard_constraints:
 
 # Validate and get default settings from schema
 try:
-    validate(config, "../../config/config.schema.yaml")
+    validate(config, "../config/config.schema.yaml")
 except WorkflowError as e:
     parse_validation_error(e)
 

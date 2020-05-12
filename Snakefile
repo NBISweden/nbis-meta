@@ -1,5 +1,5 @@
 # Snakemake workflow for various types of metagenomics analyses.
-include: "source/rules/common.smk"
+include: "source/common.py"
 include: "source/rules/examples.smk"
 
 # Targets
