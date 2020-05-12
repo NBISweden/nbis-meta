@@ -1,9 +1,9 @@
-assembly_input = expand(opj(config["results_path"],"assembly","{group}",
-                   "final_contigs.fa"),group=assemblyGroups.keys())
-assembly_input += expand(opj(config["results_path"],"assembly","{group}",
-                   "final_contigs.bed"),group=assemblyGroups.keys())
-assembly_input += [opj(config["report_path"],"assembly_stats.txt"),
-                 opj(config["report_path"],"assembly_size_dist.txt")]
+# Workflow for assembly
+assembly_input = expand(opj(config["results_path"], "assembly", "{group}", "final_contigs.{suff}"),
+                        group=assemblyGroups.keys(), suff = ["fa", "bed"])
+assembly_input.append(opj(config["report_path"], "assembly", "assembly_stats.pdf"))
+assembly_input.append(opj(config["report_path"], "assembly", "assembly_size_dist.pdf"))
+assembly_input.append(opj(config["report_path"], "assembly", "alignment_frequency.pdf"))
 
 include: "../rules/Assembly/assembly.smk"
 

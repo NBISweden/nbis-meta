@@ -329,73 +329,22 @@ rule assembly_stats:
         expand(opj(config["results_path"],"assembly","{group}",
                    "final_contigs.fa"), group=assemblyGroups.keys())
     output:
-        opj(config["report_path"],"assembly_stats.txt"),
-        opj(config["report_path"],"assembly_size_dist.txt")
-    run:
-        from source.utils import assembly_stats
-        stat_result=pd.DataFrame()
-        sizedist_result=pd.DataFrame()
-        for f in input:
-            print("Generating stats for {}".format(f))
-            p = Path(f)
-            name = p.parent.name
-            contig_lengths=assembly_stats.store_lengths(f)
-            stat_df=assembly_stats.generate_stat_df(contig_lengths)
-            size_dist=assembly_stats.size_distribute(contig_lengths)
-            stat_df["assembly"]=[name]*len(stat_df)
-            size_dist["assembly"]=[name]*len(size_dist)
-            stat_result=pd.concat([stat_result,stat_df])
-            sizedist_result=pd.concat([sizedist_result,size_dist])
-        stat_result=stat_result[["assembly","contigs", "total_size_bp", 
-                                   "min_length", "max_length", "avg_length", 
-                                   "median_length","N50_length", "N90_length"]]
-        stat_result.to_csv(output[0],sep="\t",index=False)
-        sizedist_result=sizedist_result[["assembly","min_length",
-                                           "num_contigs","total_length","%"]]
-        sizedist_result.to_csv(output[1],sep="\t",index=False)
-
-rule plot_assembly_stats:
-    input:
-        opj(config["report_path"],"assembly_stats.txt"),
-        opj(config["report_path"],"assembly_size_dist.txt")
-    output:
-        opj(config["report_path"],"assembly_stats.pdf"),
-        opj(config["report_path"],"assembly_size_dist.pdf"),
-        opj(config["report_path"],"assembly_size_distribution.html")
-    run:
-        import matplotlib as mpl
-        mpl.use('agg')
-        import pandas as pd, seaborn as sns, matplotlib.pyplot as plt
-        plt.style.use('ggplot')
-        stat_result=pd.read_csv(input[0], sep="\t", header=0)
-        sizedist_result=pd.read_csv(input[1], sep="\t", header=0)
-
-        stat_result_m=pd.melt(stat_result, id_vars=["assembly"])
-        ax=sns.factorplot(kind="bar", x="assembly", y="value", 
-                            col="variable", data=stat_result_m, size=3,
-                            sharey=False, col_wrap=4)
-        ax.set_xticklabels(rotation=90)
-        ax.set_titles("{col_name}")
-        plt.savefig(output[0], dpi=300, bbox_inches="tight")
-
-        ax=sns.factorplot(data=sizedist_result, hue="assembly", 
-                            x="min_length", y="%", size=4, 
-                            scale=0.6,aspect=1.2)
-        ax.set_xticklabels(rotation=270)
-        ax.set_ylabels("% of assembly")
-        ax.axes[0][0].set_ylim(-5,105);
-        plt.savefig(output[1],dpi=300, bbox_inches="tight")
-
-        html=generate_html(sizedist_result)
-        with open(output[2], 'w') as fh:
-          fh.write(html)
+        opj(config["report_path"], "assembly", "assembly_stats.tsv"),
+        opj(config["report_path"], "assembly", "assembly_size_dist.tsv")
+    script:
+        "../../../scripts/assembly_stats.py"
 
 rule samtools_flagstat:
+    """
+    Generate mapping statistics
+    """
     input:
         lambda wildcards: get_bamfiles(wildcards.group)
     output:
-        temp(opj(config["results_path"],"assembly","{group}",
-                 "mapping","flagstat.txt"))
+        opj(config["results_path"],"assembly","{group}",
+                 "mapping","flagstat.tsv")
+    params:
+        post = POSTPROCESS
     conda:
         "../../../envs/quantify.yml"
     shell:
@@ -404,9 +353,23 @@ rule samtools_flagstat:
         do
             al=$(samtools \
                 flagstat \
-                results/assembly/all/mapping/sample1_1_pe.markdup.bam \
-                | grep " mapped (" | cut -f2 -d '('| cut -f1 -d ' ')
-            n=$(basename $f)
+                $f | grep " mapped (" | cut -f2 -d '('| cut -f1 -d ' ')
+            n=$(basename $f | sed 's/_[ps]e{params.post}.bam//g')
             echo -e "$n\t$al" >> {output}
         done
         """
+
+rule plot_assembly_stats:
+    input:
+        stat = opj(config["report_path"], "assembly", "assembly_stats.tsv"),
+        dist = opj(config["report_path"], "assembly", "assembly_size_dist.tsv"),
+        maps = expand(opj(config["results_path"],"assembly","{group}",
+                 "mapping","flagstat.tsv"), group = assemblyGroups.keys())
+    output:
+        opj(config["report_path"], "assembly", "assembly_stats.pdf"),
+        opj(config["report_path"], "assembly", "assembly_size_dist.pdf"),
+        opj(config["report_path"], "assembly", "alignment_frequency.pdf")
+    conda:
+        "../../../envs/plotting.yml"
+    notebook:
+        "../../../notebooks/assembly_stats.py.ipynb"
