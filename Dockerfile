@@ -22,6 +22,7 @@ RUN conda env update -n base -f environment.yml && conda clean -a
 RUN mkdir envs
 COPY config config
 COPY envs/*.yml envs/
+COPY notebooks notebooks
 COPY samples samples
 COPY scripts scripts
 COPY source source
