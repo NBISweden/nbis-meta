@@ -4,9 +4,11 @@ localrules:
     assembly_stats,
     samtools_flagstat
 
-############
-# Assembly #
-############
+rule assembly:
+    input:
+        opj(config["report_path"], "assembly", "assembly_stats.pdf"),
+        opj(config["report_path"], "assembly", "assembly_size_dist.pdf"),
+        opj(config["report_path"], "assembly", "alignment_frequency.pdf")
 
 if config["metaspades"]:
     rule generate_metaspades_input:
@@ -20,25 +22,13 @@ if config["metaspades"]:
                         "{group}","R2.fq")),
             se=touch(temp(opj(config["results_path"],"assembly",
                         "{group}","se.fq")))
-        run:
-            files={"R1": [], "R2": [], "se": []}
-            # Collect all files belonging to the assembly group
-            for sample in assemblyGroups[wildcards.group].keys():
-                for run in assemblyGroups[wildcards.group][sample]:
-                    for pair in assemblyGroups[wildcards.group][sample][run].keys():
-                        files[pair].append(assemblyGroups[wildcards.group][sample][run][pair][0])
-            # Rename and concatenate reads (required for Metaspades)
-            with open(output.R1, 'w') as fh1, open(output.R2, 'w') as fh2, open(output.se, 'w') as fhse:
-                i = 0
-                for f in files["R1"]:
-                    f2=files["R2"][i]
-                    fh1=rename_records(f, fh1, i)
-                    fh2=rename_records(f2, fh2, i)
-                    i+=1
-                for i, f in enumerate(files["se"], start=i):
-                    fhse=rename_records(f, fhse, i)
+        params:
+            assembly = lambda wildcards: assemblies[wildcards.group],
+            assembler = "metaspades"
+        script:
+            "../scripts/generate_assembly_input.py"
 
-    rule run_metaspades:
+    rule metaspades:
         input:
             R1=opj(config["results_path"],"assembly",
                         "{group}","R1.fq"),
@@ -56,7 +46,7 @@ if config["metaspades"]:
             corrected=opj(config["intermediate_path"],"assembly",
                           "{group}","corrected"),
             additional_settings=config["metaspades_additional_settings"],
-            tmp=opj(config["tmpdir"],"{group}.metaspades"),
+            tmp=opj(config["temp_path"],"{group}.metaspades"),
             output_dir=opj(config["results_path"],"assembly","{group}")
         threads: config["assembly_threads"]
         resources:
@@ -118,10 +108,10 @@ else:
                             "{group}","input_list.log")
         run:
             files={"R1": [], "R2": [], "se": []}
-            for sample in assemblyGroups[wildcards.group].keys():
-                for run in assemblyGroups[wildcards.group][sample]:
-                    for pair in assemblyGroups[wildcards.group][sample][run].keys():
-                        files[pair].append(assemblyGroups[wildcards.group][sample][run][pair][0])
+            for sample in assemblies[wildcards.group].keys():
+                for run in assemblies[wildcards.group][sample]:
+                    for pair in assemblies[wildcards.group][sample][run].keys():
+                        files[pair].append(assemblies[wildcards.group][sample][run][pair][0])
             with open(output.R1, 'w') as fh1, open(output.R2, 'w') as fh2, open(output.se, 'w') as fhse:
                 fh1.write(",".join(files["R1"]))
                 fh2.write(",".join(files["R2"]))
@@ -142,7 +132,7 @@ else:
             intermediate_contigs=opj(config["intermediate_path"],"assembly",
                                      "{group}","intermediate_contigs"),
             additional_settings=config["megahit_additional_settings"],
-            tmp=opj(config["tmpdir"],"{group}.megahit"),
+            tmp=opj(config["temp_path"],"{group}.megahit"),
             output_dir=opj(config["results_path"],"assembly","{group}")
         threads: config["assembly_threads"]
         resources:
@@ -244,7 +234,7 @@ rule bowtie_map_pe:
         log=opj(config["results_path"],"assembly","{group}",
                 "mapping","{sample}_{run}_pe.bam.log")
     params:
-        temp_bam=opj(config["tmpdir"],"{group}-mapping-{sample}_{run}_pe.bam"),
+        temp_bam=opj(config["temp_path"],"{group}-mapping-{sample}_{run}_pe.bam"),
         setting=config["bowtie2_params"],
         prefix=opj(config["results_path"],"assembly","{group}",
                      "final_contigs.fa")
@@ -290,7 +280,7 @@ rule bowtie_map_se:
         log=opj(config["results_path"],"assembly","{group}",
                 "mapping","{sample}_{run}_se.bam.log")
     params:
-        temp_bam=opj(config["tmpdir"],"{group}-mapping-{sample}_{run}_se.bam"),
+        temp_bam=opj(config["temp_path"],"{group}-mapping-{sample}_{run}_se.bam"),
         setting=config["bowtie2_params"],
         prefix=opj(config["results_path"],"assembly","{group}",
                      "final_contigs.fa")
@@ -327,7 +317,7 @@ rule bowtie_map_se:
 rule assembly_stats:
     input:
         expand(opj(config["results_path"],"assembly","{group}",
-                   "final_contigs.fa"), group=assemblyGroups.keys())
+                   "final_contigs.fa"), group=assemblies.keys())
     output:
         opj(config["report_path"], "assembly", "assembly_stats.tsv"),
         opj(config["report_path"], "assembly", "assembly_size_dist.tsv")
@@ -364,7 +354,7 @@ rule plot_assembly_stats:
         stat = opj(config["report_path"], "assembly", "assembly_stats.tsv"),
         dist = opj(config["report_path"], "assembly", "assembly_size_dist.tsv"),
         maps = expand(opj(config["results_path"],"assembly","{group}",
-                 "mapping","flagstat.tsv"), group = assemblyGroups.keys())
+                 "mapping","flagstat.tsv"), group = assemblies.keys())
     output:
         opj(config["report_path"], "assembly", "assembly_stats.pdf"),
         opj(config["report_path"], "assembly", "assembly_size_dist.pdf"),
