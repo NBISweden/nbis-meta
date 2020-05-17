@@ -334,6 +334,9 @@ rule sortmerna_link_se:
     run:
         link(input.se, output.se)
 
+##### trimmomatic #####
+
+from scripts.common import get_trimmomatic_string
 
 rule trimmomatic_pe:
     input:
@@ -356,7 +359,7 @@ rule trimmomatic_pe:
         R2log=opj(config["intermediate_path"],"preprocess",
             "{sample}_{run}_R2"+preprocess_suffices["trimming"]+".trimmomatic.log")
     params:
-        trim_string=get_trimmomatic_string("pe")
+        trim_string=get_trimmomatic_string("pe", config)
     threads: 10
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
@@ -388,7 +391,7 @@ rule trimmomatic_se:
         opj(config["intermediate_path"],"preprocess",
             "{sample}_{run}_se"+preprocess_suffices["trimming"]+".trimmomatic.log")
     params:
-        trim_string=get_trimmomatic_string("se")
+        trim_string=get_trimmomatic_string("se", config)
     threads: 10
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
