@@ -32,7 +32,7 @@ rule featurecount_pe:
         opj(config["results_path"],"assembly","{group}","mapping",
             "{sample}_{run}_pe.fc.tab.summary")
     threads: 4
-    params: tmpdir=config["tmpdir"]
+    params: tmpdir=config["temp_path"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*30
     conda:
@@ -64,7 +64,7 @@ rule featurecount_se:
         opj(config["results_path"],"assembly","{group}",
             "mapping","{sample}_{run}_se.fc.tab.summary")
     threads: 4
-    params: tmpdir=config["tmpdir"]
+    params: tmpdir=config["temp_path"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*30
     conda:
@@ -120,6 +120,8 @@ rule normalize_featurecount:
             --rc {output[1]} \
             --sampleName {params.s}
         """
+
+from scripts.common import get_all_files
 
 rule aggregate_featurecount:
     """Aggregates feature count files and performs TPM normalization"""
