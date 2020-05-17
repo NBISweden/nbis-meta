@@ -10,11 +10,13 @@ rule assembly:
         opj(config["report_path"], "assembly", "assembly_size_dist.pdf"),
         opj(config["report_path"], "assembly", "alignment_frequency.pdf")
 
+from scripts.common import get_all_group_files
+
 if config["metaspades"]:
     rule generate_metaspades_input:
         """Generate input files for use with Metaspades"""
         input:
-            lambda wildcards: get_all_group_files(wildcards.group)
+            lambda wildcards: get_all_group_files(assemblies[wildcards.group])
         output:
             R1=temp(opj(config["results_path"],"assembly",
                         "{group}","R1.fq")),
@@ -95,7 +97,7 @@ else:
     rule generate_megahit_input_list:
         """Generate input lists for Megahit"""
         input:
-            lambda wildcards: get_all_group_files(wildcards.group)
+            lambda wildcards: get_all_group_files(assemblies[wildcards.group])
         output:
             R1=temp(opj(config["results_path"],"assembly",
                             "{group}","input_1")),
@@ -324,12 +326,16 @@ rule assembly_stats:
     script:
         "../../../scripts/assembly_stats.py"
 
+from scripts.common import get_bamfiles
+
 rule samtools_flagstat:
     """
     Generate mapping statistics
     """
     input:
-        lambda wildcards: get_bamfiles(wildcards.group)
+        lambda wildcards: get_bamfiles(wildcards.group,
+                                       assemblies[wildcards.group],
+                                       config["results_path"], POSTPROCESS)
     output:
         opj(config["results_path"],"assembly","{group}",
                  "mapping","flagstat.tsv")
