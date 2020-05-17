@@ -6,7 +6,13 @@ localrules:
     concoct_stats,
     metabat_stats
 
-## METABAT2 ##
+from scripts.common import binning_input
+
+rule binning:
+    input:
+        binning_input(config, assemblies)
+
+##### metabat2 #####
 
 rule run_metabat:
     input:
@@ -51,7 +57,9 @@ rule metabat_stats:
             --suffix {params.suffix} {params.dir} > {output[0]}
         """
 
-## MAXBIN ##
+##### maxbin2 #####
+
+from scripts.common import get_fw_reads
 
 rule run_maxbin:
     input:
@@ -63,7 +71,7 @@ rule run_maxbin:
     params:
         dir=opj(config["results_path"],"binning","maxbin","{group}","{l}"),
         tmp_dir=opj(config["scratch_path"],"{group}","{l}"),
-        reads=get_fw_reads(config, PREPROCESS),
+        reads=get_fw_reads(config, samples, PREPROCESS),
         markerset=config["maxbin_markerset"]
     threads: config["maxbin_threads"]
     resources:
