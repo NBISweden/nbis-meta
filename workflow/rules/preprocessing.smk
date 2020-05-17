@@ -46,6 +46,8 @@ rule link_files:
                 str(output))
         shell(cmd)
 
+##### sortmerna #####
+
 rule sortmerna_merge_fastq:
     """Merge fastq output from SortMeRNA"""
     input:
@@ -88,6 +90,7 @@ rule sortmerna_merge_fastq:
         rm {params.R1_unzipped} {params.R2_unzipped}
         """
 
+from scripts.common import get_sortmerna_ref_string
 
 rule sortmerna_fastq_pe:
     """Run SortMeRNA on paired end input"""
@@ -111,8 +114,7 @@ rule sortmerna_fastq_pe:
         other_prefix=opj(config["scratch_path"],"{sample}_{run}_merged.non_rRNA"),
         aligned_prefix=opj(config["scratch_path"],"{sample}_{run}_merged.rRNA"),
         scratch=config["scratch_path"],
-        ref_string=get_sortmerna_ref_string(config["resource_path"],
-                                            config["sortmerna_dbs"])
+        ref_string=get_sortmerna_ref_string(config["sortmerna_dbs"])
     threads: 10
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
@@ -249,8 +251,7 @@ rule sortmerna_fastq_se:
         other_prefix=opj(config["scratch_path"],"{sample}_{run}_se.non_rRNA"),
         aligned_prefix=opj(config["scratch_path"],"{sample}_{run}_se.rRNA"),
         scratch=config["scratch_path"],
-        ref_string=get_sortmerna_ref_string(config["resource_path"],
-                                            config["sortmerna_dbs"])
+        ref_string=get_sortmerna_ref_string(config["sortmerna_dbs"])
     threads: 10
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
