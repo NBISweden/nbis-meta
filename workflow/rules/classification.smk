@@ -367,11 +367,11 @@ rule krona_taxonomy:
     log:
         opj(config["resource_path"], "krona", "taxonomy.log")
     params:
-        taxdir = lambda w, output: os.path.dirname(output.tab)
+        taxdir=lambda w, output: os.path.dirname(output.tab)
     conda:
         "../envs/krona.yml"
     singularity:
-        "docker://continuumio/miniconda3:4.8.2"
+        "docker://biocontainers/krona:v2.7.1_cv1"
     shell:
         """
         ktUpdateTaxonomy.sh {params.taxdir} >{log} 2>&1
