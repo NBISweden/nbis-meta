@@ -666,7 +666,7 @@ def classify_input(config):
     return f
 
 
-def get_krona_input(config, samples, classifier):
+def krona_input(config, samples, classifier):
     input_string = ""
     files = get_all_files(samples, opj(config["results_path"], classifier),
                           ".kreport")
