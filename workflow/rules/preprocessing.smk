@@ -14,10 +14,9 @@ localrules:
 
 ##### master rule for preprocessing #####
 
-rule preprocessing:
+rule qc:
     input:
         preprocessing_input(config)
-
 
 ##### utility rules #####
 
