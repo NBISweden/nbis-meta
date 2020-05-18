@@ -1,7 +1,10 @@
-from scripts.common import classify_input, get_kraken_index_url, get_krona_input
+from scripts.common import classify_input, krona_input
+from scripts.common import get_kraken_index_url, get_centrifuge_index_url
 
 localrules:
     download_kraken_build,
+    download_centrifuge_build,
+    centrifuge_kreport,
     classifier2krona,
     all2krona
 
@@ -112,6 +115,113 @@ rule kraken_se:
             --threads {threads} {input.se} > {log} 2>&1
         """
 
+##### centrifuge #####
+
+rule download_centrifuge_build:
+    """Downloads pre-built centrifuge index"""
+    output:
+        db=expand(opj(config["centrifuge_dir"],
+                      "{base}.{i}.cf"), i=[1, 2, 3],
+                  base=config['centrifuge_base'])
+    log:
+        opj(config["centrifuge_dir"], "download.log")
+    params:
+        dir=config["centrifuge_dir"],
+        tar=opj(config["centrifuge_dir"],
+                "{base}.tar.gz".format(base=config["centrifuge_base"])),
+        url=get_centrifuge_index_url(config)
+    shell:
+        """
+        curl -o {params.tar} {params.url} > {log} 2>&1
+        tar -C {params.dir} -xf {params.tar} >>{log} 2>&1
+        rm {params.tar}
+        """
+    
+rule centrifuge_pe:
+    input:
+        R1=opj(config["intermediate_path"], "preprocess",
+               "{sample}_{run}_R1"+PREPROCESS+".fastq.gz"),
+        R2=opj(config["intermediate_path"], "preprocess",
+               "{sample}_{run}_R2"+PREPROCESS+".fastq.gz"),
+        db=expand(opj(config["centrifuge_dir"], "{base}.{i}.cf"),
+                  i=[1, 2, 3], base=config["centrifuge_base"])
+    output:
+        opj(config["results_path"], "centrifuge", "{sample}_{run}_pe.out"),
+        opj(config["results_path"], "centrifuge", "{sample}_{run}_pe.report")
+    log:
+        opj(config["results_path"], "centrifuge", "{sample}_{run}_pe.log")
+    params:
+        prefix=opj(config["centrifuge_dir"],
+                   "{base}".format(base=config["centrifuge_base"])),
+        tmp_out=opj(config["scratch_path"], "{sample}_{run}_pe.out"),
+        tmp_report=opj(config["scratch_path"], "{sample}_{run}_pe.report")
+    threads: 20
+    resources:
+        runtime=lambda wildcards, attempt: attempt**2*60
+    conda:
+        "../envs/centrifuge.yml"
+    shell:
+        """
+        mkdir -p {config[scratch_path]}
+        centrifuge -k {config[centrifuge_max_assignments]} -x {params.prefix} \
+            -1 {input.R1} -2 {input.R2} -S {params.tmp_out} -p {threads} \
+            --report-file {params.tmp_report} > {log} 2>&1
+        mv {params.tmp_out} {output[0]}
+        mv {params.tmp_report} {output[1]}
+        """
+
+rule centrifuge_se:
+    input:
+        se=opj(config["intermediate_path"], "preprocess",
+               "{sample}_{run}_se"+PREPROCESS+".fastq.gz"),
+        db=expand(opj(config["centrifuge_dir"], "{base}.{i}.cf"),
+                  i=[1, 2, 3], base=config["centrifuge_base"])
+    output:
+        opj(config["results_path"], "centrifuge", "{sample}_{run}_se.out"),
+        opj(config["results_path"], "centrifuge", "{sample}_{run}_se.report")
+    log:
+        opj(config["results_path"], "centrifuge", "{sample}_{run}_se.log")
+    params:
+        prefix=opj(config["centrifuge_dir"],
+                   "{base}".format(base=config["centrifuge_base"])),
+        tmp_out=opj(config["scratch_path"], "{sample}_{run}_se.out"),
+        tmp_report=opj(config["scratch_path"], "{sample}_{run}_se.report")
+    threads: 20
+    resources:
+        runtime=lambda wildcards, attempt: attempt**2*60
+    conda:
+        "../envs/centrifuge.yml"
+    shell:
+        """
+        mkdir -p {config[scratch_path]}
+        centrifuge -k {config[centrifuge_max_assignments]} -U {input.se} \
+            -x {params.prefix} -S {params.tmp_out} -p {threads} \
+            --report-file {params.tmp_report} > {log} 2>&1
+        mv {params.tmp_out} {output[0]}
+        mv {params.tmp_report} {output[1]}
+        """
+
+rule centrifuge_kreport:
+    input:
+        f=opj(config["results_path"], "centrifuge", 
+              "{sample}_{run}_{seq_type}.out"),
+        db=expand(opj(config["centrifuge_dir"],
+                      "{base}.{i}.cf"), 
+                  i=[1, 2, 3], base=config["centrifuge_base"])
+    output:
+        opj(config["results_path"], "centrifuge", 
+            "{sample}_{run}_{seq_type}.kreport")
+    params:
+        min_score=config["centrifuge_min_score"],
+        prefix=opj(config["centrifuge_dir"],
+                   "{base}".format(base=config["centrifuge_base"]))
+    conda:
+        "../envs/centrifuge.yml"
+    shell:
+        """
+        centrifuge-kreport --min-score {params.min_score} -x {params.prefix} \
+            {input.f} > {output[0]}
+        """
 
 ##### krona #####
 
@@ -165,7 +275,7 @@ rule all2krona:
         opj(config["report_path"], "{classifier}", "{classifier}.krona.log")
     params:
         tax="resources/krona",
-        input_string=get_krona_input(config, samples, "{classifier}")
+        input_string=krona_input(config, samples, "{classifier}")
     conda:
         "../envs/krona.yml"
     singularity:
