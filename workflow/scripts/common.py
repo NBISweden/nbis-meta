@@ -199,6 +199,7 @@ def check_classifiers(config):
     :return: Updated config dict
     """
     # Add read-based config info
+    config["centrifuge_index_path"] = config["centrifuge_base"] = config["centrifuge_dir"] = ""
     if config["centrifuge"]:
         # Check if custom database exists
         custom = expand("{b}.{i}.cf", b=config["centrifuge_custom"],
@@ -212,9 +213,9 @@ def check_classifiers(config):
         # Set centrifuge index config variables
         config['centrifuge_dir'] = os.path.dirname(
             config['centrifuge_index_path'])
-        config['centrifuge_base'] = bn(
-            config['centrifuge_index_path'])
+        config['centrifuge_base'] = bn(config['centrifuge_index_path'])
 
+    config["kraken_index_path"] = config["kraken_params"] = ""
     if config["kraken"]:
         # Check if custom database exists
         custom = expand(opj(config["kraken_custom"], "{n}.k2d"),
@@ -231,8 +232,6 @@ def check_classifiers(config):
                                               config["kraken_prebuilt"])
         if config["kraken_reduce_memory"]:
             config["kraken_params"] = "--memory-mapping"
-        else:
-            config["kraken_params"] = ""
     return config
 
 
