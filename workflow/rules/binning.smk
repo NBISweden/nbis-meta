@@ -44,7 +44,8 @@ rule run_metabat:
         depth=opj(config["results_path"], "binning", "metabat", "{group}",
                   "cov", "depth.txt")
     output:
-        opj(config["results_path"], "binning", "metabat", "{group}", "{l}", "contig_map.tsv")
+        opj(config["results_path"], "binning", "metabat", "{group}", "{l}", "contig_map.tsv"),
+        opj(config["results_path"], "binning", "metabat", "{group}", "{l}", "done")
     log:
         opj(config["results_path"], "binning", "metabat", "{group}", "{l}", "metabat.log")
     conda:
@@ -69,7 +70,8 @@ rule run_maxbin:
     input:
         opj(config["results_path"], "assembly", "{group}", "final_contigs.fa")
     output:
-        opj(config["results_path"], "binning", "maxbin", "{group}", "{l}", "{group}.summary")
+        opj(config["results_path"], "binning", "maxbin", "{group}", "{l}", "{group}.summary"),
+        opj(config["results_path"], "binning", "maxbin", "{group}", "{l}", "done")
     log:
         opj(config["results_path"], "binning", "maxbin", "{group}", "{l}", "maxbin.log")
     params:
