@@ -653,9 +653,20 @@ def concat_files(files, gff_df):
     return df
 
 
-## Read classification functions
+# classification functions
 
-def get_krona_input(samples, classifier):
+def classify_input(config):
+    f = []
+    if config["kraken"]:
+        f.append(opj(config["report_path"], "kraken", "kraken.krona.html"))
+    if config["metaphlan"]:
+        f.append(opj(config["report_path"], "metaphlan", "metaphlan.html"))
+    if config["centrifuge"]:
+        f.append(opj(config["report_path"],"centrifuge", "centrifuge.krona.html"))
+    return f
+
+
+def get_krona_input(config, samples, classifier):
     input_string = ""
     files = get_all_files(samples, opj(config["results_path"], classifier),
                           ".kreport")
