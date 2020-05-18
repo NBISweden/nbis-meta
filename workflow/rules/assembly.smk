@@ -1,3 +1,5 @@
+from scripts.common import get_all_group_files
+
 localrules:
     write_bed,
     plot_assembly_stats,
@@ -9,8 +11,6 @@ rule assembly:
         opj(config["report_path"], "assembly", "assembly_stats.pdf"),
         opj(config["report_path"], "assembly", "assembly_size_dist.pdf"),
         opj(config["report_path"], "assembly", "alignment_frequency.pdf")
-
-from scripts.common import get_all_group_files
 
 if config["metaspades"]:
     rule generate_metaspades_input:
@@ -54,7 +54,7 @@ if config["metaspades"]:
         resources:
             runtime=lambda wildcards, attempt: attempt**2*60*4
         conda:
-            "../../../envs/metaspades.yml"
+            "../envs/metaspades.yml"
         shell:
             """
             # Create directories
@@ -108,18 +108,13 @@ else:
         log:
             opj(config["results_path"],"assembly",
                             "{group}","input_list.log")
-        run:
-            files={"R1": [], "R2": [], "se": []}
-            for sample in assemblies[wildcards.group].keys():
-                for run in assemblies[wildcards.group][sample]:
-                    for pair in assemblies[wildcards.group][sample][run].keys():
-                        files[pair].append(assemblies[wildcards.group][sample][run][pair][0])
-            with open(output.R1, 'w') as fh1, open(output.R2, 'w') as fh2, open(output.se, 'w') as fhse:
-                fh1.write(",".join(files["R1"]))
-                fh2.write(",".join(files["R2"]))
-                fhse.write(",".join(files["se"]))
+        params:
+            assembly = lambda wildcards: assemblies[wildcards.group],
+            assembler = "megahit"
+        script:
+            "../scripts/generate_assembly_input.py"
 
-    rule run_megahit:
+    rule megahit:
         input:
             R1=opj(config["results_path"],"assembly",
                             "{group}","input_1"),
@@ -128,7 +123,8 @@ else:
             se=opj(config["results_path"],"assembly",
                             "{group}","input_se")
         output:
-            opj(config["results_path"],"assembly","{group}","final_contigs.fa"),
+            opj(config["results_path"],"assembly","{group}","final_contigs.fa")
+        log:
             opj(config["results_path"],"assembly","{group}","log")
         params:
             intermediate_contigs=opj(config["intermediate_path"],"assembly",
@@ -140,9 +136,10 @@ else:
         resources:
             runtime=lambda wildcards, attempt: attempt**2*60*4
         conda:
-            "../../../envs/megahit.yml"
+            "../envs/megahit.yml"
         shell:
             """
+            mkdir -p {config[temp_path]}
             rm -rf {params.tmp}
             # Only use paired-end if present
             if [ -s {input.R1} ]; then
@@ -161,13 +158,8 @@ else:
             fi
             
             # Run Megahit
-            megahit \
-                -t {threads} \
-                $paired \
-                $single \
-                -o {params.tmp} \
-                {params.additional_settings} \
-                >/dev/null 2>&1
+            megahit -t {threads} $paired $single -o {params.tmp} \
+                {params.additional_settings} >{log} 2>&1
             
             # Sync intermediate contigs if asked for
             if [ "{config[megahit_keep_intermediate]}" == "True" ]; then
@@ -209,7 +201,7 @@ rule bowtie_build:
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
-        "../../../envs/quantify.yml"
+        "../envs/quantify.yml"
     shell:
         """
         bowtie2-build \
@@ -244,7 +236,7 @@ rule bowtie_map_pe:
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
-        "../../../envs/quantify.yml"
+        "../envs/quantify.yml"
     shell:
         """
         bowtie2 \
@@ -290,7 +282,7 @@ rule bowtie_map_se:
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
-        "../../../envs/quantify.yml"
+        "../envs/quantify.yml"
     shell:
         """
         bowtie2 \
@@ -324,7 +316,7 @@ rule assembly_stats:
         opj(config["report_path"], "assembly", "assembly_stats.tsv"),
         opj(config["report_path"], "assembly", "assembly_size_dist.tsv")
     script:
-        "../../../scripts/assembly_stats.py"
+        "../scripts/assembly_stats.py"
 
 from scripts.common import get_bamfiles
 
@@ -342,7 +334,7 @@ rule samtools_flagstat:
     params:
         post = POSTPROCESS
     conda:
-        "../../../envs/quantify.yml"
+        "../envs/quantify.yml"
     shell:
         """
         for f in {input} ; 
@@ -366,6 +358,6 @@ rule plot_assembly_stats:
         opj(config["report_path"], "assembly", "assembly_size_dist.pdf"),
         opj(config["report_path"], "assembly", "alignment_frequency.pdf")
     conda:
-        "../../../envs/plotting.yml"
+        "../envs/plotting.yml"
     notebook:
-        "../../../notebooks/assembly_stats.py.ipynb"
+        "../notebooks/assembly_stats.py.ipynb"
