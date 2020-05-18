@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 
 from Bio.SeqIO import parse
-from argparse import ArgumentParser
 import pandas as pd
 from glob import glob
 from os.path import join as opj
 from os.path import basename
 import numpy as np
-import sys
 
 
 def n50(lengths):
@@ -51,25 +49,21 @@ def calculate_bin_stats(files, suffix):
     return stats
 
 
-def main():
-    parser = ArgumentParser()
-    parser.add_argument("dir", type=str,
-                        help="Directory with genome bins")
-    parser.add_argument("--suffix", type=str, default=".fa",
-                        help="Suffix for fasta files. Defaults to '.fa'")
-    args = parser.parse_args()
-
-    files = glob(opj(args.dir, "*{}".format(args.suffix)))
-    stats = calculate_bin_stats(files, args.suffix)
-    if len(stats) == 0:
-        sys.stderr.write("No bins found\n")
+def main(sm):
+    files = glob(opj(sm.params.dir, "*{}".format(sm.params.suffix)))
+    if len(files) == 0:
+        with open(sm.output[0], 'w') as fh:
+            fh.write("No bins found\n")
         return
-    cols = ["bp", "Mbp", "GC", "contigs", "n50", "mean_contig", "median_contig", "min_contig", "max_contig"]
-    df = pd.DataFrame(stats).T[cols]
-    df.index.name = "bin"
-    df.sort_values("bp", ascending=False, inplace=True)
-    df.to_csv(sys.stdout, sep="\t", index=True, header=True)
+    else:
+        stats = calculate_bin_stats(files, sm.params.suffix)
+        cols = ["bp", "Mbp", "GC", "contigs", "n50", "mean_contig",
+                "median_contig", "min_contig", "max_contig"]
+        df = pd.DataFrame(stats).T[cols]
+        df.index.name = "bin"
+        df.sort_values("bp", ascending=False, inplace=True)
+        df.to_csv(sm.output[0], sep="\t", index=True, header=True)
 
 
 if __name__ == '__main__':
-    main()
+    main(snakemake)
