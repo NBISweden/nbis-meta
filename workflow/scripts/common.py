@@ -446,7 +446,6 @@ def rename_records(f, fh, i):
 
 # binning functions
 
-
 def binning_input(config, assemblies):
     """
     Generates input list for the binning part of the workflow
@@ -456,26 +455,26 @@ def binning_input(config, assemblies):
     :return:
     """
     input = []
-    if config["concoct"] and platform.uname().system != "Darwin":
-        input += expand(
-            opj(config["results_path"], "binning", "concoct", "{group}", "{l}",
-                "summary_stats.tsv"), group=assemblies.keys(),
-            l=config["min_contig_length"])
+    if config["concoct"]:
+        input += expand(opj(config["results_path"], "binning", "concoct",
+                            "{group}", "{l}", "summary_stats.tsv"),
+                        group=assemblies.keys(),
+                        l=config["min_contig_length"])
     if config["metabat"]:
-        input += expand(
-            opj(config["results_path"], "binning", "metabat", "{group}", "{l}",
-                "summary_stats.tsv"), group=assemblies.keys(),
-            l=config["min_contig_length"])
-    if config["checkm"] and platform.uname().system != "Darwin":
+        input += expand(opj(config["results_path"], "binning", "metabat",
+                            "{group}", "{l}", "summary_stats.tsv"),
+                        group=assemblies.keys(),
+                        l=config["min_contig_length"])
+    if config["checkm"]:
         input.append(opj(config["report_path"], "checkm", "checkm.stats.tsv"))
         input.append(
             opj(config["report_path"], "checkm", "checkm.profiles.tsv"))
-    if config["gtdbtk"] and platform.uname().system != "Darwin":
+    if config["gtdbtk"]:
         input.append(opj(config["report_path"], "gtdbtk", "gtdbtk.summary.tsv"))
-        input.append(
-            opj(config["report_path"], "bin_annotation", "tRNA.total.tsv"))
-        input.append(
-            opj(config["report_path"], "bin_annotation", "rRNA.types.tsv"))
+        input.append(opj(config["report_path"], "bin_annotation",
+                         "tRNA.total.tsv"))
+        input.append(opj(config["report_path"], "bin_annotation",
+                         "rRNA.types.tsv"))
     return input
 
 
@@ -500,19 +499,6 @@ def get_fw_reads(config, samples, p):
     for i, f in enumerate(files, start=1):
         reads_string += "-reads{i} {f} ".format(i=i, f=f)
     return reads_string
-
-
-def get_indir(wildcards):
-    """
-    Get directory containing bin fasta sequences based on binner used.
-    :param wildcards: wildcards used
-    :return: fasta directory
-    """
-    indir = opj(config["results_path"], "binning", wildcards.binner,
-                wildcards.group, wildcards.l)
-    if wildcards.binner == "concoct":
-        return opj(indir, "fasta")
-    return indir
 
 
 def get_tree_settings(config):
