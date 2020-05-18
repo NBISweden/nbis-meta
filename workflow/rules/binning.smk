@@ -21,6 +21,84 @@ rule bin:
     input:
         binning_input(config, assemblies)
 
+##### metabat2 #####
+
+rule metabat_coverage:
+    input:
+        bam=get_all_files(samples, opj(config["results_path"], "assembly",
+                                       "{group}", "mapping"), ".bam")
+    output:
+        depth=opj(config["results_path"], "binning", "metabat", "{group}", "cov", "depth.txt")
+    resources:
+        runtime=lambda wildcards, attempt: attempt**2*60*2
+    conda:
+        "../envs/metabat.yml"
+    shell:
+        """
+        jgi_summarize_bam_contig_depths \
+            --outputDepth {output.depth} {input.bam} 
+        """
+
+rule run_metabat:
+    input:
+        fa=opj(config["results_path"], "assembly", "{group}",
+               "final_contigs.fa"),
+        depth=opj(config["results_path"], "binning", "metabat", "{group}",
+                  "cov", "depth.txt")
+    output:
+        opj(config["results_path"], "binning", "metabat", "{group}", "{l}", "contig_map.tsv")
+    log:
+        opj(config["results_path"], "binning", "metabat", "{group}", "{l}", "metabat.log")
+    conda:
+        "../envs/metabat.yml"
+    threads: 8
+    resources:
+        runtime=lambda wildcards, attempt: attempt**2*60*4
+    params:
+        n=opj(config["results_path"], "binning", "metabat", "{group}", "{l}", "metabat")
+    shell:
+        """
+        metabat2 -i {input.fa} -a {input.depth} -m {wildcards.l} -t {threads} \
+            -o {params.n} > {log} 2>&1
+        grep '>' {params.n}*.fa | \
+            awk -F/ '{{print $NF}}' | \
+            sed 's/.fa:>/\t/g' > {output[0]}
+        """
+
+##### maxbin2 #####
+
+rule run_maxbin:
+    input:
+        opj(config["results_path"], "assembly", "{group}", "final_contigs.fa")
+    output:
+        opj(config["results_path"], "binning", "maxbin", "{group}", "{l}", "{group}.summary")
+    log:
+        opj(config["results_path"], "binning", "maxbin", "{group}", "{l}", "maxbin.log")
+    params:
+        dir=opj(config["results_path"], "binning", "maxbin", "{group}", "{l}"),
+        tmp_dir=opj(config["scratch_path"], "{group}", "{l}"),
+        reads=get_fw_reads(config, samples, PREPROCESS),
+        markerset=config["maxbin_markerset"]
+    threads: config["maxbin_threads"]
+    resources:
+        runtime=lambda wildcards, attempt: attempt**2*60*5
+    conda:
+        "../envs/maxbin.yml"
+    shell:
+        """
+        mkdir -p {params.dir}
+        mkdir -p {params.tmp_dir}
+        run_MaxBin.pl \
+            -markerset {params.markerset} \
+            -contig {input} \
+            {params.reads} \
+            -min_contig_length {wildcards.l} \
+            -thread {threads} \
+            -out {params.tmp_dir}/{wildcards.group} 2>{log}
+        mv {params.tmp_dir}/* {params.dir}
+        rm -r {params.tmp_dir}
+        """
+
 ##### concoct #####
 
 rule concoct_coverage_table:
@@ -55,119 +133,6 @@ rule concoct_coverage_table:
             {input.bed} {input.bam} > {output.cov}
         rm {params.samplenames}
         """
-
-##### metabat2 #####
-
-rule metabat_coverage:
-    input:
-        bam=get_all_files(samples, opj(config["results_path"], "assembly",
-                                       "{group}", "mapping"), ".bam")
-    output:
-        depth=opj(config["results_path"], "binning", "metabat", "{group}", "cov", "depth.txt")
-    resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*2
-    conda:
-        "../envs/metabat.yml"
-    shell:
-        """
-        jgi_summarize_bam_contig_depths \
-            --outputDepth {output.depth} {input.bam} 
-        """
-
-rule run_metabat:
-    input:
-        fa=opj(config["results_path"], "assembly", "{group}",
-               "final_contigs.fa"),
-        depth=opj(config["results_path"], "binning", "metabat", "{group}",
-                  "cov", "depth.txt")
-    output:
-        opj(config["results_path"], "binning", "metabat", "{group}", "{l}", "contig_map.tsv")
-    log:
-        opj(config["results_path"], "binning", "metabat", "{group}", "{l}", "metabat.log")
-    conda:
-        "../envs/metabat.yml"
-    threads: config["metabat_threads"]
-    resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*4
-    params:
-        n=opj(config["results_path"], "binning", "metabat", "{group}", "{l}", "metabat")
-    shell:
-        """
-        metabat2 \
-            -i {input.fa} -a {input.depth} -m {wildcards.l} -t {threads} \
-            -o {params.n} > {log} 2>&1
-        grep '>' {params.n}*.fa | \
-            awk -F/ '{{print $NF}}' | \
-            sed 's/.fa:>/\t/g' > {output[0]}
-        """
-
-rule metabat_stats:
-    input:
-        opj(config["results_path"], "binning", "metabat", "{group}",
-            "{l}", "contig_map.tsv")
-    output:
-        opj(config["results_path"], "binning", "metabat", "{group}",
-            "{l}", "summary_stats.tsv")
-    params:
-        dir=opj(config["results_path"], "binning", "metabat", "{group}", "{l}"),
-        suffix=".fa"
-    shell:
-        """
-        python source/utils/binning_stats.py \
-            --suffix {params.suffix} {params.dir} > {output[0]}
-        """
-
-##### maxbin2 #####
-
-
-rule run_maxbin:
-    input:
-        opj(config["results_path"], "assembly", "{group}", "final_contigs.fa")
-    output:
-        opj(config["results_path"], "binning", "maxbin", "{group}", "{l}", "{group}.summary")
-    log:
-        opj(config["results_path"], "binning", "maxbin", "{group}", "{l}", "maxbin.log")
-    params:
-        dir=opj(config["results_path"], "binning", "maxbin", "{group}", "{l}"),
-        tmp_dir=opj(config["scratch_path"], "{group}", "{l}"),
-        reads=get_fw_reads(config, samples, PREPROCESS),
-        markerset=config["maxbin_markerset"]
-    threads: config["maxbin_threads"]
-    resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*5
-    conda:
-        "../envs/maxbin.yml"
-    shell:
-        """
-        mkdir -p {params.dir}
-        mkdir -p {params.tmp_dir}
-        run_MaxBin.pl \
-            -markerset {params.markerset} \
-            -contig {input} \
-            {params.reads} \
-            -min_contig_length {wildcards.l} \
-            -thread {threads} \
-            -out {params.tmp_dir}/{wildcards.group} 2>{log}
-        mv {params.tmp_dir}/* {params.dir}
-        rm -r {params.tmp_dir}
-        """
-
-rule maxbin_stats:
-    input:
-        opj(config["results_path"], "binning", "maxbin", "{group}", "{l}", "{group}.summary")
-    output:
-        opj(config["results_path"], "binning", "maxbin", "{group}",
-            "{l}", "summary_stats.tsv")
-    params:
-        dir=opj(config["results_path"], "binning", "maxbin", "{group}", "{l}"),
-        suffix=".fasta"
-    shell:
-        """
-        python source/utils/binning_stats.py \
-            --suffix {params.suffix} {params.dir} > {output[0]}
-        """
-
-## CONCOCT ##
 
 rule concoct_cutup:
     input:
@@ -251,22 +216,20 @@ rule extract_fasta:
             2> {log}
         """
 
-rule concoct_stats:
+
+##### bin qc #####
+
+rule binning_stats:
     input:
-        opj(config["results_path"], "binning", "concoct", "{group}", "{l}", "done")
+        opj(config["results_path"], "binning", "{binner}", "{group}", "{l}", "done")
     output:
-        opj(config["results_path"], "binning", "concoct", "{group}",
+        opj(config["results_path"], "binning", "{binner}", "{group}",
             "{l}", "summary_stats.tsv")
     params:
         dir=lambda wildcards, output: os.path.dirname(output[0]),
         suffix=".fa"
-    shell:
-        """
-        python source/utils/binning_stats.py \
-            --suffix {params.suffix} {params.dir} > {output[0]}
-        """
-
-##### bin qc with checkm-genome #####
+    script:
+        "../scripts/binning_stats.py"
 
 rule download_checkm:
     output:
