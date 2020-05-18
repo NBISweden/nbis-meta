@@ -166,8 +166,6 @@ rule normalize_featurecount:
             --sampleName {params.s}
         """
 
-from scripts.common import get_all_files
-
 rule aggregate_featurecount:
     """Aggregates feature count files and performs TPM normalization"""
     input:
