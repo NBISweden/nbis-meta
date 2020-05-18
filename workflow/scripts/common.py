@@ -372,7 +372,7 @@ def get_sortmerna_ref_string(dbs):
     Constructs the SortMeRNA --ref string
 
     :param dbs: Sortmerna databases from config
-    :return: STRING,STRING formatted string
+    :return: STRING, STRING formatted string
     """
     files = ["resources/rRNA_databases/{db}".format(db=db) for db in dbs]
     ref_string = ":".join(["{},{}".format(f, f) for f in files])
@@ -591,7 +591,44 @@ def concatenate(input):
     return df
 
 
-## Annotation functions
+# annotation functions
+
+def annotation_input(config, assemblies):
+    input = []
+    for group in assemblies.keys():
+        # Add orfcalling results
+        input.append(opj(config["results_path"], "annotation",
+                                    group, "final_contigs.gff"))
+        if config["infernal"]:
+            input.append(opj(config["results_path"], "annotation",
+                                        group, "final_contigs.cmscan"))
+        if config["tRNAscan"]:
+            input.append(opj(config["results_path"], "annotation",
+                                        group, "tRNA.out"))
+        # Add EGGNOG annotation
+        if config["eggnog"]:
+            input += expand(opj(config["results_path"], "annotation",
+                                         group, "{db}.parsed.{fc}.tab"),
+                                     db=["enzymes", "pathways", "kos", "modules"],
+                                     fc=["raw", "tpm"])
+        # Add PFAM annotation
+        if config["pfam"]:
+            input+=expand(opj(config["results_path"], "annotation",
+                                        group, "pfam.parsed.{fc}.tab"),
+                                    fc=["tpm", "raw"])
+        # Add taxonomic annotation
+        if config["taxonomic_annotation"]:
+            input+=expand(opj(config["results_path"], "annotation",
+                                         group, "taxonomy", "tax.{fc}.tab"),
+                                     fc=["tpm", "raw"])
+        # Add Resistance Gene Identifier output
+        if config["rgi"]:
+            input += expand(opj(config["results_path"], "annotation",
+                                           group, "rgi.{fc}.tab"),
+                                       fc=["raw", "tpm"])
+            input.append(opj(config["results_path"], "annotation",
+                                        group, "rgi.out.txt"))
+    return input
 
 def parse_cmout(f):
     with open(f) as fh:
@@ -661,7 +698,7 @@ def classify_input(config):
     if config["metaphlan"]:
         f.append(opj(config["report_path"], "metaphlan", "metaphlan.html"))
     if config["centrifuge"]:
-        f.append(opj(config["report_path"],"centrifuge", "centrifuge.krona.html"))
+        f.append(opj(config["report_path"], "centrifuge", "centrifuge.krona.html"))
     return f
 
 
