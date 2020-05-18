@@ -22,18 +22,18 @@ jobs:
     - name: Dry run
       run: snakemake --use-conda -j 4 --config fastuniq=True kraken=True eggnog=True taxonomic_annotation=True rgi=True pfam=True metabat=True concoct=True checkm=True gtdbtk=True centrifuge=True metaphlan=True -np
     - name: Cutadapt
-      run: snakemake --config example_dataset_size=10000 trimmomatic=False cutadapt=True --use-conda -j 4 -p preprocess && rm -r results
+      run: snakemake --config example_dataset_size=10000 trimmomatic=False cutadapt=True --use-conda -j 4 -p qc && rm -r results
     - name: Trimmomatic
-      run: snakemake --use-conda -j 4 -p preprocess && rm -r results/report
+      run: snakemake --use-conda -j 4 -p qc && rm -r results/report
     - name: Sortmerna
-      run: snakemake --use-conda -j 4 --config sortmerna=True -p preprocess
+      run: snakemake --use-conda -j 4 --config sortmerna=True -p qc
     - name: Metaspades
-      run: snakemake --use-conda --config metaspades=True -j 4 -p assembly && rm -r results/assembly && rm -r results/report
+      run: snakemake --use-conda --config metaspades=True -j 4 -p assemble && rm -r results/assembly && rm -r results/report
     - name: Megahit
-      run: snakemake --use-conda --config megahit=True -j 4 -p assembly
+      run: snakemake --use-conda --config megahit=True -j 4 -p assemble
     - name: Kraken
-      run: snakemake --use-conda --config kraken=True kraken_reduce_memory=True kraken_prebuilt=16S_Greengenes -j 4 -p kraken_classify && rm -r examples/data results/
+      run: snakemake --use-conda --config kraken=True kraken_reduce_memory=True kraken_prebuilt=16S_Greengenes -j 4 -p classify && rm -r examples/data results/
     - name: Preprocess
-      run: snakemake --config example_dataset_size=1000000 --use-conda -j 4 -p preprocess
+      run: snakemake --config example_dataset_size=1000000 --use-conda -j 4 -p qc
     - name: Binning
-      run: snakemake --use-conda --config metabat=True concoct=True -j 4 -p binning
+      run: snakemake --use-conda --config metabat=True concoct=True -j 4 -p bin
