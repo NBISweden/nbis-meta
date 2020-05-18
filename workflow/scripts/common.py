@@ -2,7 +2,7 @@
 
 import pandas as pd
 import os
-from os.path import join as opj
+from os.path import join as opj, basename as bn
 from snakemake.io import expand
 
 
@@ -212,7 +212,7 @@ def check_classifiers(config):
         # Set centrifuge index config variables
         config['centrifuge_dir'] = os.path.dirname(
             config['centrifuge_index_path'])
-        config['centrifuge_base'] = os.path.basename(
+        config['centrifuge_base'] = bn(
             config['centrifuge_index_path'])
 
     if config["kraken"]:
@@ -671,7 +671,7 @@ def krona_input(config, samples, classifier):
     files = get_all_files(samples, opj(config["results_path"], classifier),
                           ".kreport")
     for f in files:
-        sample_run = os.path.basename(f).replace("_pe.kreport", "").replace(
+        sample_run = bn(f).replace("_pe.kreport", "").replace(
             "_se.kreport", "")
         input_string += " {},{}".format(f, sample_run)
     return input_string
@@ -736,7 +736,6 @@ def metaphlan_krona_string(input):
     """
     s = []
     for f in input:
-        name = os.path.basename(f).replace("_pe.krona", "").replace("_se.krona",
-                                                                    "")
+        name = bn(f).replace("_pe.krona", "").replace("_se.krona", "")
         s.append("{},{}".format(f, name))
     return " ".join(s)
