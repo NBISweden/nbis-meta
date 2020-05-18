@@ -37,7 +37,7 @@ rule remove_mark_duplicates:
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
     conda:
-        "../../../envs/quantify.yml"
+        "../envs/quantify.yml"
     threads: 10
     shell:
         """
@@ -81,7 +81,7 @@ rule featurecount_pe:
     resources:
         runtime=lambda wildcards, attempt: attempt**2*30
     conda:
-        "../../../envs/quantify.yml"
+        "../envs/quantify.yml"
     shell:
         """
         featureCounts \
@@ -113,7 +113,7 @@ rule featurecount_se:
     resources:
         runtime=lambda wildcards, attempt: attempt**2*30
     conda:
-        "../../../envs/quantify.yml"
+        "../envs/quantify.yml"
     shell:
         """
         featureCounts \
@@ -135,7 +135,7 @@ rule samtools_stats:
         opj(config["results_path"],"assembly","{group}",
                 "mapping","{sample}_{run}_{seq_type}"+POSTPROCESS+".bam.stats")
     conda:
-        "../../../envs/quantify.yml"
+        "../envs/quantify.yml"
     shell:
         """
         samtools stats {input} > {output}
