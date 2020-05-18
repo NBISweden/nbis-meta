@@ -1,0 +1,43 @@
+from snakemake.utils import validate
+import pandas as pd
+import platform
+import os
+from os.path import join as opj
+from scripts.common import get_all_files
+
+# this container defines the underlying OS for each job when using the workflow
+# with --use-conda --use-singularity
+singularity: "docker://continuumio/miniconda3:4.8.2"
+
+##### load and validate config #####
+
+configfile: "config/config.yaml"
+validate(config, schema="../schemas/config.schema.yaml")
+
+##### generate preprocess/postprocess strings #####
+from scripts.common import prepost_string
+PREPROCESS, POSTPROCESS, preprocess_suffices, config = prepost_string(config)
+
+##### load and validate samples #####
+df = pd.read_csv(config["sample_list"], sep="\t")
+validate(df, schema="../schemas/samples.schema.yaml")
+
+##### parse samples #####
+from scripts.common import parse_samples
+samples, assemblies = parse_samples(df, config, PREPROCESS)
+
+##### workflow settings #####
+
+wildcard_constraints:
+    run="\d+",
+    pair="se|R[12]",
+    seq_type="[sp]e",
+    group="\w+",
+    l="\d+"
+
+from scripts.common import check_uppmax, check_annotation, check_assembly, check_classifiers
+
+config = check_uppmax(config)
+config = check_annotation(config)
+config, assemblies = check_assembly(config, assemblies)
+config = check_classifiers(config)
