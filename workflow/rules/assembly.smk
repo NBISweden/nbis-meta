@@ -6,7 +6,7 @@ localrules:
     assembly_stats,
     samtools_flagstat
 
-rule assembly:
+rule assemble:
     input:
         opj(config["report_path"], "assembly", "assembly_stats.pdf"),
         opj(config["report_path"], "assembly", "assembly_size_dist.pdf"),
