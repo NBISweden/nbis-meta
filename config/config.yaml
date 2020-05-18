@@ -96,10 +96,6 @@ metaspades_additional_settings: '-k 21,31,41,51,61,71,81,91,101,111,121'
 tRNAscan: True
 # Run infernal for rRNA identification?
 infernal: True
-# Threads to use for infernal
-infernal_threads: 8
-# Where to store infernal database
-infernal_dbpath: resources/infernal
 # Run eggnog-mapper?
 eggnog: True
 # Run PFAM-scan?

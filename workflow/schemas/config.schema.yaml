@@ -187,15 +187,6 @@ properties:
     type: boolean
     description: Indicates whether to run infernal for rRNA identification
     default: true
-  infernal_threads:
-    type: integer
-    description: How many threads to use for infernal
-    default: 8
-    minimum: 1
-  infernal_dbpath:
-    type: string
-    description: Where to store infernal database
-    default: resources/infernal
   eggnog:
     type: boolean
     description: Indicates whether to run eggnog-mapper
