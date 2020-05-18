@@ -1,3 +1,5 @@
+from scripts.common import binning_input, get_fw_reads
+
 localrules:
     concoct_cutup,
     merge_cutup,
@@ -6,13 +8,63 @@ localrules:
     concoct_stats,
     metabat_stats
 
-from scripts.common import binning_input
 
-rule binning:
+rule bin:
     input:
         binning_input(config, assemblies)
 
+##### concoct #####
+
+rule concoct_coverage_table:
+    input:
+        bam=get_all_files(samples, opj(config["results_path"],"assembly",
+                                       "{group}","mapping"),".bam"),
+        bai=get_all_files(samples, opj(config["results_path"],"assembly",
+                                       "{group}","mapping"),".bam.bai"),
+        bed=opj(config["results_path"],"assembly","{group}",
+                "final_contigs_cutup.bed")
+    output:
+        cov=opj(config["results_path"],"binning","concoct","{group}",
+                "cov","concoct_inputtable.tsv")
+    conda:
+        "../../../envs/concoct.yml"
+    resources:
+        runtime=lambda wildcards, attempt: attempt**2*60*2
+    params:
+        samplenames=opj(config["results_path"],"binning","concoct",
+                        "{group}","cov","samplenames"),
+        p=POSTPROCESS
+    shell:
+        """
+        for f in {input.bam} ; 
+            do 
+                n=$(basename $f); 
+                s=$(echo -e $n | sed 's/_[ps]e{params.p}.bam//g'); 
+                echo $s; 
+            done > {params.samplenames}
+        concoct_coverage_table.py \
+            --samplenames {params.samplenames} \
+            {input.bed} {input.bam} > {output.cov}
+        rm {params.samplenames}
+        """
+
 ##### metabat2 #####
+
+rule metabat_coverage:
+    input:
+        bam=get_all_files(samples, opj(config["results_path"],"assembly",
+                                       "{group}","mapping"),".bam")
+    output:
+        depth=opj(config["results_path"],"binning","metabat","{group}","cov","depth.txt")
+    resources:
+        runtime=lambda wildcards, attempt: attempt**2*60*2
+    conda:
+        "../envs/metabat.yml"
+    shell:
+        """
+        jgi_summarize_bam_contig_depths \
+            --outputDepth {output.depth} {input.bam} 
+        """
 
 rule run_metabat:
     input:
@@ -25,12 +77,12 @@ rule run_metabat:
     log:
         opj(config["results_path"],"binning","metabat","{group}","{l}","metabat.log")
     conda:
-        "../../../envs/metabat.yml"
+        "../envs/metabat.yml"
     threads: config["metabat_threads"]
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*4
+        runtime = lambda wildcards, attempt: attempt**2*60*4
     params:
-        n=opj(config["results_path"],"binning","metabat","{group}","{l}","metabat")
+        n = opj(config["results_path"],"binning","metabat","{group}","{l}","metabat")
     shell:
         """
         metabat2 \
@@ -49,8 +101,8 @@ rule metabat_stats:
         opj(config["results_path"],"binning","metabat","{group}",
             "{l}","summary_stats.tsv")
     params:
-        dir=opj(config["results_path"],"binning","metabat","{group}","{l}"),
-        suffix=".fa"
+        dir = opj(config["results_path"],"binning","metabat","{group}","{l}"),
+        suffix = ".fa"
     shell:
         """
         python source/utils/binning_stats.py \
@@ -59,7 +111,6 @@ rule metabat_stats:
 
 ##### maxbin2 #####
 
-from scripts.common import get_fw_reads
 
 rule run_maxbin:
     input:
