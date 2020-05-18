@@ -1,4 +1,4 @@
-$schema: "http://json-schema.org/draft-04/schema#"
+$schema: "http://json-schema.org/draft-06/schema#"
 description: an entry in the sample sheet
 properties:
   sampleID:
@@ -16,10 +16,6 @@ properties:
   pair:
     type: string
     description: File path for the paired sequence file for paired-end samples
-  interleaved:
-    type: boolean
-    description: Indicates whether the file path specified by fileName contains interleaved paired-end data
-    default: false
 
 required:
   - sampleID
