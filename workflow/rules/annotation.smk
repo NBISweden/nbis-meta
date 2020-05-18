@@ -9,7 +9,8 @@ localrules:
     press_pfam,
     download_pfam_info,
     download_eggnog,
-    get_kegg_info
+    get_kegg_info,
+    download_rgi_data
 
 ##### annotation master rule #####
 
@@ -246,15 +247,15 @@ rule parse_pfam:
 
 rule download_eggnog:
     output:
-        db = opj(config["resource_path"],"eggnog-mapper","eggnog.db"),
-        version = opj(config["resource_path"],"eggnog-mapper","eggnog.version")
+        db=opj(config["resource_path"],"eggnog-mapper","eggnog.db"),
+        version=opj(config["resource_path"],"eggnog-mapper","eggnog.version")
     log:
         opj(config["resource_path"],"eggnog-mapper","download.log")
     conda:
-        "../../../envs/annotation.yml"
+        "../envs/annotation.yml"
     params:
         dbs="none",
-        data_dir = lambda w, output: os.path.dirname(output.db)
+        data_dir=lambda wildcards, output: os.path.dirname(output.db)
     shell:
         """
         download_eggnog_data.py --data_dir {params.data_dir} -y > {log} 2>&1
@@ -400,6 +401,25 @@ rule parse_ko_annotations:
         """
 
 ##### resistance gene identifier #####
+
+rule download_rgi_data:
+    output:
+        json=opj(config["resource_path"], "card", "card.json"),
+        version=opj(config["resource_path"], "card", "card.version")
+    log:
+        opj(config["resource_path"], "card", "log")
+    params:
+        tar=opj(config["resource_path"], "card", "data.tar.gz"),
+        dir=lambda w, output: os.path.dirname(output.json)
+    shell:
+         """
+         curl -L -o {params.tar} \
+            https://card.mcmaster.ca/latest/data >{log} 2>&1
+         tar -C {params.dir} -xf {params.tar} ./card.json
+         # Store download date in versionfile
+         date > {output.version}
+         rm {params.tar}
+         """
 
 rule rgi:
     input:
