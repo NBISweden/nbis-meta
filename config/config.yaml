@@ -1,7 +1,7 @@
 ## PATHS
 workdir: .
 # Sample information file
-sample_list: samples/example_sample_list.tsv
+sample_list: config/samples.tsv
 # Main folder for results
 results_path: results
 # Subfolder for report files
