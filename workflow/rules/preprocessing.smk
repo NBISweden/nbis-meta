@@ -10,9 +10,7 @@ localrules:
     download_phix,
     bowtie_build_phix,
     fastuniq_se,
-    avg_seq_length,
-    samples_qc_report
-
+    avg_seq_length
 
 ##### master rule for preprocessing #####
 
