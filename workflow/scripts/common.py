@@ -419,7 +419,8 @@ def get_bamfiles(g, assembly_dict, results_path, POSTPROCESS):
             else:
                 seq_type = "se"
             files.append(opj(results_path, "assembly", g, "mapping",
-                    "{}_{}_{}{}.bam".format(sample, unit, seq_type, POSTPROCESS))
+                    "{}_{}_{}{}.bam".format(sample, unit, seq_type,
+                                            POSTPROCESS)))
     return files
 
 
