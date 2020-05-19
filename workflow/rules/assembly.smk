@@ -2,7 +2,7 @@ from scripts.common import get_all_group_files, get_bamfiles
 
 
 localrules:
-    write_bed,
+    fasta2bed,
     plot_assembly_stats,
     assembly_stats,
     samtools_flagstat
