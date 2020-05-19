@@ -639,17 +639,6 @@ rule fastuniq_se:
     run:
         link(input.se, output.se)
 
-rule avg_seq_length:
-    """Extracts average sequence lengths from FastQC"""
-    input:
-        "results/report/samples_report_data/multiqc_general_stats.txt"
-    output:
-        opj(config["intermediate_path"], "preprocess", "read_lengths.tsv")
-    log:
-        opj(config["intermediate_path"], "preprocess", "read_lengths.log")
-    script:
-        "../../../scripts/avg_seq_length.py"
-
 rule fastqc:
     """Run fastqc on preprocessed data"""
     input:
