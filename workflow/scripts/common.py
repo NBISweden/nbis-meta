@@ -585,22 +585,22 @@ def annotation_input(config, assemblies):
         # Add EGGNOG annotation
         if config["eggnog"]:
             input += expand(opj(config["results_path"], "annotation", group,
-                                "{db}.parsed.{fc}.tab"),
+                                "{db}.parsed.{fc}.tsv"),
                             db=["enzymes", "pathways", "kos", "modules"],
                             fc=["raw", "tpm"])
         # Add PFAM annotation
         if config["pfam"]:
             input += expand(opj(config["results_path"], "annotation", group,
-                                "pfam.parsed.{fc}.tab"), fc=["tpm", "raw"])
+                                "pfam.parsed.{fc}.tsv"), fc=["tpm", "raw"])
         # Add taxonomic annotation
         if config["taxonomic_annotation"]:
             input += expand(
                 opj(config["results_path"], "annotation", group, "taxonomy",
-                    "tax.{fc}.tab"), fc=["tpm", "raw"])
+                    "tax.{fc}.tsv"), fc=["tpm", "raw"])
         # Add Resistance Gene Identifier output
         if config["rgi"]:
             input += expand(opj(config["results_path"], "annotation", group,
-                                "rgi.{fc}.tab"), fc=["raw", "tpm"])
+                                "rgi.{fc}.tsv"), fc=["raw", "tpm"])
             input.append(
                 opj(config["results_path"], "annotation", group, "rgi.out.txt"))
     return input
@@ -646,12 +646,12 @@ def get_fc_files(wildcards, file_type):
             if "se" in assemblies[g][sample][unit].keys():
                 files.append(
                     opj(config["results_path"], "assembly", g, "mapping",
-                        sample + "_" + unit + "_se.fc.{}.tab".format(
+                        sample + "_" + unit + "_se.fc.{}.tsv".format(
                             file_type)))
             else:
                 files.append(
                     opj(config["results_path"], "assembly", g, "mapping",
-                        sample + "_" + unit + "_pe.fc.{}.tab".format(
+                        sample + "_" + unit + "_pe.fc.{}.tsv".format(
                             file_type)))
     return files
 

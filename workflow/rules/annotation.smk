@@ -221,7 +221,7 @@ rule parse_pfam:
         opj(config["resource_path"], "pfam", "clan.txt"),
         opj(config["resource_path"], "pfam", "Pfam-A.clans.tsv")
     output:
-        opj(config["results_path"], "annotation", "{group}", "pfam.parsed.tab")
+        opj(config["results_path"], "annotation", "{group}", "pfam.parsed.tsv")
     script:
         "../scripts/annotation_utils.py"
 
@@ -368,7 +368,7 @@ rule parse_ko_annotations:
         modules=opj(config["resource_path"], "kegg", "kegg_modules.tsv"),
         pathways=opj(config["resource_path"], "kegg", "kegg_pathways.tsv")
     output:
-        expand(opj(config["results_path"], "annotation", "{{group}}", "{db}.parsed.tab"),
+        expand(opj(config["results_path"], "annotation", "{{group}}", "{db}.parsed.tsv"),
             db=["enzymes", "pathways", "modules", "kos"])
     log:
         opj(config["results_path"], "annotation", "{{group}}", "eggnog-parser.log")

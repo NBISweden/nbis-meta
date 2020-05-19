@@ -216,14 +216,14 @@ def parse_ko_annotations(annotations, dldir, outdir, map_go=False):
         logging.info("{} ORFs in {} GO terms".format(len(orf2go["orf"].unique()), len(orf2go["GO"].unique())))
     # Write files
     logging.info("Writing files to {}".format(outdir))
-    orf2ko.to_csv("{}/kos.parsed.tab".format(outdir), index=True, sep="\t")
-    orf2ec.to_csv("{}/enzymes.parsed.tab".format(outdir), index=True, sep="\t")
-    orf2pathway.to_csv("{}/pathways.parsed.tab".format(outdir), index=True, sep="\t")
-    orf2module.to_csv("{}/modules.parsed.tab".format(outdir), index=True, sep="\t")
-    orf2tc.to_csv("{}/tc.parsed.tab".format(outdir), index=True, sep="\t")
-    orf2caz.to_csv("{}/cazy.parsed.tab".format(outdir), index=True, sep="\t")
+    orf2ko.to_csv("{}/kos.parsed.tsv".format(outdir), index=True, sep="\t")
+    orf2ec.to_csv("{}/enzymes.parsed.tsv".format(outdir), index=True, sep="\t")
+    orf2pathway.to_csv("{}/pathways.parsed.tsv".format(outdir), index=True, sep="\t")
+    orf2module.to_csv("{}/modules.parsed.tsv".format(outdir), index=True, sep="\t")
+    orf2tc.to_csv("{}/tc.parsed.tsv".format(outdir), index=True, sep="\t")
+    orf2caz.to_csv("{}/cazy.parsed.tsv".format(outdir), index=True, sep="\t")
     if map_go:
-        orf2go.to_csv("{}/gos.parsed.tab".format(outdir), index=True, sep="\t")
+        orf2go.to_csv("{}/gos.parsed.tsv".format(outdir), index=True, sep="\t")
 
 
 # Quantify functions

@@ -11,7 +11,7 @@ localrules:
 rule quantify:
     input:
         expand(opj(config["results_path"], "annotation", "{group}",
-                   "fc.{fc_type}.tab"),
+                   "fc.{fc_type}.tsv"),
                group=assemblies.keys(), fc_type=["tpm", "raw"])
 
 
@@ -71,9 +71,9 @@ rule featurecount_pe:
                 "mapping", "{sample}_{unit}_pe"+POSTPROCESS+".bam")
     output:
         opj(config["results_path"], "assembly", "{group}", "mapping",
-            "{sample}_{unit}_pe.fc.tab"),
+            "{sample}_{unit}_pe.fc.tsv"),
         opj(config["results_path"], "assembly", "{group}", "mapping",
-            "{sample}_{unit}_pe.fc.tab.summary")
+            "{sample}_{unit}_pe.fc.tsv.summary")
     log:
         opj(config["results_path"], "assembly", "{group}",
             "mapping", "{sample}_{unit}_pe.fc.log")
@@ -97,9 +97,9 @@ rule featurecount_se:
                 "mapping", "{sample}_{unit}_se"+POSTPROCESS+".bam")
     output:
         opj(config["results_path"], "assembly", "{group}",
-            "mapping", "{sample}_{unit}_se.fc.tab"),
+            "mapping", "{sample}_{unit}_se.fc.tsv"),
         opj(config["results_path"], "assembly", "{group}",
-            "mapping", "{sample}_{unit}_se.fc.tab.summary")
+            "mapping", "{sample}_{unit}_se.fc.tsv.summary")
     log:
         opj(config["results_path"], "assembly", "{group}",
             "mapping", "{sample}_{unit}_se.fc.log")
@@ -132,14 +132,14 @@ rule samtools_stats:
 rule normalize_featurecount:
     input:
         opj(config["results_path"], "assembly", "{group}", "mapping",
-            "{sample}_{unit}_{seq_type}.fc.tab"),
+            "{sample}_{unit}_{seq_type}.fc.tsv"),
         opj(config["results_path"], "assembly", "{group}", "mapping",
             "{sample}_{unit}_{seq_type}"+POSTPROCESS+".bam.stats")
     output:
         opj(config["results_path"], "assembly", "{group}", "mapping",
-            "{sample}_{unit}_{seq_type}.fc.tpm.tab"),
+            "{sample}_{unit}_{seq_type}.fc.tpm.tsv"),
         opj(config["results_path"], "assembly", "{group}", "mapping",
-            "{sample}_{unit}_{seq_type}.fc.raw.tab")
+            "{sample}_{unit}_{seq_type}.fc.raw.tsv")
     log:
         opj(config["results_path"], "assembly", "{group}", "mapping",
             "{sample}_{unit}_{seq_type}.fc.norm.log")
@@ -151,24 +151,24 @@ rule aggregate_featurecount:
     input:
         raw_files=get_all_files(samples, opj(config["results_path"],
                                              "assembly", "{group}", "mapping"),
-                                ".fc.raw.tab"),
+                                ".fc.raw.tsv"),
         tpm_files=get_all_files(samples, opj(config["results_path"],
                                              "assembly", "{group}", "mapping"),
-                                ".fc.tpm.tab"),
+                                ".fc.tpm.tsv"),
         gff_file=opj(config["results_path"], "annotation", "{group}",
                      "final_contigs.features.gff")
     output:
-        raw=opj(config["results_path"], "annotation", "{group}", "fc.raw.tab"),
-        tpm=opj(config["results_path"], "annotation", "{group}", "fc.tpm.tab")
+        raw=opj(config["results_path"], "annotation", "{group}", "fc.raw.tsv"),
+        tpm=opj(config["results_path"], "annotation", "{group}", "fc.tpm.tsv")
     script:
         "../scripts/quantification_utils.py"
 
 rule quantify_features:
     input:
-        abund=opj(config["results_path"], "annotation", "{group}", "fc.{fc_type}.tab"),
-        annot=opj(config["results_path"], "annotation", "{group}", "{db}.parsed.tab")
+        abund=opj(config["results_path"], "annotation", "{group}", "fc.{fc_type}.tsv"),
+        annot=opj(config["results_path"], "annotation", "{group}", "{db}.parsed.tsv")
     output:
-        opj(config["results_path"], "annotation", "{group}", "{db}.parsed.{fc_type}.tab")
+        opj(config["results_path"], "annotation", "{group}", "{db}.parsed.{fc_type}.tsv")
     shell:
         """
         python source/utils/eggnog-parser.py \
@@ -179,18 +179,18 @@ rule sum_to_taxa:
     input:
         tax=opj(config["results_path"], "annotation", "{group}", "taxonomy",
             "orfs.{db}.taxonomy.tsv".format(db=config["taxdb"])),
-        abund=opj(config["results_path"], "annotation", "{group}", "fc.{fc_type}.tab")
+        abund=opj(config["results_path"], "annotation", "{group}", "fc.{fc_type}.tsv")
     output:
-        opj(config["results_path"], "annotation", "{group}", "taxonomy", "tax.{fc_type}.tab")
+        opj(config["results_path"], "annotation", "{group}", "taxonomy", "tax.{fc_type}.tsv")
     script:
         "../scripts/quantification_utils.py"
 
 rule sum_to_rgi:
     input:
         annot=opj(config["results_path"], "annotation", "{group}", "rgi.out.txt"),
-        abund=opj(config["results_path"], "annotation", "{group}", "fc.{fc_type}.tab")
+        abund=opj(config["results_path"], "annotation", "{group}", "fc.{fc_type}.tsv")
     output:
-        opj(config["results_path"], "annotation", "{group}", "rgi.{fc_type}.tab")
+        opj(config["results_path"], "annotation", "{group}", "rgi.{fc_type}.tsv")
     script:
         "../scripts/quantification_utils.py"
 
