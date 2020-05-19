@@ -169,7 +169,7 @@ rule tango_search:
         """
         tango search {params.settings} -p {threads} \
             --tmpdir {params.tmpdir} -l {params.min_len} \
-            {input.fasta} {input.db} {output[0]} >{log} 2>&1
+            {input.fasta} {input.db} {output} >{log} 2>&1
         """
 
 rule tango_assign:
@@ -196,7 +196,7 @@ rule tango_assign:
          """
          tango assign {params.settings} -p {threads} -m rank_lca \
             --reportranks {params.taxonomy_ranks} -t {params.taxdir} \
-            {input[0]} {output[0]} > {log} 2>&1
+            {input} {output} > {log} 2>&1
          """
 
 ##### sourmash #####
