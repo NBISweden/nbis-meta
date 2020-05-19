@@ -13,12 +13,8 @@ rule write_featurefile:
     output:
         opj(config["results_path"],"annotation","{group}",
             "final_contigs.features.gff")
-    params:
-        src=opj("source","utils","parse_prodigal_gff.py")
-    shell:
-        """
-        python {params.src} {input} > {output}
-        """
+    script:
+        "../scripts/quantification_utils.py"
 
 ##### markduplicates #####
 rule remove_mark_duplicates:
