@@ -5,6 +5,7 @@ localrules:
     concoct_cutup,
     merge_cutup,
     extract_fasta,
+    contig_map,
     binning_stats,
     download_checkm, 
     checkm_qa,
@@ -41,41 +42,38 @@ rule metabat_coverage:
             --outputDepth {output.depth} {input.bam} >{log} 2>&1
         """
 
-rule run_metabat:
+rule metabat:
     input:
         fa=opj(config["results_path"], "assembly", "{group}",
                "final_contigs.fa"),
         depth=opj(config["results_path"], "binning", "metabat", "{group}",
                   "cov", "depth.txt")
     output:
-        opj(config["results_path"], "binning", "metabat", "{group}", "{l}",
-            "contig_map.tsv")
+        touch(temp(opj(config["results_path"], "binning", "metabat", "{group}",
+                       "{l}", "done")))
     log:
         opj(config["results_path"], "binning", "metabat", "{group}", "{l}", "metabat.log")
+    params:
+        n=opj(config["results_path"], "binning", "metabat", "{group}", "{l}", "metabat")
     conda:
         "../envs/metabat.yml"
     threads: 8
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
-    params:
-        n=opj(config["results_path"], "binning", "metabat", "{group}", "{l}", "metabat")
     shell:
         """
         metabat2 -i {input.fa} -a {input.depth} -m {wildcards.l} -t {threads} \
             -o {params.n} > {log} 2>&1
-        grep '>' {params.n}*.fa | \
-            awk -F/ '{{print $NF}}' | \
-            sed 's/.fa:>/\t/g' > {output[0]}
         """
 
 ##### maxbin2 #####
 
-rule run_maxbin:
+rule maxbin:
     input:
         opj(config["results_path"], "assembly", "{group}", "final_contigs.fa")
     output:
-        opj(config["results_path"], "binning", "maxbin", "{group}", "{l}",
-            "contig_map.tsv")
+        touch(temp(opj(config["results_path"], "binning", "maxbin", "{group}",
+                 "{l}", "done")))
     log:
         opj(config["results_path"], "binning", "maxbin", "{group}", "{l}", "maxbin.log")
     params:
@@ -96,15 +94,11 @@ rule run_maxbin:
             {params.reads} -min_contig_length {wildcards.l} -thread {threads} \
             -out {params.tmp_dir}/{wildcards.group} >{log} 2>{log}
         # Rename fasta files
-        for f in {params.tmp_dir}/*.fasta ; do mv $f ${{f%.fasta}} ; done
+        for f in {params.tmp_dir}/*.fasta ; do mv $f ${{f%.fasta}}.fa ; done
         # Move output from temporary dir
         mv {params.tmp_dir}/* {params.dir}
         # Clean up
         rm -r {params.tmp_dir}
-        # Create contig map
-        grep '>' {params.dir}/*.fa | \
-            awk -F/ '{{print $NF}}' | \
-            sed 's/.fa:>/\t/g' > {output[0]}
         """
 
 ##### concoct #####
@@ -161,7 +155,7 @@ rule concoct_cutup:
             > {output.fa} 2>{log}
         """
 
-rule run_concoct:
+rule concoct:
     input:
         cov=opj(config["results_path"], "binning", "concoct", "{group}",
                 "cov", "concoct_inputtable.tsv"),
@@ -209,8 +203,8 @@ rule extract_fasta:
         opj(config["results_path"], "binning", "concoct", "{group}",
             "{l}", "clustering_gt{l}_merged.csv")
     output:
-        opj(config["results_path"], "binning", "concoct", "{group}",
-                  "{l}", "contig_map.tsv")
+        temp(opj(config["results_path"], "binning", "concoct", "{group}",
+                  "{l}", "done"))
     log:
         opj(config["results_path"], "binning", "concoct", "{group}",
                   "{l}", "extract_fasta.log")
@@ -222,12 +216,21 @@ rule extract_fasta:
         """
         extract_fasta_bins.py {input[0]} {input[1]} --output_path {params.dir} \
             2> {log}
-        # Create contig map
-        grep '>' {params.dir}/*.fa | \
-            awk -F/ '{{print $NF}}' | \
-            sed 's/.fa:>/\t/g' > {output[0]}
         """
 
+##### map contigs to bins #####
+
+rule contig_map:
+    input:
+        opj(config["results_path"], "binning", "{binner}", "{group}",
+                  "{l}", "done")
+    output:
+        opj(config["results_path"], "binning", "{binner}", "{group}",
+                  "{l}", "contig_map.tsv")
+    params:
+        dir=lambda wildcards, input: os.path.dirname(input[0])
+    script:
+        "../scripts/binning_utils.py"
 
 ##### bin qc #####
 
@@ -239,10 +242,9 @@ rule binning_stats:
         opj(config["results_path"], "binning", "{binner}", "{group}",
             "{l}", "summary_stats.tsv")
     params:
-        dir=lambda wildcards, output: os.path.dirname(output[0]),
-        suffix=".fa"
+        dir=lambda wildcards, output: os.path.dirname(output[0])
     script:
-        "../scripts/binning_stats.py"
+        "../scripts/binning_utils.py"
 
 rule download_checkm:
     output:
@@ -263,6 +265,7 @@ rule download_checkm:
         # Set root
         checkm data setRoot {params.dir} > {log} 2>&1
         """
+
 if config["checkm_taxonomy_wf"]:
     rule checkm_taxonomy_wf:
         input:
@@ -569,7 +572,7 @@ rule count_rRNA:
         opj(config["results_path"], "binning", "{binner}", "{group}", "{l}",
             "barrnap", "rRNA.types.tsv")
     script:
-        "../scripts/count_rRNA.py"
+        "../scripts/binning_utils.py"
 
 rule trnascan_bins:
     #TODO: Run with general model if neither bacteria nor archaea
@@ -624,7 +627,7 @@ rule count_tRNA:
         opj(config["results_path"], "binning", "{binner}", "{group}", "{l}", 
             "tRNAscan", "tRNA.total.tsv")
     script:
-        "../scripts/count_tRNA.py"
+        "../scripts/binning_utils.py"
 
 rule aggregate_bin_annot:
     input:
