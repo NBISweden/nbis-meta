@@ -194,8 +194,8 @@ def megahit_input(sm):
 
 def main(sm):
     toolbox = {"assembly_stats": stats,
-               "generate_megahit_input_list": megahit_input,
-               "generate_metaspades_input_list": metaspades_input,
+               "generate_megahit_input": megahit_input,
+               "generate_metaspades_input": metaspades_input,
                "fasta2bed": fasta2bed}
     toolbox[sm.rule](sm)
 

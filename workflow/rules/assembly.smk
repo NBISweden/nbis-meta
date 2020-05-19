@@ -95,7 +95,7 @@ if config["metaspades"]:
             """
 
 else:
-    rule generate_megahit_input_list:
+    rule generate_megahit_input:
         """Generate input lists for Megahit"""
         input:
             lambda wildcards: get_all_group_files(assemblies[wildcards.group])
