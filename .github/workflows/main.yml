@@ -44,4 +44,4 @@ jobs:
     - name: Kraken
       run: snakemake --use-conda --config kraken=True kraken_reduce_memory=True kraken_prebuilt=16S_Greengenes -j 4 -p classify
     - name: Binning
-      run: snakemake --use-conda --config metabat=True concoct=True -j 4 -p bin
+      run: snakemake --use-conda --config metabat=True concoct=True maxbin=True -j 4 -p bin
