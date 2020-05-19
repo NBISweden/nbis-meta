@@ -326,7 +326,7 @@ rule metaphlan2krona_table:
         temp(opj(config["results_path"], "metaphlan",
                  "{sample}_{unit}_{seq_type}.krona"))
     script:
-        "../scripts/metaphlan2krona.py"
+        "../scripts/classification_utils.py"
 
 rule metaphlan2krona:
     input:
