@@ -257,25 +257,20 @@ rule sourmash_classify:
 ##### common taxonomy rules #####
 
 rule merge_tango_sourmash:
-    #TODO: Make this a script
     input:
         smash=opj(config["results_path"], "annotation", "{group}",
                     "taxonomy", "sourmash.taxonomy.csv"),
         tango=opj(config["results_path"], "annotation", "{group}",
                     "taxonomy", "tango.{db}.taxonomy.tsv".format(db=config["taxdb"]))
     output:
-        tax=opj(config["results_path"], "annotation", "{group}", "taxonomy",
+        opj(config["results_path"], "annotation", "{group}", "taxonomy",
         "final_contigs.taxonomy.tsv")
     log:
         opj(config["results_path"], "annotation", "{group}", "taxonomy", "merge.log")
-    shell:
-        """
-        python scripts/tango_mash.py \
-            {input.smash} {input.tango} > {output.tax} 2>{log}
-        """
+    script:
+        "../scripts/taxonomy_utils.py"
 
 rule tango_assign_orfs:
-    #TODO: Make this a script
     input:
         tax=opj(config["results_path"], "annotation", "{group}", "taxonomy",
             "final_contigs.taxonomy.tsv"),
@@ -284,24 +279,5 @@ rule tango_assign_orfs:
     output:
         tax=opj(config["results_path"], "annotation", "{group}", "taxonomy",
             "orfs.{db}.taxonomy.tsv".format(db=config["taxdb"]))
-    run:
-        import pandas as pd
-        gff_df=pd.read_csv(input.gff, header=None, sep="\t", comment="#",
-                           usecols=[0, 8], names=["contig", "id"])
-        # Extract ids
-        ids=["{}_{}".format(gff_df.loc[i, "contig"], gff_df.loc[i, "id"].split(";")[0].split("_")[-1]) for i in gff_df.index]
-        gff_df.loc[:, "id"]=ids
-        # Read taxonomy for contigs
-        tax_df=pd.read_csv(input.tax, header=0, sep="\t", index_col=0)
-        # Merge dataframes
-        orf_tax_df=pd.merge(gff_df, tax_df, left_on="contig",
-                            right_index=True, how="outer")
-        # When using 'outer' merging there may be contigs with no called ORF
-        # but with a tax assignment. Drop these contigs.
-        orf_tax_df=orf_tax_df.loc[orf_tax_df["id"]==orf_tax_df["id"]]
-        # Set Unclassified for NA values
-        orf_tax_df.fillna("Unclassified", inplace=True)
-        # Set index to ORF ids
-        orf_tax_df.set_index("id", inplace=True)
-        orf_tax_df.drop("contig", axis=1, inplace=True)
-        orf_tax_df.to_csv(output.tax, sep="\t", index=True, header=True)
+    script:
+        "../scripts/taxonomy_utils.py"

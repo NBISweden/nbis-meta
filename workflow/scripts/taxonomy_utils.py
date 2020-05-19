@@ -2,15 +2,20 @@
 
 import sys
 import pandas as pd
-from argparse import ArgumentParser
-
 
 def add_lower(df, ranks):
+    """
+    Propagates assignments from higher to lower taxonomic ranks,
+    and adds a 'Unclassified.' prefix.
+    :param df: pandas DataFrame
+    :param ranks: ranks for which to propagate
+    :return:
+    """
     for i in df.index:
-        last_known = df.loc[i,ranks[0]]
+        last_known = df.loc[i, ranks[0]]
         for rank in ranks[1:]:
-            if df.loc[i,rank] != "Unclassified":
-                last_known = df.loc[i,rank]
+            if df.loc[i, rank] != "Unclassified":
+                last_known = df.loc[i, rank]
             else:
                 if last_known == "Unclassified":
                     df.loc[i, rank] = last_known
@@ -19,16 +24,16 @@ def add_lower(df, ranks):
     return df
 
 
-def main(args):
+def tango_mash(sm):
     # Keep stats on assignments
     # resolved = cases where sourmash helped resolve assignments
     # transferred = cases where blast-based assignments were overwritten
     # added = cases where assignments from sourmash were added
     # total = total number of contigs
     stats = {'resolved': 0, 'transferred': 0, 'added': 0, 'total': 0}
-    df1 = pd.read_csv(args.sourmash, sep=",", header=0, index_col=0)
+    df1 = pd.read_csv(sm.input.smash, sep=",", header=0, index_col=0)
     stats['total'] = df1.shape[0]
-    df2 = pd.read_csv(args.tango, sep="\t", header=0, index_col=0)
+    df2 = pd.read_csv(sm.input.tango, sep="\t", header=0, index_col=0)
     ranks = list(df2.columns)
     ranks.reverse()
     # Only use subset of contigs with matches
@@ -67,18 +72,19 @@ def main(args):
         stats['added']+=len(missing)
         df2 = pd.concat([df2, df1.loc[missing]])
     df2 = add_lower(df2, df2.columns)
-    df2.to_csv(sys.stdout, sep="\t")
-    sys.stderr.write("Total:       {}\n".format(stats['total']))
-    sys.stderr.write("Resolved:    {}\n".format(stats['resolved']))
-    sys.stderr.write("Transferred: {}\n".format(stats["transferred"]))
-    sys.stderr.write("Added:       {}\n".format(stats['added']))
+    df2.to_csv(sm.output[0], sep="\t")
+    # Write to log
+    with open(sm.log, 'w') as fhout:
+        fhout.write("Total:       {}\n".format(stats['total']))
+        fhout.write("Resolved:    {}\n".format(stats['resolved']))
+        fhout..write("Transferred: {}\n".format(stats["transferred"]))
+        fhout..write("Added:       {}\n".format(stats['added']))
 
 
-if __name__ == '__main__':
-    parser = ArgumentParser()
-    parser.add_argument("sourmash", type=str,
-                        help="Sourmash-based taxonomy assignments")
-    parser.add_argument("tango", type=str,
-                        help="BLAST-based taxonomy assignments")
-    args = parser.parse_args()
-    main(args)
+def main(sm):
+    toolbox = {"tango_mash": tango_mash}
+    toolbox[sm.rule](sm)
+
+
+if __name__ == "__main__":
+    main(snakemake)
