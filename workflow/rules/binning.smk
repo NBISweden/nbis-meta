@@ -49,9 +49,7 @@ rule run_metabat:
                   "cov", "depth.txt")
     output:
         opj(config["results_path"], "binning", "metabat", "{group}", "{l}",
-            "contig_map.tsv"),
-        touch(opj(config["results_path"], "binning", "metabat", "{group}",
-                  "{l}", "done"))
+            "contig_map.tsv")
     log:
         opj(config["results_path"], "binning", "metabat", "{group}", "{l}", "metabat.log")
     conda:
@@ -76,8 +74,8 @@ rule run_maxbin:
     input:
         opj(config["results_path"], "assembly", "{group}", "final_contigs.fa")
     output:
-        opj(config["results_path"], "binning", "maxbin", "{group}", "{l}", "{group}.summary"),
-        touch(opj(config["results_path"], "binning", "maxbin", "{group}", "{l}", "done"))
+        opj(config["results_path"], "binning", "maxbin", "{group}", "{l}",
+            "contig_map.tsv")
     log:
         opj(config["results_path"], "binning", "maxbin", "{group}", "{l}", "maxbin.log")
     params:
@@ -97,8 +95,16 @@ rule run_maxbin:
         run_MaxBin.pl -markerset {params.markerset} -contig {input} \
             {params.reads} -min_contig_length {wildcards.l} -thread {threads} \
             -out {params.tmp_dir}/{wildcards.group} >{log} 2>{log}
+        # Rename fasta files
+        for f in {params.tmp_dir}/*.fasta ; do mv $f ${{f%.fasta}} ; done
+        # Move output from temporary dir
         mv {params.tmp_dir}/* {params.dir}
+        # Clean up
         rm -r {params.tmp_dir}
+        # Create contig map
+        grep '>' {params.dir}/*.fa | \
+            awk -F/ '{{print $NF}}' | \
+            sed 's/.fa:>/\t/g' > {output[0]}
         """
 
 ##### concoct #####
@@ -203,8 +209,8 @@ rule extract_fasta:
         opj(config["results_path"], "binning", "concoct", "{group}",
             "{l}", "clustering_gt{l}_merged.csv")
     output:
-        touch(opj(config["results_path"], "binning", "concoct", "{group}",
-                  "{l}", "done"))
+        opj(config["results_path"], "binning", "concoct", "{group}",
+                  "{l}", "contig_map.tsv")
     log:
         opj(config["results_path"], "binning", "concoct", "{group}",
                   "{l}", "extract_fasta.log")
@@ -216,6 +222,10 @@ rule extract_fasta:
         """
         extract_fasta_bins.py {input[0]} {input[1]} --output_path {params.dir} \
             2> {log}
+        # Create contig map
+        grep '>' {params.dir}/*.fa | \
+            awk -F/ '{{print $NF}}' | \
+            sed 's/.fa:>/\t/g' > {output[0]}
         """
 
 
@@ -223,7 +233,8 @@ rule extract_fasta:
 
 rule binning_stats:
     input:
-        opj(config["results_path"], "binning", "{binner}", "{group}", "{l}", "done")
+        opj(config["results_path"], "binning", "{binner}", "{group}", "{l}",
+            "contig_map.tsv")
     output:
         opj(config["results_path"], "binning", "{binner}", "{group}",
             "{l}", "summary_stats.tsv")
