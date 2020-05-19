@@ -96,7 +96,7 @@ rule run_maxbin:
         mkdir -p {params.tmp_dir}
         run_MaxBin.pl -markerset {params.markerset} -contig {input} \
             {params.reads} -min_contig_length {wildcards.l} -thread {threads} \
-            -out {params.tmp_dir}/{wildcards.group} 2>{log}
+            -out {params.tmp_dir}/{wildcards.group} >{log} 2>{log}
         mv {params.tmp_dir}/* {params.dir}
         rm -r {params.tmp_dir}
         """
