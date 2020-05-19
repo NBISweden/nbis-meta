@@ -23,16 +23,16 @@ rule write_featurefile:
 ##### markduplicates #####
 rule remove_mark_duplicates:
     input:
-        opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_{seq_type}.bam")
+        opj(config["results_path"],"assembly","{group}","mapping","{sample}_{unit}_{seq_type}.bam")
     output:
-        opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_{seq_type}.markdup.bam"),
-        opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_{seq_type}.markdup.bam.bai"),
-        opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_{seq_type}.markdup.metrics")
+        opj(config["results_path"],"assembly","{group}","mapping","{sample}_{unit}_{seq_type}.markdup.bam"),
+        opj(config["results_path"],"assembly","{group}","mapping","{sample}_{unit}_{seq_type}.markdup.bam.bai"),
+        opj(config["results_path"],"assembly","{group}","mapping","{sample}_{unit}_{seq_type}.markdup.metrics")
     log:
-        opj(config["results_path"],"assembly","{group}","mapping","{sample}_{run}_{seq_type}.markdup.log")
+        opj(config["results_path"],"assembly","{group}","mapping","{sample}_{unit}_{seq_type}.markdup.log")
     params:
-        temp_bam=opj(config["temp_path"],"{group}","{sample}_{run}_{seq_type}.markdup.bam"),
-        temp_sort_bam=opj(config["temp_path"],"{group}", "{sample}_{run}_{seq_type}.markdup.re_sort.bam"),
+        temp_bam=opj(config["temp_path"],"{group}","{sample}_{unit}_{seq_type}.markdup.bam"),
+        temp_sort_bam=opj(config["temp_path"],"{group}", "{sample}_{unit}_{seq_type}.markdup.re_sort.bam"),
         temp_dir=opj(config["temp_path"],"{group}")
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
@@ -70,12 +70,12 @@ rule featurecount_pe:
         gff=opj(config["results_path"],"annotation","{group}",
                 "final_contigs.features.gff"),
         bam=opj(config["results_path"],"assembly","{group}",
-                "mapping","{sample}_{run}_pe"+POSTPROCESS+".bam")
+                "mapping","{sample}_{unit}_pe"+POSTPROCESS+".bam")
     output:
         opj(config["results_path"],"assembly","{group}","mapping",
-            "{sample}_{run}_pe.fc.tab"),
+            "{sample}_{unit}_pe.fc.tab"),
         opj(config["results_path"],"assembly","{group}","mapping",
-            "{sample}_{run}_pe.fc.tab.summary")
+            "{sample}_{unit}_pe.fc.tab.summary")
     threads: 4
     params: tmpdir=config["temp_path"]
     resources:
@@ -102,12 +102,12 @@ rule featurecount_se:
         gff=opj(config["results_path"],"annotation","{group}",
                 "final_contigs.features.gff"),
         bam=opj(config["results_path"],"assembly","{group}",
-                "mapping","{sample}_{run}_se"+POSTPROCESS+".bam")
+                "mapping","{sample}_{unit}_se"+POSTPROCESS+".bam")
     output:
         opj(config["results_path"],"assembly","{group}",
-            "mapping","{sample}_{run}_se.fc.tab"),
+            "mapping","{sample}_{unit}_se.fc.tab"),
         opj(config["results_path"],"assembly","{group}",
-            "mapping","{sample}_{run}_se.fc.tab.summary")
+            "mapping","{sample}_{unit}_se.fc.tab.summary")
     threads: 4
     params: tmpdir=config["temp_path"]
     resources:
@@ -130,10 +130,10 @@ rule featurecount_se:
 rule samtools_stats:
     input:
         opj(config["results_path"],"assembly","{group}",
-                "mapping","{sample}_{run}_{seq_type}"+POSTPROCESS+".bam")
+                "mapping","{sample}_{unit}_{seq_type}"+POSTPROCESS+".bam")
     output:
         opj(config["results_path"],"assembly","{group}",
-                "mapping","{sample}_{run}_{seq_type}"+POSTPROCESS+".bam.stats")
+                "mapping","{sample}_{unit}_{seq_type}"+POSTPROCESS+".bam.stats")
     conda:
         "../envs/quantify.yml"
     shell:
@@ -144,16 +144,16 @@ rule samtools_stats:
 rule normalize_featurecount:
     input:
         opj(config["results_path"],"assembly","{group}","mapping",
-            "{sample}_{run}_{seq_type}.fc.tab"),
+            "{sample}_{unit}_{seq_type}.fc.tab"),
         opj(config["results_path"],"assembly","{group}","mapping",
-            "{sample}_{run}_{seq_type}"+POSTPROCESS+".bam.stats")
+            "{sample}_{unit}_{seq_type}"+POSTPROCESS+".bam.stats")
     output:
         opj(config["results_path"],"assembly","{group}","mapping",
-            "{sample}_{run}_{seq_type}.fc.tpm.tab"),
+            "{sample}_{unit}_{seq_type}.fc.tpm.tab"),
         opj(config["results_path"],"assembly","{group}","mapping",
-            "{sample}_{run}_{seq_type}.fc.raw.tab")
+            "{sample}_{unit}_{seq_type}.fc.raw.tab")
     params:
-        s="{sample}_{run}",
+        s="{sample}_{unit}",
         src="source/utils/featureCountsTPM.py"
     shell:
         """

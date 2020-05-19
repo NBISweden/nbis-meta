@@ -217,18 +217,18 @@ rule bowtie_map_pe:
                               "final_contigs.fa.{index}.bt2l"),
                           index=range(1,5)),
         R1=expand(opj(config["intermediate_path"], "preprocess",
-                        "{{sample}}_{{run}}_R1{p}.fastq.gz"), p=PREPROCESS),
+                        "{{sample}}_{{unit}}_R1{p}.fastq.gz"), p=PREPROCESS),
         R2=expand(opj(config["intermediate_path"], "preprocess",
-                        "{{sample}}_{{run}}_R2{p}.fastq.gz"), p=PREPROCESS)
+                        "{{sample}}_{{unit}}_R2{p}.fastq.gz"), p=PREPROCESS)
     output:
         bam=temp(opj(config["results_path"],"assembly","{group}",
-                     "mapping","{sample}_{run}_pe.bam")),
+                     "mapping","{sample}_{unit}_pe.bam")),
         bai=temp(opj(config["results_path"],"assembly","{group}",
-                     "mapping","{sample}_{run}_pe.bam.bai")),
+                     "mapping","{sample}_{unit}_pe.bam.bai")),
         log=opj(config["results_path"],"assembly","{group}",
-                "mapping","{sample}_{run}_pe.bam.log")
+                "mapping","{sample}_{unit}_pe.bam.log")
     params:
-        temp_bam=opj(config["temp_path"],"{group}-mapping-{sample}_{run}_pe.bam"),
+        temp_bam=opj(config["temp_path"],"{group}-mapping-{sample}_{unit}_pe.bam"),
         setting=config["bowtie2_params"],
         prefix=opj(config["results_path"],"assembly","{group}",
                      "final_contigs.fa")
@@ -265,16 +265,16 @@ rule bowtie_map_se:
                               "final_contigs.fa.{index}.bt2l"),
                           index=range(1,5)),
         se=expand(opj(config["intermediate_path"], "preprocess",
-                        "{{sample}}_{{run}}_se{p}.fastq.gz"), p=PREPROCESS)
+                        "{{sample}}_{{unit}}_se{p}.fastq.gz"), p=PREPROCESS)
     output:
         bam=temp(opj(config["results_path"],"assembly","{group}",
-                     "mapping","{sample}_{run}_se.bam")),
+                     "mapping","{sample}_{unit}_se.bam")),
         bai=temp(opj(config["results_path"],"assembly","{group}",
-                     "mapping","{sample}_{run}_se.bam.bai")),
+                     "mapping","{sample}_{unit}_se.bam.bai")),
         log=opj(config["results_path"],"assembly","{group}",
-                "mapping","{sample}_{run}_se.bam.log")
+                "mapping","{sample}_{unit}_se.bam.log")
     params:
-        temp_bam=opj(config["temp_path"],"{group}-mapping-{sample}_{run}_se.bam"),
+        temp_bam=opj(config["temp_path"],"{group}-mapping-{sample}_{unit}_se.bam"),
         setting=config["bowtie2_params"],
         prefix=opj(config["results_path"],"assembly","{group}",
                      "final_contigs.fa")

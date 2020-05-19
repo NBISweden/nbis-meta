@@ -29,7 +29,7 @@ samples, assemblies = parse_samples(df, config, PREPROCESS)
 ##### workflow settings #####
 
 wildcard_constraints:
-    run="\d+",
+    unit="\d+",
     pair="se|R[12]",
     seq_type="[sp]e",
     group="\w+",
