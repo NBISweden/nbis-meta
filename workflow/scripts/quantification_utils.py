@@ -2,6 +2,7 @@
 
 import pandas as pd
 
+
 def write_featurefile(sm, score=".", group="gene_id", phase="."):
     with open(sm.input[0], 'r') as fhin, open(sm.output[0], 'w') as fhout:
         for line in fhin:
@@ -26,22 +27,23 @@ def write_featurefile(sm, score=".", group="gene_id", phase="."):
     return
 
 
-def calculate_tpm(df, readlength):
+def calculate_tpm(df, readlength, fhlog):
     sampleName = df.columns[-1]
     # 1. Calculate t for sample
     # t = (reads_mapped_to_gene * read_length) / length_of_gene
-    # Multiply gene counts with read length, then divide by the Length column (in kb)
-    logging.info("Normalizing by read length and gene length")
+    # Multiply gene counts with read length,
+    # then divide by the Length column (in kb)
+    fhlog.write("Normalizing by read length and gene length\n")
     t = df[sampleName].multiply(readlength).div(df["Length"].div(1000))
     df = df.assign(t=pd.Series(t, index=df.index))
     # 2. Calculate T
     # T = sum(t)
-    logging.info("Calculating sum of normalized values")
+    fhlog.write("Calculating sum of normalized values\n")
     T = df["t"].sum()
     # 3. Calculate TPM
     # TPM = t*10^6 / T
-    logging.info("Normalization factor T is {}".format(T))
-    logging.info("Calculating TPM")
+    fhlog.write("Normalization factor T is {}\n".format(T))
+    fhlog.write("Calculating TPM\n")
     TPM = (df["t"].multiply(1000000)).div(T)
     df = df.assign(TPM=pd.Series(TPM, index=df.index))
     return df
@@ -63,13 +65,15 @@ def get_readlength(f):
 
 def normalize_featurecount(sm):
     df = pd.read_csv(sm.input[0], skiprows=1, sep="\t")
-    sample_unit = sm.params.s
+    sample_unit = "{sample}_{unit}".format(sample=sm.wildcards.sample,
+                                           unit=sm.wildcards.unit)
     df.columns = list(df.columns)[0:-1] + [sample_unit]
     # Get average mapped read length
     readlength = get_readlength(sm.input[1])
 
     # Perform normalization
-    df = calculate_tpm(df, readlength)
+    with open(sm.log[0], 'w') as fhlog:
+        df = calculate_tpm(df, readlength, fhlog)
 
     df_tpm = df.iloc[:, [0, -1]]
     df_tpm.columns = ["gene_id", sample_unit]
@@ -78,6 +82,17 @@ def normalize_featurecount(sm):
     df_raw = df.iloc[:, [0, 6]]
     df_raw.columns = ["gene_id", sample_unit]
     df_raw.to_csv(sm.output[1], sep="\t", index=False)
+
+
+def concat_files(files, gff_df):
+    df = pd.DataFrame()
+    for f in files:
+        _df = pd.read_csv(f, index_col=0, sep="\t")
+        df = pd.concat([df, _df], axis=1)
+    df = pd.merge(df, gff_df, left_index=True, right_on="gene_id")
+    df.drop("gene_id", axis=1, inplace=True)
+    df.set_index("orf", inplace=True)
+    return df
 
 
 def aggregate_featurecount(sm):
@@ -99,10 +114,34 @@ def aggregate_featurecount(sm):
     tpm_df.to_csv(sm.output.tpm, sep="\t")
 
 
+def sum_to_taxa(sm):
+    header = ["protein", "superkingdom", "phylum", "class", "order", "family",
+              "genus", "species"]
+    df = pd.read_csv(sm.input.tax, sep="\t", index_col=0, header=None,
+                     names=header)
+    abund_df = pd.read_csv(sm.input.abund, header=0, index_col=0, sep="\t")
+    taxa_abund = pd.merge(df, abund_df, right_index=True, left_index=True)
+    taxa_abund_sum = taxa_abund.groupby(header[1:]).sum().reset_index()
+    taxa_abund_sum.to_csv(sm.output[0], sep="\t", index=False)
+
+
+def sum_to_rgi(sm):
+    annot = pd.read_csv(sm.input.annot, sep="\t", header=0, index_col=0,
+                        usecols=[0, 16])
+    # Rename index for annotations to remove text after whitespace
+    annot.rename(index=lambda x: x.split(" ")[0], inplace=True)
+    abund = pd.read_csv(sm.input.abund, sep="\t", header=0, index_col=0)
+    df = pd.merge(annot, abund, left_index=True, right_index=True)
+    # Sum to Gene family
+    dfsum = df.groupby("AMR Gene Family").sum()
+    dfsum.to_csv(sm.output[0], sep="\t", index=True, header=True)
+
 def main(sm):
     toolbox = {"write_featurefile": write_featurefile,
                "normalize_featurecount": normalize_featurecount,
-               "aggregate_featurecount": aggregate_featurecount}
+               "aggregate_featurecount": aggregate_featurecount,
+               "sum_to_taxa": sum_to_taxa,
+               "sum_to_rgi": sum_to_rgi}
 
     toolbox[sm.rule](sm)
 

@@ -656,17 +656,6 @@ def get_fc_files(wildcards, file_type):
     return files
 
 
-def concat_files(files, gff_df):
-    df = pd.DataFrame()
-    for f in files:
-        _df = pd.read_csv(f, index_col=0, sep="\t")
-        df = pd.concat([df, _df], axis=1)
-    df = pd.merge(df, gff_df, left_index=True, right_on="gene_id")
-    df.drop("gene_id", axis=1, inplace=True)
-    df.set_index("orf", inplace=True)
-    return df
-
-
 # classification functions
 
 def classify_input(config):
