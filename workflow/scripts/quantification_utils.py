@@ -48,6 +48,17 @@ def calculate_tpm(df, readlength):
 
 
 def get_readlength(f):
+    """
+    Reads samtools flagstat file and extract average mapped read length
+    :param f: samtools flagstat file
+    :return:
+    """
+    with open(f, 'r') as fhin:
+        for line in fhin:
+            line = line.rstrip()
+            if line.startswith("SN") and "average length:" in line:
+                length = line.rsplit()[-1]
+    return float(length)
 
 
 def normalize_featurecount(sm):
@@ -69,9 +80,29 @@ def normalize_featurecount(sm):
     df_raw.to_csv(sm.output[1], sep="\t", index=False)
 
 
+def aggregate_featurecount(sm):
+    gff_df = pd.read_csv(sm.input.gff_file, header=None, usecols=[0, 8],
+                         names=["contig", "gene"], sep="\t")
+    gff_df = gff_df.assign(
+        gene_id=pd.Series([x.replace("gene_id ", "") for x in gff_df.gene],
+                          index=gff_df.index))
+    gff_df = gff_df.assign(
+        suffix=pd.Series([x.split(" ")[-1].split("_")[-1] for x in gff_df.gene],
+                         index=gff_df.index))
+    gff_df = gff_df.assign(
+        orf=pd.Series(gff_df.contig + "_" + gff_df.suffix, index=gff_df.index))
+    gff_df = gff_df[["orf", "gene_id"]]
+
+    raw_df = concat_files(sm.input.raw_files, gff_df)
+    tpm_df = concat_files(sm.input.tpm_files, gff_df)
+    raw_df.to_csv(sm.output.raw, sep="\t")
+    tpm_df.to_csv(sm.output.tpm, sep="\t")
+
+
 def main(sm):
     toolbox = {"write_featurefile": write_featurefile,
-               "normalize_featurecount": normalize_featurecount}
+               "normalize_featurecount": normalize_featurecount,
+               "aggregate_featurecount": aggregate_featurecount}
 
     toolbox[sm.rule](sm)
 
