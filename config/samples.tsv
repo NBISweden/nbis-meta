@@ -1,4 +1,4 @@
-sampleID	runID	assemblyGroup	fileName	pair	interleaved
+sampleID	runID	assemblyGroup	fileName	pair
 sample1	1	sample1,all	examples/data/sample1_1_R1.fastq.gz	examples/data/sample1_1_R2.fastq.gz
 sample2	1	sample2,all	examples/data/sample2_11_R1.fastq.gz	examples/data/sample2_11_R2.fastq.gz
 sample3	1	sample3,all	examples/data/sample3_21_R1.fastq.gz
