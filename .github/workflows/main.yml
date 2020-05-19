@@ -32,8 +32,16 @@ jobs:
     - name: Megahit
       run: snakemake --use-conda --config megahit=True -j 4 -p assemble
     - name: Kraken
-      run: snakemake --use-conda --config kraken=True kraken_reduce_memory=True kraken_prebuilt=16S_Greengenes -j 4 -p classify && rm -r examples/data results/
+      run: snakemake --use-conda --config kraken=True kraken_reduce_memory=True kraken_prebuilt=16S_Greengenes -j 4 -p results/kraken/sample1_1_pe.kreport results/kraken/sample3_1_se.kreport && rm -r examples/data results/
     - name: Preprocess
       run: snakemake --config example_dataset_size=1000000 --use-conda -j 4 -p qc
+    - name: Binning
+      run: snakemake --use-conda --config metabat=True -j 4 -p bin
+
+  test_linux:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Kraken
+      run: snakemake --use-conda --config kraken=True kraken_reduce_memory=True kraken_prebuilt=16S_Greengenes -j 4 -p classify
     - name: Binning
       run: snakemake --use-conda --config metabat=True concoct=True -j 4 -p bin
