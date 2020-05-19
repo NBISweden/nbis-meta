@@ -26,7 +26,11 @@ rule metabat_coverage:
         bam=get_all_files(samples, opj(config["results_path"], "assembly",
                                        "{group}", "mapping"), ".bam")
     output:
-        depth=opj(config["results_path"], "binning", "metabat", "{group}", "cov", "depth.txt")
+        depth=opj(config["results_path"], "binning", "metabat", "{group}",
+                  "cov", "depth.txt")
+    log:
+        opj(config["results_path"], "binning", "metabat", "{group}",
+                  "cov", "log")
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*2
     conda:
@@ -34,7 +38,7 @@ rule metabat_coverage:
     shell:
         """
         jgi_summarize_bam_contig_depths \
-            --outputDepth {output.depth} {input.bam} 
+            --outputDepth {output.depth} {input.bam} >{log} 2>&1
         """
 
 rule run_metabat:
@@ -44,8 +48,10 @@ rule run_metabat:
         depth=opj(config["results_path"], "binning", "metabat", "{group}",
                   "cov", "depth.txt")
     output:
-        opj(config["results_path"], "binning", "metabat", "{group}", "{l}", "contig_map.tsv"),
-        opj(config["results_path"], "binning", "metabat", "{group}", "{l}", "done")
+        opj(config["results_path"], "binning", "metabat", "{group}", "{l}",
+            "contig_map.tsv"),
+        touch(opj(config["results_path"], "binning", "metabat", "{group}",
+                  "{l}", "done"))
     log:
         opj(config["results_path"], "binning", "metabat", "{group}", "{l}", "metabat.log")
     conda:
@@ -71,7 +77,7 @@ rule run_maxbin:
         opj(config["results_path"], "assembly", "{group}", "final_contigs.fa")
     output:
         opj(config["results_path"], "binning", "maxbin", "{group}", "{l}", "{group}.summary"),
-        opj(config["results_path"], "binning", "maxbin", "{group}", "{l}", "done")
+        touch(opj(config["results_path"], "binning", "maxbin", "{group}", "{l}", "done"))
     log:
         opj(config["results_path"], "binning", "maxbin", "{group}", "{l}", "maxbin.log")
     params:
@@ -88,12 +94,8 @@ rule run_maxbin:
         """
         mkdir -p {params.dir}
         mkdir -p {params.tmp_dir}
-        run_MaxBin.pl \
-            -markerset {params.markerset} \
-            -contig {input} \
-            {params.reads} \
-            -min_contig_length {wildcards.l} \
-            -thread {threads} \
+        run_MaxBin.pl -markerset {params.markerset} -contig {input} \
+            {params.reads} -min_contig_length {wildcards.l} -thread {threads} \
             -out {params.tmp_dir}/{wildcards.group} 2>{log}
         mv {params.tmp_dir}/* {params.dir}
         rm -r {params.tmp_dir}
