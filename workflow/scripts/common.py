@@ -90,11 +90,9 @@ def parse_samples(df, config, PREPROCESS):
 
         # Initiate keys for all assembly group values
         if "assembly" in df.columns:
-            assemblies = df.iloc[i]["assembly"].split(",")
-            # Remove empty assembly groups
-            assemblies = [a for a in assemblies if a != ""]
-            for a in assemblies:
-                if a not in assemblies.keys():
+            assem_list = df.iloc[i]["assembly"].split(",")
+            for a in assem_list:
+                if a not in assemblies.keys() and a != "":
                     assemblies[a] = {}
         # Handling of paired and/or single end sequence files If the sample
         # annotation file has a 'pair' column, add the read files as 'R1' and
