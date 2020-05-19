@@ -69,61 +69,59 @@ def parse_samples(df, config, PREPROCESS):
 
     for i in list(df.index):
         # Add sample to dict
-        sample = df.iloc[i]["sampleID"]
+        sample = df.iloc[i]["sample"]
         if sample not in samples.keys():
             samples[sample] = {}
-        # Add runID to dict
-        runID = str(df.iloc[i]["runID"])
-        if runID not in samples[sample].keys():
-            samples[sample][runID] = {}
-        R1 = df.iloc[i]["fileName"]
+        # Add unit to dict
+        unit = str(df.iloc[i]["unit"])
+        if unit not in samples[sample].keys():
+            samples[sample][unit] = {}
+        R1 = df.iloc[i]["fq1"]
         groups = []
         r2 = False
 
         # Set preprocessed file paths
         R1_p = opj(config["intermediate_path"], "preprocess",
-                   "{}_{}_R1{}.fastq.gz".format(sample, runID, PREPROCESS))
+                   "{}_{}_R1{}.fastq.gz".format(sample, unit, PREPROCESS))
         R2_p = opj(config["intermediate_path"], "preprocess",
-                   "{}_{}_R2{}.fastq.gz".format(sample, runID, PREPROCESS))
+                   "{}_{}_R2{}.fastq.gz".format(sample, unit, PREPROCESS))
         se_p = opj(config["intermediate_path"], "preprocess",
-                   "{}_{}_se{}.fastq.gz".format(sample, runID, PREPROCESS))
+                   "{}_{}_se{}.fastq.gz".format(sample, unit, PREPROCESS))
 
         # Initiate keys for all assembly group values
-        if "assemblyGroup" in df.columns:
-            groups = df.iloc[i]["assemblyGroup"].split(",")
+        if "assembly" in df.columns:
+            assemblies = df.iloc[i]["assembly"].split(",")
             # Remove empty assembly groups
-            groups = [g for g in groups if g != ""]
-            for g in groups:
-                if g not in assemblies.keys() and g != "":
-                    assemblies[g] = {}
-
+            assemblies = [a for a in assemblies if a != ""]
+            for a in assemblies:
+                if a not in assemblies.keys():
+                    assemblies[a] = {}
         # Handling of paired and/or single end sequence files If the sample
         # annotation file has a 'pair' column, add the read files as 'R1' and
         # 'R2'
-        if "pair" in df.columns and df.iloc[i]["pair"]:
-            R2 = df.iloc[i]["pair"]
+        if "fq2" in df.columns and df.iloc[i]["fq2"]:
+            R2 = df.iloc[i]["fq2"]
             r2 = True
-            samples[sample][runID]["R1"] = R1
-            samples[sample][runID]["R2"] = R2
+            samples[sample][unit]["R1"] = R1
+            samples[sample][unit]["R2"] = R2
             # Add filepaths to preprocessed output files for each of the read
-            # files in each of the assembly groups This will be the initial
+            # files in each of the assemblies. This will be the initial
             # input to the assembly rule
-            for g in groups:
-                if sample not in assemblies[g].keys():
-                    assemblies[g][sample] = {runID: {}}
+            for a in assemblies:
+                if sample not in assemblies[a].keys():
+                    assemblies[a][sample] = {unit: {}}
                 if r2:
-                    assemblies[g][sample][runID]["R1"] = [R1_p]
-                    assemblies[g][sample][runID]["R2"] = [R2_p]
+                    assemblies[a][sample][unit]["R1"] = [R1_p]
+                    assemblies[a][sample][unit]["R2"] = [R2_p]
                 else:
-                    assemblies[g][sample][runID]["se"] = [se_p]
-
-        # If there is no 'pair' column, add the single file path as 'se'
+                    assemblies[a][sample][unit]["se"] = [se_p]
+        # If there is no 'fq2' column, add the single file path as 'se'
         else:
-            samples[sample][runID]["se"] = R1
-            for g in groups:
-                if sample not in assemblies[g].keys():
-                    assemblies[g][sample] = {runID: {}}
-                assemblies[g][sample][runID]["se"] = [se_p]
+            samples[sample][unit]["se"] = R1
+            for a in assemblies:
+                if sample not in assemblies[a].keys():
+                    assemblies[a][sample] = {unit: {}}
+                assemblies[a][sample][unit]["se"] = [se_p]
     return samples, assemblies
 
 
@@ -274,15 +272,15 @@ def get_all_files(samples, dir, suffix="", nested=False):
     """
     files = []
     for sample in samples:
-        for run in samples[sample].keys():
+        for unit in samples[sample].keys():
             if nested:
-                d = "{}/{}_{}".format(dir, sample, run)
+                d = "{}/{}_{}".format(dir, sample, unit)
             else:
                 d = "{}".format(dir)
-            if is_pe(samples[sample][run]):
-                files.append(opj(d, "{}_{}_pe{}".format(sample, run, suffix)))
+            if is_pe(samples[sample][unit]):
+                files.append(opj(d, "{}_{}_pe{}".format(sample, unit, suffix)))
             else:
-                files.append(opj(d, "{}_{}_se{}".format(sample, run, suffix)))
+                files.append(opj(d, "{}_{}_se{}".format(sample, unit, suffix)))
     return files
 
 
@@ -290,31 +288,31 @@ def multiqc_input(samples, config):
     files = []
     pre, post, d, _ = prepost_string(config)
     for sample in samples.keys():
-        for run in samples[sample].keys():
-            if is_pe(samples[sample][run]):
+        for unit in samples[sample].keys():
+            if is_pe(samples[sample][unit]):
                 pairs = ["R1", "R2"]
                 seq_type = "pe"
             else:
                 pairs = ["se"]
                 seq_type = "se"
-            files += get_fastqc_files(sample, run, pairs, config, pre)
-            files += get_trim_logs(sample, run, pairs, config, d)
-            files += get_filt_logs(sample, run, seq_type, config, d)
-            files += get_sortmerna_logs(sample, run, seq_type, config)
+            files += get_fastqc_files(sample, unit, pairs, config, pre)
+            files += get_trim_logs(sample, unit, pairs, config, d)
+            files += get_filt_logs(sample, unit, seq_type, config, d)
+            files += get_sortmerna_logs(sample, unit, seq_type, config)
     return files
 
 
-def get_fastqc_files(sample, run, pairs, config, pre):
+def get_fastqc_files(sample, unit, pairs, config, pre):
     """Get all fastqc output"""
     if config["fastqc"]:
         files = expand(opj(config["intermediate_path"], "fastqc",
-                           "{sample}_{run}_{pair}{PREPROCESS}_fastqc.zip"),
-                       sample=sample, run=run, pair=pairs, PREPROCESS=pre)
+                           "{sample}_{unit}_{pair}{PREPROCESS}_fastqc.zip"),
+                       sample=sample, unit=unit, pair=pairs, PREPROCESS=pre)
         return files
     return []
 
 
-def get_trim_logs(sample, run, pairs, config, d):
+def get_trim_logs(sample, unit, pairs, config, d):
     if not config["trimmomatic"] and not config["cutadapt"]:
         return []
     if config["trimmomatic"]:
@@ -322,27 +320,27 @@ def get_trim_logs(sample, run, pairs, config, d):
     else:
         trimmer = "cutadapt"
     files = expand(opj(config["intermediate_path"], "preprocess",
-                       "{sample}_{run}_{pair}{s}.{trimmer}.log"),
-                   sample=sample, run=run, pair=pairs, s=d["trimming"],
+                       "{sample}_{unit}_{pair}{s}.{trimmer}.log"),
+                   sample=sample, unit=unit, pair=pairs, s=d["trimming"],
                    trimmer=trimmer)
     return files
 
 
-def get_filt_logs(sample, run, seq_type, config, d):
+def get_filt_logs(sample, unit, seq_type, config, d):
     if not config["phix_filter"]:
         return []
     files = expand(opj(config["intermediate_path"], "preprocess",
-                       "{sample}_{run}_PHIX_{seq_type}{s}.log"),
-                   sample=sample, run=run, seq_type=seq_type, s=d["phixfilt"])
+                       "{sample}_{unit}_PHIX_{seq_type}{s}.log"),
+                   sample=sample, unit=unit, seq_type=seq_type, s=d["phixfilt"])
     return files
 
 
-def get_sortmerna_logs(sample, run, seq_type, config):
+def get_sortmerna_logs(sample, unit, seq_type, config):
     if not config["sortmerna"]:
         return []
     files = expand(opj(config["intermediate_path"], "preprocess",
-                       "{sample}_{run}_{seq_type}.sortmerna.log"),
-                   sample=sample, run=run, seq_type=seq_type)
+                       "{sample}_{unit}_{seq_type}.sortmerna.log"),
+                   sample=sample, unit=unit, seq_type=seq_type)
     return files
 
 
@@ -392,8 +390,8 @@ def filter_metaspades_assemblies(d):
     for assembly in d.keys():
         i = 0
         for sample in d[assembly].keys():
-            for runID in d[assembly][sample].keys():
-                if is_pe(d[assembly][sample][runID]):
+            for unit in d[assembly][sample].keys():
+                if is_pe(d[assembly][sample][unit]):
                     i += 1
                     break
         if i == 0:
@@ -406,24 +404,22 @@ def filter_metaspades_assemblies(d):
 def get_all_group_files(assembly_dict):
     files = []
     for sample in assembly_dict.keys():
-        for run in assembly_dict[sample].keys():
-            for pair in assembly_dict[sample][run].keys():
-                files.append(assembly_dict[sample][run][pair][0])
+        for unit in assembly_dict[sample].keys():
+            for pair in assembly_dict[sample][unit].keys():
+                files.append(assembly_dict[sample][unit][pair][0])
     return files
 
 
 def get_bamfiles(g, assembly_dict, results_path, POSTPROCESS):
     files = []
     for sample in assembly_dict.keys():
-        for run in assembly_dict[sample].keys():
-            if "R2" in assembly_dict[sample][run].keys():
-                files.append(
-                    opj(results_path, "assembly", g, "mapping",
-                        sample + "_" + run + "_pe" + POSTPROCESS + ".bam"))
+        for unit in assembly_dict[sample].keys():
+            if "R2" in assembly_dict[sample][unit].keys():
+                seq_type = "pe"
             else:
-                files.append(
-                    opj(results_path, "assembly", g, "mapping",
-                        sample + "_" + run + "_se" + POSTPROCESS + ".bam"))
+                seq_type = "se"
+            files.append(opj(results_path, "assembly", g, "mapping",
+                    "{}_{}_{}{}.bam".format(sample, unit, seq_type, POSTPROCESS))
     return files
 
 
@@ -485,15 +481,15 @@ def get_fw_reads(config, samples, p):
     """
     files = []
     for sample in samples.keys():
-        for run in samples[sample].keys():
-            if "R1" in samples[sample][run].keys():
+        for unit in samples[sample].keys():
+            if "R1" in samples[sample][unit].keys():
                 f = opj(config["intermediate_path"], "preprocess",
-                        "{sample}_{run}_R1{p}.fastq.gz".format(sample=sample,
-                                                               run=run, p=p))
+                        "{sample}_{unit}_R1{p}.fastq.gz".format(sample=sample,
+                                                               unit=unit, p=p))
             else:
                 f = opj(config["intermediate_path"], "preprocess",
-                        "{sample}_{run}_se{p}.fastq.gz".format(sample=sample,
-                                                               run=run, p=p))
+                        "{sample}_{unit}_se{p}.fastq.gz".format(sample=sample,
+                                                               unit=unit, p=p))
             files.append(f)
     reads_string = ""
     for i, f in enumerate(files, start=1):
@@ -652,15 +648,15 @@ def get_fc_files(wildcards, file_type):
     g = wildcards.group
     files = []
     for sample in assemblies[g].keys():
-        for run in assemblies[g][sample].keys():
-            if "se" in assemblies[g][sample][run].keys():
+        for unit in assemblies[g][sample].keys():
+            if "se" in assemblies[g][sample][unit].keys():
                 files.append(
                     opj(config["results_path"], "assembly", g, "mapping",
-                        sample + "_" + run + "_se.fc.{}.tab".format(file_type)))
+                        sample + "_" + unit + "_se.fc.{}.tab".format(file_type)))
             else:
                 files.append(
                     opj(config["results_path"], "assembly", g, "mapping",
-                        sample + "_" + run + "_pe.fc.{}.tab".format(file_type)))
+                        sample + "_" + unit + "_pe.fc.{}.tab".format(file_type)))
     return files
 
 
@@ -693,9 +689,9 @@ def krona_input(config, samples, classifier):
     files = get_all_files(samples, opj(config["results_path"], classifier),
                           ".kreport")
     for f in files:
-        sample_run = bn(f).replace("_pe.kreport", "").replace(
+        sample_unit = bn(f).replace("_pe.kreport", "").replace(
             "_se.kreport", "")
-        input_string += " {},{}".format(f, sample_run)
+        input_string += " {},{}".format(f, sample_unit)
     return input_string
 
 
