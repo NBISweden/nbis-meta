@@ -151,8 +151,6 @@ rule normalize_featurecount:
     log:
         opj(config["results_path"],"assembly","{group}","mapping",
             "{sample}_{unit}_{seq_type}.fc.norm.log")
-    params:
-        s="{sample}_{unit}"
     script:
         "../scripts/quantification_utils.py"
 
@@ -165,17 +163,9 @@ rule aggregate_featurecount:
     output:
         raw=opj(config["results_path"],"annotation","{group}","fc.raw.tab"),
         tpm=opj(config["results_path"],"annotation","{group}","fc.tpm.tab")
-    run:
-        gff_df=pd.read_csv(input.gff_file, header=None, usecols=[0,8], names=["contig","gene"], sep="\t")
-        gff_df=gff_df.assign(gene_id=pd.Series([x.replace("gene_id ","") for x in gff_df.gene], index=gff_df.index))
-        gff_df=gff_df.assign(suffix=pd.Series([x.split(" ")[-1].split("_")[-1] for x in gff_df.gene],index=gff_df.index))
-        gff_df=gff_df.assign(orf=pd.Series(gff_df.contig+"_"+gff_df.suffix, index=gff_df.index))
-        gff_df=gff_df[["orf","gene_id"]]
+    script:
+        "../scripts/quantification_utils.py"
 
-        raw_df=concat_files(input.raw_files, gff_df)
-        tpm_df=concat_files(input.tpm_files, gff_df)
-        raw_df.to_csv(output.raw, sep="\t")
-        tpm_df.to_csv(output.tpm, sep="\t")
 
 rule quantify_features:
     input:
