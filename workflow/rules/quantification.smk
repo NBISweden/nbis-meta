@@ -148,19 +148,13 @@ rule normalize_featurecount:
             "{sample}_{unit}_{seq_type}.fc.tpm.tab"),
         opj(config["results_path"],"assembly","{group}","mapping",
             "{sample}_{unit}_{seq_type}.fc.raw.tab")
+    log:
+        opj(config["results_path"],"assembly","{group}","mapping",
+            "{sample}_{unit}_{seq_type}.fc.norm.log")
     params:
-        s="{sample}_{unit}",
-        src="source/utils/featureCountsTPM.py"
-    shell:
-        """
-        rl=$(grep -w "average length" {input[1]} |  egrep -o "[0-9]+")
-        python {params.src} \
-            --rl $rl \
-            -i {input[0]} \
-            -o {output[0]} \
-            --rc {output[1]} \
-            --sampleName {params.s}
-        """
+        s="{sample}_{unit}"
+    script:
+        "../scripts/quantification_utils.py"
 
 rule aggregate_featurecount:
     """Aggregates feature count files and performs TPM normalization"""
