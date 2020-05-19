@@ -1,4 +1,5 @@
-from scripts.common import get_all_group_files
+from scripts.common import get_all_group_files, get_bamfiles
+
 
 localrules:
     write_bed,
@@ -28,7 +29,7 @@ if config["metaspades"]:
             assembly = lambda wildcards: assemblies[wildcards.group],
             assembler = "metaspades"
         script:
-            "../scripts/generate_assembly_input.py"
+            "../scripts/assembly_utils.py"
 
     rule metaspades:
         input:
@@ -109,10 +110,9 @@ else:
             opj(config["results_path"],"assembly",
                             "{group}","input_list.log")
         params:
-            assembly = lambda wildcards: assemblies[wildcards.group],
-            assembler = "megahit"
+            assembly = lambda wildcards: assemblies[wildcards.group]
         script:
-            "../scripts/generate_assembly_input.py"
+            "../scripts/assembly_utils.py"
 
     rule megahit:
         input:
@@ -176,16 +176,14 @@ else:
             mv {params.output_dir}/final.contigs.fa {params.output_dir}/final_contigs.fa
             """
 
-rule write_bed:
+rule fasta2bed:
     """Creates bed-format file from assembly"""
     input:
         opj(config["results_path"],"assembly","{group}","final_contigs.fa")
     output:
         opj(config["results_path"],"assembly","{group}","final_contigs.bed")
-    shell:
-        """
-        python source/utils/fasta2bed.py -i {input} -o {output}
-        """
+    script:
+        "../scripts/assembly_utils.py"
 
 ###########
 # Mapping #
@@ -316,9 +314,7 @@ rule assembly_stats:
         opj(config["report_path"], "assembly", "assembly_stats.tsv"),
         opj(config["report_path"], "assembly", "assembly_size_dist.tsv")
     script:
-        "../scripts/assembly_stats.py"
-
-from scripts.common import get_bamfiles
+        "../scripts/assembly_utils.py"
 
 rule samtools_flagstat:
     """
