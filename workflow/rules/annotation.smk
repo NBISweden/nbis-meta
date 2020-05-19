@@ -414,7 +414,7 @@ rule rgi:
         opj(config["results_path"], "annotation", "{group}", "rgi.log")
     params:
         out=opj(config["results_path"], "annotation", "{group}", "rgi.out"),
-        settings=config["rgi_params"]
+        settings="-a diamond --local --clean --input_type protein"
     conda:
         "../envs/rgi.yml"
     threads: 10
