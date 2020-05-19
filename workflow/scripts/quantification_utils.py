@@ -4,6 +4,15 @@ import pandas as pd
 
 
 def write_featurefile(sm, score=".", group="gene_id", phase="."):
+    """
+    Takes a prodigal GFF file and turns it into a file for use with
+    featureCounts
+    :param sm: snakemake object
+    :param score: dummy score column
+    :param group: identifier for featurecounts
+    :param phase: dummy phase column
+    :return:
+    """
     with open(sm.input[0], 'r') as fhin, open(sm.output[0], 'w') as fhout:
         for line in fhin:
             line = line.rstrip()
@@ -28,6 +37,14 @@ def write_featurefile(sm, score=".", group="gene_id", phase="."):
 
 
 def calculate_tpm(df, readlength, fhlog):
+    """
+    Calculates transcripts per million normalized values for a sample based
+    on featureCounts output
+    :param df: pandas DataFrame as read from featureCounts output
+    :param readlength: average length of mapped reads
+    :param fhlog: loghandle
+    :return: pandas DataFrame with normalized values per gene
+    """
     sampleName = df.columns[-1]
     # 1. Calculate t for sample
     # t = (reads_mapped_to_gene * read_length) / length_of_gene
@@ -64,6 +81,11 @@ def get_readlength(f):
 
 
 def normalize_featurecount(sm):
+    """
+    Master rule for running normalization
+    :param sm: snakemake object
+    :return:
+    """
     df = pd.read_csv(sm.input[0], skiprows=1, sep="\t")
     sample_unit = "{sample}_{unit}".format(sample=sm.wildcards.sample,
                                            unit=sm.wildcards.unit)
@@ -84,7 +106,13 @@ def normalize_featurecount(sm):
     df_raw.to_csv(sm.output[1], sep="\t", index=False)
 
 
-def concat_files(files, gff_df):
+def merge_files(files, gff_df):
+    """
+    Merges abundance tables from several samples
+    :param files: list of files
+    :param gff_df: pandas DataFrame with orf ids in the format <contig>_<orfnum>
+    :return: merged pandas DataFrame
+    """
     df = pd.DataFrame()
     for f in files:
         _df = pd.read_csv(f, index_col=0, sep="\t")
@@ -96,6 +124,12 @@ def concat_files(files, gff_df):
 
 
 def aggregate_featurecount(sm):
+    """
+    Aggregates normalized and raw tables per sample into one table per assembly
+
+    :param sm: snakemake object
+    :return:
+    """
     gff_df = pd.read_csv(sm.input.gff_file, header=None, usecols=[0, 8],
                          names=["contig", "gene"], sep="\t")
     gff_df = gff_df.assign(
@@ -108,13 +142,20 @@ def aggregate_featurecount(sm):
         orf=pd.Series(gff_df.contig + "_" + gff_df.suffix, index=gff_df.index))
     gff_df = gff_df[["orf", "gene_id"]]
 
-    raw_df = concat_files(sm.input.raw_files, gff_df)
-    tpm_df = concat_files(sm.input.tpm_files, gff_df)
+    raw_df = merge_files(sm.input.raw_files, gff_df)
+    tpm_df = merge_files(sm.input.tpm_files, gff_df)
     raw_df.to_csv(sm.output.raw, sep="\t")
     tpm_df.to_csv(sm.output.tpm, sep="\t")
 
 
 def sum_to_taxa(sm):
+    """
+    Takes taxonomic assignments per orf and abundance values (tpm or raw) and
+    returns abundance values summed to unique combinations of ranks
+
+    :param sm: snakemake object
+    :return:
+    """
     header = ["protein", "superkingdom", "phylum", "class", "order", "family",
               "genus", "species"]
     df = pd.read_csv(sm.input.tax, sep="\t", index_col=0, header=None,
@@ -126,6 +167,13 @@ def sum_to_taxa(sm):
 
 
 def sum_to_rgi(sm):
+    """
+    Takes Resistance gene identifier output and abundance info per orf and sums
+    values to gene family level
+
+    :param sm: snakemake object
+    :return:
+    """
     annot = pd.read_csv(sm.input.annot, sep="\t", header=0, index_col=0,
                         usecols=[0, 16])
     # Rename index for annotations to remove text after whitespace
