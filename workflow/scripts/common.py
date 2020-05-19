@@ -150,8 +150,8 @@ def check_annotation(config):
     :return: Updated config dict
     """
     # Check whether to set annotation downstream of assembly
-    tools = [config["pfam"], config["taxonomic_annotation"],
-                  config["infernal"], config["eggnog"], config["rgi"]]
+    tools = [config["pfam"], config["taxonomic_annotation"], config["infernal"],
+             config["eggnog"], config["rgi"]]
     if True in tools:
         config["annotation"] = True
         # if True also assume the user wants assembly
@@ -195,7 +195,8 @@ def check_classifiers(config):
     :return: Updated config dict
     """
     # Add read-based config info
-    config["centrifuge_index_path"] = config["centrifuge_base"] = config["centrifuge_dir"] = ""
+    config["centrifuge_index_path"] = config["centrifuge_base"] = config[
+        "centrifuge_dir"] = ""
     if config["centrifuge"]:
         # Check if custom database exists
         custom = expand("{b}.{i}.cf", b=config["centrifuge_custom"],
@@ -328,8 +329,8 @@ def get_filt_logs(sample, unit, seq_type, config, d):
     if not config["phix_filter"]:
         return []
     files = expand(opj(config["intermediate_path"], "preprocess",
-                       "{sample}_{unit}_PHIX_{seq_type}{s}.log"),
-                   sample=sample, unit=unit, seq_type=seq_type, s=d["phixfilt"])
+                       "{sample}_{unit}_PHIX_{seq_type}{s}.log"), sample=sample,
+                   unit=unit, seq_type=seq_type, s=d["phixfilt"])
     return files
 
 
@@ -417,8 +418,8 @@ def get_bamfiles(g, assembly_dict, results_path, POSTPROCESS):
             else:
                 seq_type = "se"
             files.append(opj(results_path, "assembly", g, "mapping",
-                    "{}_{}_{}{}.bam".format(sample, unit, seq_type,
-                                            POSTPROCESS)))
+                             "{}_{}_{}{}.bam".format(sample, unit, seq_type,
+                                                     POSTPROCESS)))
     return files
 
 
@@ -449,28 +450,23 @@ def binning_input(config, assemblies):
     :param assemblies: Dictionary of assemblies
     :return:
     """
-    input = []
-    if config["concoct"]:
-        input += expand(opj(config["results_path"], "binning", "concoct",
-                            "{group}", "{l}", "summary_stats.tsv"),
-                        group=assemblies.keys(),
-                        l=config["min_contig_length"])
-    if config["metabat"]:
-        input += expand(opj(config["results_path"], "binning", "metabat",
-                            "{group}", "{l}", "summary_stats.tsv"),
-                        group=assemblies.keys(),
-                        l=config["min_contig_length"])
+    binners = get_binners(config)
+    bin_input = expand(
+        opj(config["results_path"], "binning", "{binner}", "{group}", "{l}",
+            "summary_stats.tsv"), binner=binners, group=assemblies.keys(),
+        l=config["min_contig_length"])
+
     if config["checkm"]:
-        input.append(opj(config["report_path"], "checkm", "checkm.stats.tsv"))
-        input.append(
+        bin_input.append(opj(config["report_path"], "checkm", "checkm.stats.tsv"))
+        bin_input.append(
             opj(config["report_path"], "checkm", "checkm.profiles.tsv"))
     if config["gtdbtk"]:
-        input.append(opj(config["report_path"], "gtdbtk", "gtdbtk.summary.tsv"))
-        input.append(opj(config["report_path"], "bin_annotation",
-                         "tRNA.total.tsv"))
-        input.append(opj(config["report_path"], "bin_annotation",
-                         "rRNA.types.tsv"))
-    return input
+        bin_input.append(opj(config["report_path"], "gtdbtk", "gtdbtk.summary.tsv"))
+        bin_input.append(
+            opj(config["report_path"], "bin_annotation", "tRNA.total.tsv"))
+        bin_input.append(
+            opj(config["report_path"], "bin_annotation", "rRNA.types.tsv"))
+    return bin_input
 
 
 def get_fw_reads(config, samples, p):
@@ -484,11 +480,11 @@ def get_fw_reads(config, samples, p):
             if "R1" in samples[sample][unit].keys():
                 f = opj(config["intermediate_path"], "preprocess",
                         "{sample}_{unit}_R1{p}.fastq.gz".format(sample=sample,
-                                                               unit=unit, p=p))
+                                                                unit=unit, p=p))
             else:
                 f = opj(config["intermediate_path"], "preprocess",
                         "{sample}_{unit}_se{p}.fastq.gz".format(sample=sample,
-                                                               unit=unit, p=p))
+                                                                unit=unit, p=p))
             files.append(f)
     reads_string = ""
     for i, f in enumerate(files, start=1):
@@ -578,38 +574,37 @@ def annotation_input(config, assemblies):
     input = []
     for group in assemblies.keys():
         # Add orfcalling results
-        input.append(opj(config["results_path"], "annotation",
-                                    group, "final_contigs.gff"))
+        input.append(opj(config["results_path"], "annotation", group,
+                         "final_contigs.gff"))
         if config["infernal"]:
-            input.append(opj(config["results_path"], "annotation",
-                                        group, "final_contigs.cmscan"))
+            input.append(opj(config["results_path"], "annotation", group,
+                             "final_contigs.cmscan"))
         if config["tRNAscan"]:
-            input.append(opj(config["results_path"], "annotation",
-                                        group, "tRNA.out"))
+            input.append(
+                opj(config["results_path"], "annotation", group, "tRNA.out"))
         # Add EGGNOG annotation
         if config["eggnog"]:
-            input += expand(opj(config["results_path"], "annotation",
-                                         group, "{db}.parsed.{fc}.tab"),
-                                     db=["enzymes", "pathways", "kos", "modules"],
-                                     fc=["raw", "tpm"])
+            input += expand(opj(config["results_path"], "annotation", group,
+                                "{db}.parsed.{fc}.tab"),
+                            db=["enzymes", "pathways", "kos", "modules"],
+                            fc=["raw", "tpm"])
         # Add PFAM annotation
         if config["pfam"]:
-            input+=expand(opj(config["results_path"], "annotation",
-                                        group, "pfam.parsed.{fc}.tab"),
-                                    fc=["tpm", "raw"])
+            input += expand(opj(config["results_path"], "annotation", group,
+                                "pfam.parsed.{fc}.tab"), fc=["tpm", "raw"])
         # Add taxonomic annotation
         if config["taxonomic_annotation"]:
-            input+=expand(opj(config["results_path"], "annotation",
-                                         group, "taxonomy", "tax.{fc}.tab"),
-                                     fc=["tpm", "raw"])
+            input += expand(
+                opj(config["results_path"], "annotation", group, "taxonomy",
+                    "tax.{fc}.tab"), fc=["tpm", "raw"])
         # Add Resistance Gene Identifier output
         if config["rgi"]:
-            input += expand(opj(config["results_path"], "annotation",
-                                           group, "rgi.{fc}.tab"),
-                                       fc=["raw", "tpm"])
-            input.append(opj(config["results_path"], "annotation",
-                                        group, "rgi.out.txt"))
+            input += expand(opj(config["results_path"], "annotation", group,
+                                "rgi.{fc}.tab"), fc=["raw", "tpm"])
+            input.append(
+                opj(config["results_path"], "annotation", group, "rgi.out.txt"))
     return input
+
 
 def parse_cmout(f):
     with open(f) as fh:
@@ -651,11 +646,13 @@ def get_fc_files(wildcards, file_type):
             if "se" in assemblies[g][sample][unit].keys():
                 files.append(
                     opj(config["results_path"], "assembly", g, "mapping",
-                        sample + "_" + unit + "_se.fc.{}.tab".format(file_type)))
+                        sample + "_" + unit + "_se.fc.{}.tab".format(
+                            file_type)))
             else:
                 files.append(
                     opj(config["results_path"], "assembly", g, "mapping",
-                        sample + "_" + unit + "_pe.fc.{}.tab".format(file_type)))
+                        sample + "_" + unit + "_pe.fc.{}.tab".format(
+                            file_type)))
     return files
 
 
@@ -679,7 +676,8 @@ def classify_input(config):
     if config["metaphlan"]:
         f.append(opj(config["report_path"], "metaphlan", "metaphlan.html"))
     if config["centrifuge"]:
-        f.append(opj(config["report_path"], "centrifuge", "centrifuge.krona.html"))
+        f.append(
+            opj(config["report_path"], "centrifuge", "centrifuge.krona.html"))
     return f
 
 
@@ -688,8 +686,8 @@ def krona_input(config, samples, classifier):
     files = get_all_files(samples, opj(config["results_path"], classifier),
                           ".kreport")
     for f in files:
-        sample_unit = bn(f).replace("_pe.kreport", "").replace(
-            "_se.kreport", "")
+        sample_unit = bn(f).replace("_pe.kreport", "").replace("_se.kreport",
+            "")
         input_string += " {},{}".format(f, sample_unit)
     return input_string
 
