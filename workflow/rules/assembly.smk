@@ -13,7 +13,7 @@ rule assemble:
         opj(config["paths"]["results"], "report", "assembly", "assembly_size_dist.pdf"),
         opj(config["paths"]["results"], "report", "assembly", "alignment_frequency.pdf")
 
-if config["metaspades"]:
+if config["assembly"]["metaspades"]:
     rule generate_metaspades_input:
         """Generate input files for use with Metaspades"""
         input:
@@ -48,7 +48,7 @@ if config["metaspades"]:
                                      "{group}","intermediate_contigs"),
             corrected=opj(config["paths"]["results"], "intermediate","assembly",
                           "{group}","corrected"),
-            additional_settings=config["metaspades_additional_settings"],
+            additional_settings=config["metaspades"]["extra_settings"],
             tmp=opj(config["paths"]["temp"],"{group}.metaspades"),
             output_dir=opj(config["paths"]["results"],"assembly","{group}")
         threads: config["metaspades"]["threads"]
@@ -75,11 +75,11 @@ if config["metaspades"]:
                 -o {params.tmp} > {log} 2>&1
             
             # If set to keep intermediate contigs, move to intermediate folder before deleting
-            if [ "{config[metaspades_keep_intermediate]}" == "True" ]; then
+            if [ "{config[metaspades][keep_intermediate]}" == "True" ]; then
                 mkdir -p {params.intermediate_contigs}
                 cp -r {params.tmp}/K* {params.intermediate_contigs}
             fi
-            if [ "{config[metaspades_keep_corrected]}" == "True" ]; then
+            if [ "{config[metaspades][keep_corrected]}" == "True" ]; then
                 mkdir -p {params.corrected}
                 cp -r {params.tmp}/corrected {params.corrected}
             fi

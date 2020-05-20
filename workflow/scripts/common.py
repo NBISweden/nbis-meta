@@ -171,7 +171,7 @@ def check_assembly(config, assemblies):
     :return: Tuple of updated config and assembly dict
     """
     if len(assemblies) > 0:
-        if config["metaspades"]:
+        if config["assembly"]["metaspades"]:
             # Remove single-end only assemblies
             # that Metaspades won't be able to run
             assemblies = filter_metaspades_assemblies(assemblies)
