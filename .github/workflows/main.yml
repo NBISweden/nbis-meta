@@ -20,28 +20,30 @@ jobs:
     - name: Install the conda environment
       run: conda env update -n base -f environment.yml
     - name: Dry run
-      run: snakemake --use-conda -j 4 --config fastuniq=True kraken=True eggnog=True taxonomic_annotation=True rgi=True pfam=True metabat=True concoct=True checkm=True gtdbtk=True centrifuge=True metaphlan=True -np
+      run: snakemake --use-conda -j 4 --configfile .test/config/dry-run.yaml -n
     - name: Cutadapt
-      run: snakemake --config example_dataset_size=10000 trimmomatic=False cutadapt=True --use-conda -j 4 -p qc && rm -r results
-    - name: Trimmomatic
-      run: snakemake --use-conda -j 4 -p qc && rm -r results/report
+      run: snakemake --use-conda -j 4 --configfile .test/config/cutadapt.yaml -p qc && rm -r results
     - name: Sortmerna
-      run: snakemake --use-conda -j 4 --config sortmerna=True -p qc
+      run: snakemake --use-conda -j 4 --configfile .test/config/sortmerna.yaml -p qc
     - name: Metaspades
-      run: snakemake --use-conda --config metaspades=True -j 4 -p assemble && rm -r results/assembly && rm -r results/report
+      run: snakemake --use-conda -j 4 --configfile .test/config/metaspades.yaml -p assemble && rm -r results/assembly && rm -r results/report
     - name: Megahit
-      run: snakemake --use-conda --config megahit=True -j 4 -p assemble
+      run: snakemake --use-conda -j 4 --configfile .test/config/megahit.yaml -p assemble
     - name: Kraken
-      run: snakemake --use-conda --config kraken=True kraken_reduce_memory=True kraken_prebuilt=16S_Greengenes -j 4 -p results/kraken/sample1_1_pe.kreport results/kraken/sample3_1_se.kreport && rm -r examples/data results/
+      run: snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml -p results/kraken/sample1_1_pe.kreport results/kraken/sample3_1_se.kreport && rm -r examples/data results/
     - name: Preprocess
-      run: snakemake --config example_dataset_size=1000000 --use-conda -j 4 -p qc
-    - name: Binning
-      run: snakemake --use-conda --config metabat=True -j 4 -p bin
+      run: snakemake --use-conda -j 4 --configfile .test/config/preprocess.yaml -p qc
+    - name: Metabat
+      run: snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p bin
+    - name: Prepare taxonomy
+      run: bash .test/scripts/prep_taxonomy.sh
+    - name: Taxonomy
+      run: snakemake --use-conda -j 4 --configfile .test/config/taxonomy.yaml -p taxonomy
 
   test_linux:
     runs-on: ubuntu-latest
     steps:
     - name: Kraken
-      run: snakemake --use-conda --config kraken=True kraken_reduce_memory=True kraken_prebuilt=16S_Greengenes -j 4 -p classify
+      run: snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml -p classify
     - name: Binning
-      run: snakemake --use-conda --config metabat=True concoct=True maxbin=True -j 4 -p bin
+      run: snakemake --use-conda -j 4 --configfile .test/config/binning.yaml -p bin
