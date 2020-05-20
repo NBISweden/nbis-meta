@@ -126,7 +126,7 @@ rule download_centrifuge_build:
     output:
         db=expand(opj(config["centrifuge"]["dir"],
                       "{base}.{i}.cf"), i=[1, 2, 3],
-                  base=config['centrifuge_base'])
+                  base=config["centrifuge"]["base"])
     log:
         opj(config["centrifuge"]["dir"], "download.log")
     params:
