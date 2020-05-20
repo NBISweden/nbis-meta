@@ -48,6 +48,6 @@ jobs:
     - name: Install the conda environment
       run: conda env update -n base -f environment.yml
     - name: Kraken
-      run: snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml -p classify
+      run: snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml -p classify && rm -r examples results
     - name: Binning
       run: snakemake --use-conda -j 4 --configfile .test/config/binning.yaml -p bin
