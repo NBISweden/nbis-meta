@@ -248,9 +248,9 @@ rule binning_stats:
 
 rule download_checkm:
     output:
-        db=opj(config["resource_path"], "checkm", ".dmanifest")
+        db=opj("resources", "checkm", ".dmanifest")
     log:
-        opj(config["resource_path"], "checkm", "checkm.log")
+        opj("resources", "checkm", "checkm.log")
     params:
         tar=lambda wildcards, output: opj(os.path.dirname(output.db), "checkm_data.tar.gz"),
         dir=lambda wildcards, output: os.path.dirname(output.db)
@@ -269,7 +269,7 @@ rule download_checkm:
 if config["checkm_taxonomy_wf"]:
     rule checkm_taxonomy_wf:
         input:
-            db=opj(config["resource_path"], "checkm", ".dmanifest"),
+            db=opj("resources", "checkm", ".dmanifest"),
             tsv=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "summary_stats.tsv")
         output:
             tsv=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm",
@@ -307,7 +307,7 @@ if config["checkm_taxonomy_wf"]:
 else:
     rule checkm_lineage_wf:
         input:
-            db=opj(config["resource_path"], "checkm", ".dmanifest"),
+            db=opj("resources", "checkm", ".dmanifest"),
             tsv=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "summary_stats.tsv")
         output:
             tsv=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm",
@@ -450,10 +450,10 @@ rule aggregate_checkm_stats:
 
 rule download_gtdb:
     output:
-        met=opj(config["resource_path"], "gtdb", "metadata",
+        met=opj("resources", "gtdb", "metadata",
                   "metadata.txt")
     log:
-        opj(config["resource_path"], "gtdb", "download.log")
+        opj("resources", "gtdb", "download.log")
     params:
         url="https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/gtdbtk_r89_data.tar.gz",
         tar=lambda wildcards, output: opj(os.path.dirname(output.met), "gtdbtk_r89_data.tar.gz"),
@@ -466,7 +466,7 @@ rule download_gtdb:
 
 rule gtdbtk_classify:
     input:
-        met=opj(config["resource_path"], "gtdb", "metadata",
+        met=opj("resources", "gtdb", "metadata",
                   "metadata.txt"),
         tsv=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "summary_stats.tsv")
     output:

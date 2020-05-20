@@ -220,10 +220,10 @@ def check_classifiers(config):
             config["kraken_index_path"] = config["kraken_custom"]
         # If not, use prebuilt or standard
         elif config["kraken_standard_db"]:
-            config["kraken_index_path"] = opj(config["resource_path"], "kraken",
+            config["kraken_index_path"] = opj("resources", "kraken",
                                               "standard")
         else:
-            config["kraken_index_path"] = opj(config["resource_path"], "kraken",
+            config["kraken_index_path"] = opj("resources", "kraken",
                                               "prebuilt",
                                               config["kraken_prebuilt"])
         if config["kraken_reduce_memory"]:

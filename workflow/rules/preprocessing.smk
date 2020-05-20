@@ -33,9 +33,9 @@ rule link_files:
 
 rule download_rRNA_database:
     output:
-        opj(config["resource_path"], "rRNA_databases", "{file}.fasta")
+        opj("resources", "rRNA_databases", "{file}.fasta")
     log:
-        opj(config["resource_path"], "rRNA_databases", "{file}.dl.log")
+        opj("resources", "rRNA_databases", "{file}.dl.log")
     params:
         url="https://raw.githubusercontent.com/biocore/sortmerna/master/data/rRNA_databases/{file}.fasta"
     shell:
@@ -45,13 +45,13 @@ rule download_rRNA_database:
 
 rule index_db:
     input:
-        fasta=opj(config["resource_path"], "rRNA_databases", "{file}.fasta")
+        fasta=opj("resources", "rRNA_databases", "{file}.fasta")
     output:
-        expand(opj(config["resource_path"], "rRNA_databases",
+        expand(opj("resources", "rRNA_databases",
                    "{{file}}.fasta.{suffix}"),
                suffix=["bursttrie_0.dat", "kmer_0.dat", "pos_0.dat", "stats"])
     log:
-        opj(config["resource_path"], "rRNA_databases", "{file}.index.log")
+        opj("resources", "rRNA_databases", "{file}.index.log")
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*5
     conda:
@@ -106,7 +106,7 @@ rule sortmerna_fastq_pe:
     input:
         fastq=opj(config["paths"]["results"], "intermediate", "preprocess",
                   "{sample}_{unit}_merged.fastq"),
-        db=expand(opj(config["resource_path"], "rRNA_databases",
+        db=expand(opj("resources", "rRNA_databases",
                       "{file}.{suffix}"),
                   suffix=["bursttrie_0.dat", "kmer_0.dat", "pos_0.dat", "stats"],
                   file=config["sortmerna_dbs"])
@@ -232,7 +232,7 @@ rule sortmerna_fastq_se:
     input:
         fastq=opj(config["paths"]["results"], "intermediate", "preprocess",
                   "{sample}_{unit}_se.fastq"),
-        db=expand(opj(config["resource_path"], "rRNA_databases",
+        db=expand(opj("resources", "rRNA_databases",
                       "{file}.{suffix}"),
             suffix=["bursttrie_0.dat", "kmer_0.dat", "pos_0.dat", "stats"],
             file=config["sortmerna_dbs"])
@@ -467,9 +467,9 @@ rule cutadapt_se:
 rule download_phix:
     """Downloads the phiX genome"""
     output:
-        opj(config["resource_path"], "phix", "phix.fasta")
+        opj("resources", "phix", "phix.fasta")
     log:
-        opj(config["resource_path"], "phix", "phix.log")
+        opj("resources", "phix", "phix.log")
     params:
         url_base="ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/819/615/GCF_000819615.1_ViralProj14015"
     shell:
@@ -486,12 +486,12 @@ rule download_phix:
 rule bowtie_build_phix:
     """Build bowtie2 index for phiX"""
     input:
-        fasta = opj(config["resource_path"], "phix", "phix.fasta")
+        fasta = opj("resources", "phix", "phix.fasta")
     output:
-        expand(opj(config["resource_path"], "phix", "phix.{index}.bt2"),
+        expand(opj("resources", "phix", "phix.{index}.bt2"),
                index=range(1, 5))
     log:
-        opj(config["resource_path"], "phix", "bowtie_build.log")
+        opj("resources", "phix", "bowtie_build.log")
     params:
         prefix = lambda w, input: os.path.splitext(input.fasta)[0]
     threads: 1
@@ -507,7 +507,7 @@ rule bowtie_build_phix:
 rule filter_phix_pe:
     """Maps reads against the phiX genome, keeping non-concordantly mapped"""
     input:
-        bt_index=expand(opj(config["resource_path"], "phix",
+        bt_index=expand(opj("resources", "phix",
                             "phix.{index}.bt2"), index=range(1, 5)),
         R1=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R1"+preprocess_suffices["phixfilt"]+".fastq.gz"),
@@ -524,7 +524,7 @@ rule filter_phix_pe:
     params:
         tmp_out=config["paths"]["temp"],
         setting=config["bowtie2_params"],
-        prefix=opj(config["resource_path"], "phix", "phix")
+        prefix=opj("resources", "phix", "phix")
     threads: config["bowtie2_threads"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60
@@ -548,7 +548,7 @@ rule filter_phix_pe:
 rule filter_phix_se:
     """Maps reads against the phiX genome, keeping non-concordantly mapped"""
     input:
-        bt_index=expand(opj(config["resource_path"], "phix",
+        bt_index=expand(opj("resources", "phix",
                             "phix.{index}.bt2"), index=range(1, 5)),
         se=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_se"+preprocess_suffices["phixfilt"]+".fastq.gz")
@@ -561,7 +561,7 @@ rule filter_phix_se:
     params:
         tmp_out=config["paths"]["temp"],
         setting=config["bowtie2_params"],
-        prefix=opj(config["resource_path"], "phix", "phix")
+        prefix=opj("resources", "phix", "phix")
     threads: config["bowtie2_threads"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60

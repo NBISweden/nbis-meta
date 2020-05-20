@@ -20,14 +20,14 @@ rule taxonomy:
 
 rule tango_download_taxonomy:
     output:
-        sqlite=opj(config["resource_path"], "taxonomy", "taxonomy.sqlite"),
-        taxdump=opj(config["resource_path"], "taxonomy", "taxdump.tar.gz"),
-        nodes=opj(config["resource_path"], "taxonomy", "nodes.dmp"),
-        names=opj(config["resource_path"], "taxonomy", "names.dmp"),
-        pkl=opj(config["resource_path"], "taxonomy",
+        sqlite=opj("resources", "taxonomy", "taxonomy.sqlite"),
+        taxdump=opj("resources", "taxonomy", "taxdump.tar.gz"),
+        nodes=opj("resources", "taxonomy", "nodes.dmp"),
+        names=opj("resources", "taxonomy", "names.dmp"),
+        pkl=opj("resources", "taxonomy",
                   "taxonomy.sqlite.traverse.pkl")
     log:
-        opj(config["resource_path"], "taxonomy", "tango.log")
+        opj("resources", "taxonomy", "tango.log")
     params:
         taxdir=lambda wildcards, output: os.path.dirname(output.sqlite)
     conda:
@@ -39,9 +39,9 @@ rule tango_download_taxonomy:
 
 rule tango_download:
     output:
-        fasta=temp(opj(config["resource_path"], "{db}", "{db}.fasta.gz"))
+        fasta=temp(opj("resources", "{db}", "{db}.fasta.gz"))
     log:
-        opj(config["resource_path"], "{db}", "tango_download.log")
+        opj("resources", "{db}", "tango_download.log")
     params:
         dldir=lambda wildcards, output: os.path.dirname(output.fasta),
         tmpdir="$TMPDIR"
@@ -55,9 +55,9 @@ rule tango_download:
 
 rule tango_download_nr_idmap:
     output:
-        idmap=opj(config["resource_path"], "nr", "prot.accession2taxid.gz")
+        idmap=opj("resources", "nr", "prot.accession2taxid.gz")
     log:
-        opj(config["resource_path"], "nr", "tango_download_idmap.log")
+        opj("resources", "nr", "tango_download_idmap.log")
     params:
         dldir=lambda wildcards, output: os.path.dirname(output.idmap)
     conda:
@@ -69,12 +69,12 @@ rule tango_download_nr_idmap:
 
 rule tango_format_uniref:
     input:
-        fasta=opj(config["resource_path"], "{db}", "{db}.fasta.gz")
+        fasta=opj("resources", "{db}", "{db}.fasta.gz")
     output:
-        fasta=opj(config["resource_path"], "{db}", "{db}.reformat.fasta.gz"),
-        idmap=opj(config["resource_path"], "{db}", "prot.accession2taxid.gz")
+        fasta=opj("resources", "{db}", "{db}.reformat.fasta.gz"),
+        idmap=opj("resources", "{db}", "prot.accession2taxid.gz")
     log:
-        opj(config["resource_path"], "{db}", "tango_format.log")
+        opj("resources", "{db}", "tango_format.log")
     params:
         tmpdir=config["paths"]["temp"]
     conda:
@@ -87,11 +87,11 @@ rule tango_format_uniref:
 
 rule tango_format_nr:
     input:
-        fasta=opj(config["resource_path"], "nr", "nr.fasta.gz")
+        fasta=opj("resources", "nr", "nr.fasta.gz")
     output:
-        fasta=opj(config["resource_path"], "nr", "nr.reformat.fasta.gz")
+        fasta=opj("resources", "nr", "nr.reformat.fasta.gz")
     log:
-        opj(config["resource_path"], "nr", "tango_format.log")
+        opj("resources", "nr", "tango_format.log")
     params:
         tmpdir=config["paths"]["temp"]
     conda:
@@ -104,11 +104,11 @@ rule tango_format_nr:
 
 rule tango_update:
     input:
-        idmap=opj(config["resource_path"], "{db}", "prot.accession2taxid.gz")
+        idmap=opj("resources", "{db}", "prot.accession2taxid.gz")
     output:
-        idmap=opj(config["resource_path"], "{db}", "prot.accession2taxid.update.gz")
+        idmap=opj("resources", "{db}", "prot.accession2taxid.update.gz")
     log:
-        opj(config["resource_path"], "{db}", "tango_update.log")
+        opj("resources", "{db}", "tango_update.log")
     conda:
         "../envs/tango.yml"
     params:
@@ -128,13 +128,13 @@ rule tango_update:
 
 rule tango_build:
     input:
-        fasta=opj(config["resource_path"], "{db}", "{db}.reformat.fasta.gz"),
-        nodes=opj(config["resource_path"], "taxonomy", "nodes.dmp"),
-        idmap=opj(config["resource_path"], "{db}", "prot.accession2taxid.update.gz")
+        fasta=opj("resources", "{db}", "{db}.reformat.fasta.gz"),
+        nodes=opj("resources", "taxonomy", "nodes.dmp"),
+        idmap=opj("resources", "{db}", "prot.accession2taxid.update.gz")
     output:
-        opj(config["resource_path"], "{db}", "diamond.dmnd")
+        opj("resources", "{db}", "diamond.dmnd")
     log:
-        opj(config["resource_path"], "{db}", "diamond.log")
+        opj("resources", "{db}", "diamond.log")
     threads: config["diamond_threads"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*10
@@ -148,7 +148,7 @@ rule tango_build:
 
 rule tango_search:
     input:
-        db=opj(config["resource_path"], config["taxdb"], "diamond.dmnd"),
+        db=opj("resources", config["taxdb"], "diamond.dmnd"),
         fasta=opj(config["paths"]["results"], "assembly", "{group}",
                   "final_contigs.fa")
     output:
@@ -176,7 +176,7 @@ rule tango_assign:
     input:
         opj(config["paths"]["results"], "annotation", "{group}",
             "final_contigs.{db}.tsv.gz".format(db=config["taxdb"])),
-        ancient(opj(config["resource_path"], "taxonomy", "taxonomy.sqlite"))
+        ancient(opj("resources", "taxonomy", "taxonomy.sqlite"))
     output:
         opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
             "tango.{db}.taxonomy.tsv".format(db=config["taxdb"]))
@@ -185,7 +185,7 @@ rule tango_assign:
             "tango_assign.log")
     params:
         taxonomy_ranks=config["taxonomy_ranks"],
-        taxdir=opj(config["resource_path"], "taxonomy"),
+        taxdir=opj("resources", "taxonomy"),
         settings=config["tango_assign_params"]
     threads: 4
     resources:
@@ -203,9 +203,9 @@ rule tango_assign:
 
 rule download_sourmash_db:
     output:
-        opj(config["resource_path"], "sourmash", "genbank-k31.lca.json")
+        opj("resources", "sourmash", "genbank-k31.lca.json")
     log:
-        opj(config["resource_path"], "sourmash", "download.log")
+        opj("resources", "sourmash", "download.log")
     params:
         url="https://osf.io/4f8n3/download"
     shell:
@@ -235,7 +235,7 @@ rule sourmash_classify:
     input:
         sig=opj(config["paths"]["results"], "assembly", "{group}",
                  "final_contigs.fa.sig"),
-        db=opj(config["resource_path"], "sourmash", "genbank-k31.lca.json")
+        db=opj("resources", "sourmash", "genbank-k31.lca.json")
     output:
         csv=opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
                   "sourmash.taxonomy.csv")

@@ -62,13 +62,13 @@ rule trnascan:
 
 rule download_rfams:
     output:
-        tar=temp(opj(config["resource_path"], "infernal", "Rfam.tar.gz")),
-        cm=opj(config["resource_path"], "infernal", "Rfam.rRNA.cm"),
-        readme=opj(config["resource_path"], "infernal", "README"),
-        version=opj(config["resource_path"], "infernal", "Rfam.version"),
-        clanin=opj(config["resource_path"], "infernal", "Rfam.clanin")
+        tar=temp(opj("resources", "infernal", "Rfam.tar.gz")),
+        cm=opj("resources", "infernal", "Rfam.rRNA.cm"),
+        readme=opj("resources", "infernal", "README"),
+        version=opj("resources", "infernal", "Rfam.version"),
+        clanin=opj("resources", "infernal", "Rfam.clanin")
     log:
-        opj(config["resource_path"], "infernal", "download.log")
+        opj("resources", "infernal", "download.log")
     params:
         url="ftp://ftp.ebi.ac.uk/pub/databases/Rfam/CURRENT",
         rfams=" ".join(["RF00001.cm", "RF00002.cm", "RF00177.cm",
@@ -95,12 +95,12 @@ rule download_rfams:
 
 rule press_rfams:
     input:
-        opj(config["resource_path"], "infernal", "Rfam.rRNA.cm")
+        opj("resources", "infernal", "Rfam.rRNA.cm")
     output:
-        expand(opj(config["resource_path"], "infernal", "Rfam.rRNA.cm.i1{suffix}"),
+        expand(opj("resources", "infernal", "Rfam.rRNA.cm.i1{suffix}"),
                suffix=["m", "i", "f", "p"])
     log:
-        opj(config["resource_path"], "infernal", "cmpress.log")
+        opj("resources", "infernal", "cmpress.log")
     conda:
         "../envs/annotation.yml"
     shell:
@@ -112,10 +112,10 @@ rule infernal:
     input:
         fastafile=opj(config["paths"]["results"], "assembly", "{group}",
                       "final_contigs.fa"),
-        db=expand(opj(config["resource_path"], "infernal",
+        db=expand(opj("resources", "infernal",
                       "Rfam.rRNA.cm.i1{suffix}"),
                   suffix=["m", "i", "f", "p"]),
-        cl=opj(config["resource_path"], "infernal", "Rfam.clanin")
+        cl=opj("resources", "infernal", "Rfam.clanin")
     output:
         opj(config["paths"]["results"], "annotation", "{group}",
             "final_contigs.cmscan")
@@ -123,7 +123,7 @@ rule infernal:
         opj(config["paths"]["results"], "annotation", "{group}",
             "infernal.log")
     params:
-        db=opj(config["resource_path"], "infernal", "Rfam.rRNA.cm")
+        db=opj("resources", "infernal", "Rfam.rRNA.cm")
     threads: 4
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*10
@@ -140,11 +140,11 @@ rule infernal:
 
 rule download_pfam:
     output:
-        hmmfile=opj(config["resource_path"], "pfam", "Pfam-A.hmm"),
-        datfile=opj(config["resource_path"], "pfam", "Pfam-A.hmm.dat"),
-        versionfile=opj(config["resource_path"], "pfam", "Pfam-A.version"),
+        hmmfile=opj("resources", "pfam", "Pfam-A.hmm"),
+        datfile=opj("resources", "pfam", "Pfam-A.hmm.dat"),
+        versionfile=opj("resources", "pfam", "Pfam-A.version"),
     log:
-        opj(config["resource_path"], "pfam", "download.log")
+        opj("resources", "pfam", "download.log")
     params:
         ftp="ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release"
     shell:
@@ -160,10 +160,10 @@ rule download_pfam:
 
 rule download_pfam_info:
     output:
-        clanfile=opj(config["resource_path"], "pfam", "clan.txt"),
-        info=opj(config["resource_path"], "pfam", "Pfam-A.clans.tsv")
+        clanfile=opj("resources", "pfam", "clan.txt"),
+        info=opj("resources", "pfam", "Pfam-A.clans.tsv")
     log:
-        opj(config["resource_path"], "pfam", "info.log")
+        opj("resources", "pfam", "info.log")
     params:
         ftp="ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release"
     shell:
@@ -177,12 +177,12 @@ rule download_pfam_info:
 
 rule press_pfam:
     input:
-        hmmfile=opj(config["resource_path"], "pfam", "Pfam-A.hmm")
+        hmmfile=opj("resources", "pfam", "Pfam-A.hmm")
     output:
-        expand(opj(config["resource_path"], "pfam", "Pfam-A.hmm.h3{suffix}"),
+        expand(opj("resources", "pfam", "Pfam-A.hmm.h3{suffix}"),
                suffix=["f", "i", "m", "p"])
     log:
-        opj(config["resource_path"], "pfam", "hmmpress.log")
+        opj("resources", "pfam", "hmmpress.log")
     conda:
         "../envs/annotation.yml"
     shell:
@@ -193,7 +193,7 @@ rule press_pfam:
 rule pfam_scan:
     input:
         opj(config["paths"]["results"], "annotation", "{group}", "final_contigs.faa"),
-        expand(opj(config["resource_path"], "pfam", "Pfam-A.hmm.h3{suffix}"),
+        expand(opj("resources", "pfam", "Pfam-A.hmm.h3{suffix}"),
                suffix=["f", "i", "m", "p"])
     output:
         opj(config["paths"]["results"], "annotation", "{group}", "{group}.pfam.out")
@@ -202,7 +202,7 @@ rule pfam_scan:
     conda:
         "../envs/annotation.yml"
     params:
-        dir=opj(config["resource_path"], "pfam"),
+        dir=opj("resources", "pfam"),
         tmp_out=opj(os.path.expandvars(config["paths"]["temp"]),
                     "{group}.pfam.out")
     threads: 2
@@ -218,8 +218,8 @@ rule pfam_scan:
 rule parse_pfam:
     input:
         opj(config["paths"]["results"], "annotation", "{group}", "{group}.pfam.out"),
-        opj(config["resource_path"], "pfam", "clan.txt"),
-        opj(config["resource_path"], "pfam", "Pfam-A.clans.tsv")
+        opj("resources", "pfam", "clan.txt"),
+        opj("resources", "pfam", "Pfam-A.clans.tsv")
     output:
         opj(config["paths"]["results"], "annotation", "{group}", "pfam.parsed.tsv")
     script:
@@ -229,10 +229,10 @@ rule parse_pfam:
 
 rule download_eggnog:
     output:
-        db=opj(config["resource_path"],"eggnog-mapper","eggnog.db"),
-        version=opj(config["resource_path"],"eggnog-mapper","eggnog.version")
+        db=opj("resources","eggnog-mapper","eggnog.db"),
+        version=opj("resources","eggnog-mapper","eggnog.version")
     log:
-        opj(config["resource_path"],"eggnog-mapper","download.log")
+        opj("resources","eggnog-mapper","download.log")
     conda:
         "../envs/annotation.yml"
     params:
@@ -247,12 +247,12 @@ rule download_eggnog:
 rule get_kegg_info:
     #TODO: Check which files are needed with new eggnog-mapper version
     output:
-        expand(opj(config["resource_path"], "kegg", "{f}"),
+        expand(opj("resources", "kegg", "{f}"),
                f=["kegg_ec2pathways.tsv", "kegg_ko2ec.tsv",
                   "kegg_ko2pathways.tsv", "kegg_kos.tsv", "kegg_modules.tsv",
                   "kegg_pathways.tsv"])
     log:
-        opj(config["resource_path"], "kegg", "download.log")
+        opj("resources", "kegg", "download.log")
     params:
         outdir=lambda w, output: os.path.dirname(output[0]),
         src="../scripts/eggnog-parser.py"
@@ -265,12 +265,12 @@ rule emapper_homology_search:
     input:
         opj(config["paths"]["results"], "annotation", "{group}",
             "final_contigs.faa"),
-        opj(config["resource_path"], "eggnog-mapper", "eggnog.db")
+        opj("resources", "eggnog-mapper", "eggnog.db")
     output:
         opj(config["paths"]["results"], "annotation", "{group}",
             "{group}.emapper.seed_orthologs")
     params:
-        resource_dir=opj(config["resource_path"], "eggnog-mapper"),
+        resource_dir=opj("resources", "eggnog-mapper"),
         out="{group}",
         tmpdir=opj(os.path.expandvars(config["paths"]["temp"]),
                    "{group}-eggnog"),
@@ -305,7 +305,7 @@ if config["runOnUppMax"] == "yes":
             opj(config["paths"]["results"], "annotation", "{group}",
                 "{group}.emapper.annotations")
         params:
-            resource_dir=opj(config["resource_path"], "eggnog-mapper"),
+            resource_dir=opj("resources", "eggnog-mapper"),
             tmpdir=opj(os.path.expandvars(config["paths"]["temp"]),
                        "{group}-eggnog"),
             out=opj(config["paths"]["results"], "annotation", "{group}", "{group}"),
@@ -341,7 +341,7 @@ else:
             opj(config["paths"]["results"], "annotation", "{group}",
                  "{group}.emapper.annotations.log")
         params:
-            resource_dir=opj(config["resource_path"], "eggnog-mapper"),
+            resource_dir=opj("resources", "eggnog-mapper"),
             tmpdir=opj(os.path.expandvars(config["paths"]["temp"]),
                        "{group}-eggnog"),
             out=opj(config["paths"]["results"], "annotation", "{group}", "{group}"),
@@ -361,12 +361,12 @@ else:
 rule parse_ko_annotations:
     input:
         annotations=opj(config["paths"]["results"], "annotation", "{group}", "{group}.emapper.annotations"),
-        ko2ec=opj(config["resource_path"], "kegg", "kegg_ko2ec.tsv"),
-        ko2path=opj(config["resource_path"], "kegg", "kegg_ko2pathways.tsv"),
-        #ko2module=opj(config["resource_path"], "kegg", "kegg_ko2modules.tsv"),
-        kos=opj(config["resource_path"], "kegg", "kegg_kos.tsv"),
-        modules=opj(config["resource_path"], "kegg", "kegg_modules.tsv"),
-        pathways=opj(config["resource_path"], "kegg", "kegg_pathways.tsv")
+        ko2ec=opj("resources", "kegg", "kegg_ko2ec.tsv"),
+        ko2path=opj("resources", "kegg", "kegg_ko2pathways.tsv"),
+        #ko2module=opj("resources", "kegg", "kegg_ko2modules.tsv"),
+        kos=opj("resources", "kegg", "kegg_kos.tsv"),
+        modules=opj("resources", "kegg", "kegg_modules.tsv"),
+        pathways=opj("resources", "kegg", "kegg_pathways.tsv")
     output:
         expand(opj(config["paths"]["results"], "annotation", "{{group}}", "{db}.parsed.tsv"),
             db=["enzymes", "pathways", "modules", "kos"])
@@ -374,7 +374,7 @@ rule parse_ko_annotations:
         opj(config["paths"]["results"], "annotation", "{{group}}", "eggnog-parser.log")
     params:
         outbase=opj(config["paths"]["results"], "annotation", "{group}"),
-        resource_dir=opj(config["resource_path"], "kegg"),
+        resource_dir=opj("resources", "kegg"),
         src="../scripts/eggnog-parser.py"
     shell:
         """
@@ -386,12 +386,12 @@ rule parse_ko_annotations:
 
 rule download_rgi_data:
     output:
-        json=opj(config["resource_path"], "card", "card.json"),
-        version=opj(config["resource_path"], "card", "card.version")
+        json=opj("resources", "card", "card.json"),
+        version=opj("resources", "card", "card.version")
     log:
-        opj(config["resource_path"], "card", "log")
+        opj("resources", "card", "log")
     params:
-        tar=opj(config["resource_path"], "card", "data.tar.gz"),
+        tar=opj("resources", "card", "data.tar.gz"),
         dir=lambda w, output: os.path.dirname(output.json)
     shell:
          """
@@ -406,7 +406,7 @@ rule download_rgi_data:
 rule rgi:
     input:
         faa=opj(config["paths"]["results"], "annotation", "{group}", "final_contigs.faa"),
-        db=opj(config["resource_path"], "card", "card.json")
+        db=opj("resources", "card", "card.json")
     output:
         json=opj(config["paths"]["results"], "annotation", "{group}", "rgi.out.json"),
         txt=opj(config["paths"]["results"], "annotation", "{group}", "rgi.out.txt")

@@ -23,11 +23,11 @@ rule classify:
 rule download_kraken_build:
     """Downloads pre-built kraken2 index"""
     output:
-        expand(opj(config["resource_path"], "kraken", "prebuilt",
+        expand(opj("resources", "kraken", "prebuilt",
                    config["kraken_prebuilt"], "{n}.k2d"),
                n=["hash", "opts", "taxo"])
     log:
-        opj(config["resource_path"], "kraken", "prebuilt",
+        opj("resources", "kraken", "prebuilt",
                    config["kraken_prebuilt"], "download.log")
     params:
         dir=lambda w, output: os.path.dirname(output[0]),
@@ -48,11 +48,11 @@ rule download_kraken_build:
 
 rule kraken_build_standard:
     output:
-        expand(opj(config["resource_path"], "kraken", "standard", "{n}.k2d"),
+        expand(opj("resources", "kraken", "standard", "{n}.k2d"),
                n=["hash", "opts", "taxo"])
     log:
-        build=opj(config["resource_path"], "kraken", "standard", "build.log"),
-        clean=opj(config["resource_path"], "kraken", "standard", "clean.log"),
+        build=opj("resources", "kraken", "standard", "build.log"),
+        clean=opj("resources", "kraken", "standard", "clean.log"),
     params:
         dir=lambda w, output: os.path.dirname(output[0])
     conda:
@@ -236,13 +236,13 @@ rule build_metaphlan:
     Download and build the metaphlan bowtie2 database
     """
     output:
-        expand(opj(config["resource_path"], "metaphlan", "{index}.{s}.bt2"),
+        expand(opj("resources", "metaphlan", "{index}.{s}.bt2"),
                index=config["metaphlan_index"], 
                s=["1", "2", "3", "4", "rev.1", "rev.2"])
     log:
-        opj(config["resource_path"], "metaphlan", "mpa.log")
+        opj("resources", "metaphlan", "mpa.log")
     params:
-        dir=opj(config["resource_path"], "metaphlan"),
+        dir=opj("resources", "metaphlan"),
         index=config["metaphlan_index"]
     threads: 4
     resources:
@@ -261,7 +261,7 @@ rule metaphlan_pe:
                  "{sample}_{unit}_R1"+PREPROCESS+".fastq.gz"),
         R2=opj(config["paths"]["results"], "intermediate", "preprocess",
                  "{sample}_{unit}_R2"+PREPROCESS+".fastq.gz"),
-        db=expand(opj(config["resource_path"], "metaphlan", "{index}.{s}.bt2"),
+        db=expand(opj("resources", "metaphlan", "{index}.{s}.bt2"),
                   index=config["metaphlan_index"],
                   s=["1", "2", "3", "4", "rev.1", "rev.2"])
     output:
@@ -270,7 +270,7 @@ rule metaphlan_pe:
     log:
         opj(config["paths"]["results"], "metaphlan", "{sample}_{unit}_pe.log")
     params:
-        dir=opj(config["resource_path"], "metaphlan")
+        dir=opj("resources", "metaphlan")
     conda:
         "../envs/metaphlan.yml"
     threads: 10
@@ -287,7 +287,7 @@ rule metaphlan_se:
     input:
         se=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_se"+PREPROCESS+".fastq.gz"),
-        db=expand(opj(config["resource_path"], "metaphlan", "{index}.{s}.bt2"),
+        db=expand(opj("resources", "metaphlan", "{index}.{s}.bt2"),
                   index = config["metaphlan_index"],
                   s = ["1", "2", "3", "4", "rev.1", "rev.2"])
     output:
@@ -296,7 +296,7 @@ rule metaphlan_se:
     log:
         opj(config["paths"]["results"], "metaphlan", "{sample}_{unit}_se.log")
     params:
-        dir = opj(config["resource_path"], "metaphlan")
+        dir = opj("resources", "metaphlan")
     conda:
         "../envs/metaphlan.yml"
     threads: 10
@@ -333,7 +333,7 @@ rule metaphlan2krona_table:
 rule metaphlan2krona:
     input:
         files = get_all_files(samples, opj(config["paths"]["results"], "metaphlan"), ".krona"),
-        db = opj(config["resource_path"], "krona", "taxonomy.tab")
+        db = opj("resources", "krona", "taxonomy.tab")
     output:
         opj(config["paths"]["results"], "report", "metaphlan", "metaphlan.html")
     log:
@@ -365,9 +365,9 @@ rule plot_metaphlan:
 
 rule krona_taxonomy:
     output:
-        tab=opj(config["resource_path"], "krona", "taxonomy.tab")
+        tab=opj("resources", "krona", "taxonomy.tab")
     log:
-        opj(config["resource_path"], "krona", "taxonomy.log")
+        opj("resources", "krona", "taxonomy.log")
     params:
         taxdir=lambda w, output: os.path.dirname(output.tab)
     conda:
