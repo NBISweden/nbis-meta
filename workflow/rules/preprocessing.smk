@@ -615,13 +615,12 @@ rule fastuniq:
         gunzip -c {input.R2} > {params.R2_intmp}
         echo {params.R1_intmp} > {params.file_list}
         echo {params.R2_intmp} >> {params.file_list}
-        fastuniq \
-            -i {params.file_list} \
-            -t q \
-            -o {params.R1_outtmp} \
+        fastuniq -i {params.file_list} -t q -o {params.R1_outtmp} \
             -p {params.R2_outtmp} >{log} 2>&1
         gzip -c {params.R1_outtmp} > {output.R1}
         gzip -c {params.R2_outtmp} > {output.R2}
+        rm {params.R1_intmp} {params.R1_outtmp} {params.R2_intmp} {params.R2_outtmp}
+        rm {params.file_list}
         """
 
 rule fastuniq_se:
