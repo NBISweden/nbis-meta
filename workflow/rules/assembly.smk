@@ -9,9 +9,9 @@ localrules:
 
 rule assemble:
     input:
-        opj(config["report_path"], "assembly", "assembly_stats.pdf"),
-        opj(config["report_path"], "assembly", "assembly_size_dist.pdf"),
-        opj(config["report_path"], "assembly", "alignment_frequency.pdf")
+        opj(config["paths"]["results"], "report", "assembly", "assembly_stats.pdf"),
+        opj(config["paths"]["results"], "report", "assembly", "assembly_size_dist.pdf"),
+        opj(config["paths"]["results"], "report", "assembly", "alignment_frequency.pdf")
 
 if config["metaspades"]:
     rule generate_metaspades_input:
@@ -311,8 +311,8 @@ rule assembly_stats:
         expand(opj(config["paths"]["results"],"assembly","{group}",
                    "final_contigs.fa"), group=assemblies.keys())
     output:
-        opj(config["report_path"], "assembly", "assembly_stats.tsv"),
-        opj(config["report_path"], "assembly", "assembly_size_dist.tsv")
+        opj(config["paths"]["results"], "report", "assembly", "assembly_stats.tsv"),
+        opj(config["paths"]["results"], "report", "assembly", "assembly_size_dist.tsv")
     script:
         "../scripts/assembly_utils.py"
 
@@ -345,14 +345,14 @@ rule samtools_flagstat:
 
 rule plot_assembly_stats:
     input:
-        stat = opj(config["report_path"], "assembly", "assembly_stats.tsv"),
-        dist = opj(config["report_path"], "assembly", "assembly_size_dist.tsv"),
+        stat = opj(config["paths"]["results"], "report", "assembly", "assembly_stats.tsv"),
+        dist = opj(config["paths"]["results"], "report", "assembly", "assembly_size_dist.tsv"),
         maps = expand(opj(config["paths"]["results"],"assembly","{group}",
                  "mapping","flagstat.tsv"), group = assemblies.keys())
     output:
-        opj(config["report_path"], "assembly", "assembly_stats.pdf"),
-        opj(config["report_path"], "assembly", "assembly_size_dist.pdf"),
-        opj(config["report_path"], "assembly", "alignment_frequency.pdf")
+        opj(config["paths"]["results"], "report", "assembly", "assembly_stats.pdf"),
+        opj(config["paths"]["results"], "report", "assembly", "assembly_size_dist.pdf"),
+        opj(config["paths"]["results"], "report", "assembly", "alignment_frequency.pdf")
     conda:
         "../envs/plotting.yml"
     notebook:

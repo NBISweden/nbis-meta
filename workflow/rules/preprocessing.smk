@@ -666,11 +666,11 @@ rule multiqc:
     input:
         multiqc_input(samples, config)
     output:
-        html=opj(config["report_path"], "samples_report.html"),
-        txt=opj(config["report_path"], "samples_report_data",
+        html=opj(config["paths"]["results"], "report", "samples_report.html"),
+        txt=opj(config["paths"]["results"], "report", "samples_report_data",
             "multiqc_general_stats.txt")
     log:
-        opj(config["report_path"], "multiqc.log")
+        opj(config["paths"]["results"], "report", "multiqc.log")
     shadow:
         "shallow"
     params:

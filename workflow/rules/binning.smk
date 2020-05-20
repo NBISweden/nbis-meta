@@ -428,7 +428,7 @@ rule aggregate_checkm_profiles:
                l=config["min_contig_length"],
                binner=get_binners(config))
     output:
-        tsv=opj(config["report_path"], "checkm", "checkm.profiles.tsv")
+        tsv=opj(config["paths"]["results"], "report", "checkm", "checkm.profiles.tsv")
     run:
         df=concatenate(input)
         df.to_csv(output.tsv, sep="\t", index=True)
@@ -441,7 +441,7 @@ rule aggregate_checkm_stats:
                l=config["min_contig_length"],
                binner=get_binners(config))
     output:
-        tsv=opj(config["report_path"], "checkm", "checkm.stats.tsv")
+        tsv=opj(config["paths"]["results"], "report", "checkm", "checkm.stats.tsv")
     run:
         df=concatenate(input)
         df.to_csv(output.tsv, sep="\t", index=True)
@@ -509,7 +509,7 @@ rule aggregate_gtdbtk:
                group=assemblies.keys(),
                l=config["min_contig_length"])
     output:
-        summary=opj(config["report_path"], "gtdbtk", "gtdbtk.summary.tsv")
+        summary=opj(config["paths"]["results"], "report", "gtdbtk", "gtdbtk.summary.tsv")
     run:
         summaries=[]
         for f in input:
@@ -642,8 +642,8 @@ rule aggregate_bin_annot:
                     group=assemblies.keys(),
                     l=config["min_contig_length"])
     output:
-        trna=opj(config["report_path"], "bin_annotation", "tRNA.total.tsv"),
-        rrna=opj(config["report_path"], "bin_annotation", "rRNA.types.tsv")
+        trna=opj(config["paths"]["results"], "report", "bin_annotation", "tRNA.total.tsv"),
+        rrna=opj(config["paths"]["results"], "report", "bin_annotation", "rRNA.types.tsv")
     run:
         df=concatenate(input.trna)
         df.to_csv(output.trna, sep="\t", index=True)

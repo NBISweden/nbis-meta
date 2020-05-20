@@ -311,7 +311,7 @@ rule merge_metaphlan:
     input:
         get_all_files(samples, opj(config["paths"]["results"], "metaphlan"), ".tsv")
     output:
-        opj(config["report_path"], "metaphlan", "metaphlan.tsv")
+        opj(config["paths"]["results"], "report", "metaphlan", "metaphlan.tsv")
     conda:
         "../envs/metaphlan.yml"
     shell:
@@ -333,9 +333,9 @@ rule metaphlan2krona:
         files = get_all_files(samples, opj(config["paths"]["results"], "metaphlan"), ".krona"),
         db = opj(config["resource_path"], "krona", "taxonomy.tab")
     output:
-        opj(config["report_path"], "metaphlan", "metaphlan.html")
+        opj(config["paths"]["results"], "report", "metaphlan", "metaphlan.html")
     log:
-        opj(config["report_path"], "metaphlan", "krona.log")
+        opj(config["paths"]["results"], "report", "metaphlan", "krona.log")
     conda:
         "../envs/krona.yml"
     params:
@@ -349,9 +349,9 @@ rule metaphlan2krona:
 
 rule plot_metaphlan:
     input:
-        opj(config["report_path"], "metaphlan", "metaphlan.tsv")
+        opj(config["paths"]["results"], "report", "metaphlan", "metaphlan.tsv")
     output:
-        opj(config["report_path"], "metaphlan", "metaphlan.pdf")
+        opj(config["paths"]["results"], "report", "metaphlan", "metaphlan.pdf")
     params:
         rank=config["metaphlan_plot_rank"]
     conda:
@@ -406,9 +406,9 @@ rule all2krona:
                                     "{classifier}"), ".html"),
         t=opj("resources", "krona", "taxonomy.tab")
     output:
-        opj(config["report_path"], "{classifier}", "{classifier}.krona.html")
+        opj(config["paths"]["results"], "report", "{classifier}", "{classifier}.krona.html")
     log:
-        opj(config["report_path"], "{classifier}", "{classifier}.krona.log")
+        opj(config["paths"]["results"], "report", "{classifier}", "{classifier}.krona.log")
     params:
         tax="resources/krona",
         input_string=krona_input(config, samples, "{classifier}")
