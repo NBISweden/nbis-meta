@@ -24,17 +24,17 @@ rule download_kraken_build:
     """Downloads pre-built kraken2 index"""
     output:
         expand(opj("resources", "kraken", "prebuilt",
-                   config["kraken_prebuilt"], "{n}.k2d"),
+                   config["kraken"]["prebuilt"], "{n}.k2d"),
                n=["hash", "opts", "taxo"])
     log:
         opj("resources", "kraken", "prebuilt",
-                   config["kraken_prebuilt"], "download.log")
+                   config["kraken"]["prebuilt"], "download.log")
     params:
         dir=lambda w, output: os.path.dirname(output[0]),
         tar=opj(config["paths"]["temp"],
-                "{base}.tgz".format(base=config["kraken_prebuilt"])),
-        url=get_kraken_index_url(config["kraken_prebuilt"]),
-        db_version=get_kraken_index_url(config["kraken_prebuilt"], version=True),
+                "{base}.tgz".format(base=config["kraken"]["prebuilt"])),
+        url=get_kraken_index_url(config["kraken"]["prebuilt"]),
+        db_version=get_kraken_index_url(config["kraken"]["prebuilt"], version=True),
         tmpdir = opj(config["paths"]["temp"], "kraken_db")
     shell:
          """
@@ -71,7 +71,7 @@ rule kraken_pe:
                "{sample}_{unit}_R1"+PREPROCESS+".fastq.gz"),
         R2=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_R2"+PREPROCESS+".fastq.gz"),
-        db=expand(opj(config["kraken_index_path"], "{n}.k2d"),
+        db=expand(opj(config["kraken"]["index_path"], "{n}.k2d"),
                   n=["hash", "opts", "taxo"])
     output:
         opj(config["paths"]["results"], "kraken", "{sample}_{unit}_pe.out"),
@@ -79,8 +79,8 @@ rule kraken_pe:
     log:
         opj(config["paths"]["results"], "kraken", "{sample}_{unit}_pe.log")
     params:
-        db=opj(config["kraken_index_path"]),
-        mem=config["kraken_params"]
+        db=opj(config["kraken"]["index_path"]),
+        mem=config["kraken"]["mem"]
     threads: 10
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*10
@@ -97,7 +97,7 @@ rule kraken_se:
     input:
         se=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_se"+PREPROCESS+".fastq.gz"),
-        db=expand(opj(config["kraken_index_path"], "{n}.k2d"),
+        db=expand(opj(config["kraken"]["index_path"], "{n}.k2d"),
                   n=["hash", "opts", "taxo"])
     output:
         opj(config["paths"]["results"], "kraken", "{sample}_{unit}_se.out"),
@@ -105,8 +105,8 @@ rule kraken_se:
     log:
         opj(config["paths"]["results"], "kraken", "{sample}_{unit}_se.log")
     params:
-        db=opj(config["kraken_index_path"]),
-        mem=config["kraken_params"]
+        db=opj(config["kraken"]["index_path"]),
+        mem=config["kraken"]["mem"]
     threads: 10
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*10
@@ -124,15 +124,15 @@ rule kraken_se:
 rule download_centrifuge_build:
     """Downloads pre-built centrifuge index"""
     output:
-        db=expand(opj(config["centrifuge_dir"],
+        db=expand(opj(config["centrifuge"]["dir"],
                       "{base}.{i}.cf"), i=[1, 2, 3],
                   base=config['centrifuge_base'])
     log:
-        opj(config["centrifuge_dir"], "download.log")
+        opj(config["centrifuge"]["dir"], "download.log")
     params:
-        dir=config["centrifuge_dir"],
-        tar=opj(config["centrifuge_dir"],
-                "{base}.tar.gz".format(base=config["centrifuge_base"])),
+        dir=config["centrifuge"]["dir"],
+        tar=opj(config["centrifuge"]["dir"],
+                "{base}.tar.gz".format(base=config["centrifuge"]["base"])),
         url=get_centrifuge_index_url(config)
     shell:
         """
@@ -147,19 +147,20 @@ rule centrifuge_pe:
                "{sample}_{unit}_R1"+PREPROCESS+".fastq.gz"),
         R2=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_R2"+PREPROCESS+".fastq.gz"),
-        db=expand(opj(config["centrifuge_dir"], "{base}.{i}.cf"),
-                  i=[1, 2, 3], base=config["centrifuge_base"])
+        db=expand(opj(config["centrifuge"]["dir"], "{base}.{i}.cf"),
+                  i=[1, 2, 3], base=config["centrifuge"]["base"])
     output:
         opj(config["paths"]["results"], "centrifuge", "{sample}_{unit}_pe.out"),
         opj(config["paths"]["results"], "centrifuge", "{sample}_{unit}_pe.report")
     log:
         opj(config["paths"]["results"], "centrifuge", "{sample}_{unit}_pe.log")
     params:
-        prefix=opj(config["centrifuge_dir"],
-                   "{base}".format(base=config["centrifuge_base"])),
+        prefix=opj(config["centrifuge"]["dir"],
+                   "{base}".format(base=config["centrifuge"]["base"])),
         tmp_out=opj(config["paths"]["temp"], "{sample}_{unit}_pe.out"),
         tmpdir=config["paths"]["temp"],
-        tmp_report=opj(config["paths"]["temp"], "{sample}_{unit}_pe.report")
+        tmp_report=opj(config["paths"]["temp"], "{sample}_{unit}_pe.report"),
+        k=config["centrifuge"]["max_assignments"]
     threads: 20
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60
@@ -168,9 +169,9 @@ rule centrifuge_pe:
     shell:
         """
         mkdir -p {params.tmpdir}
-        centrifuge -k {config[centrifuge_max_assignments]} -x {params.prefix} \
-            -1 {input.R1} -2 {input.R2} -S {params.tmp_out} -p {threads} \
-            --report-file {params.tmp_report} > {log} 2>&1
+        centrifuge -k {params.k} -x {params.prefix} -1 {input.R1} -2 {input.R2} \
+            -S {params.tmp_out} -p {threads} --report-file {params.tmp_report} \
+            > {log} 2>&1
         mv {params.tmp_out} {output[0]}
         mv {params.tmp_report} {output[1]}
         """
@@ -179,19 +180,20 @@ rule centrifuge_se:
     input:
         se=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_se"+PREPROCESS+".fastq.gz"),
-        db=expand(opj(config["centrifuge_dir"], "{base}.{i}.cf"),
-                  i=[1, 2, 3], base=config["centrifuge_base"])
+        db=expand(opj(config["centrifuge"]["dir"], "{base}.{i}.cf"),
+                  i=[1, 2, 3], base=config["centrifuge"]["base"])
     output:
         opj(config["paths"]["results"], "centrifuge", "{sample}_{unit}_se.out"),
         opj(config["paths"]["results"], "centrifuge", "{sample}_{unit}_se.report")
     log:
         opj(config["paths"]["results"], "centrifuge", "{sample}_{unit}_se.log")
     params:
-        prefix=opj(config["centrifuge_dir"],
-                   "{base}".format(base=config["centrifuge_base"])),
+        prefix=opj(config["centrifuge"]["dir"],
+                   "{base}".format(base=config["centrifuge"]["base"])),
         tmp_out=opj(config["paths"]["temp"], "{sample}_{unit}_se.out"),
         tmpdir=config["paths"]["temp"],
-        tmp_report=opj(config["paths"]["temp"], "{sample}_{unit}_se.report")
+        tmp_report=opj(config["paths"]["temp"], "{sample}_{unit}_se.report"),
+        k=config["centrifuge"]["max_assignments"]
     threads: 20
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60
@@ -200,9 +202,9 @@ rule centrifuge_se:
     shell:
         """
         mkdir -p {params.tmpdir}
-        centrifuge -k {config[centrifuge_max_assignments]} -U {input.se} \
-            -x {params.prefix} -S {params.tmp_out} -p {threads} \
-            --report-file {params.tmp_report} > {log} 2>&1
+        centrifuge -k {params.k} -U {input.se} -x {params.prefix} \
+            -S {params.tmp_out} -p {threads} --report-file {params.tmp_report} \
+            > {log} 2>&1
         mv {params.tmp_out} {output[0]}
         mv {params.tmp_report} {output[1]}
         """
@@ -211,16 +213,16 @@ rule centrifuge_kreport:
     input:
         f=opj(config["paths"]["results"], "centrifuge", 
               "{sample}_{unit}_{seq_type}.out"),
-        db=expand(opj(config["centrifuge_dir"],
+        db=expand(opj(config["centrifuge"]["dir"],
                       "{base}.{i}.cf"), 
-                  i=[1, 2, 3], base=config["centrifuge_base"])
+                  i=[1, 2, 3], base=config["centrifuge"]["base"])
     output:
         opj(config["paths"]["results"], "centrifuge", 
             "{sample}_{unit}_{seq_type}.kreport")
     params:
-        min_score=config["centrifuge_min_score"],
-        prefix=opj(config["centrifuge_dir"],
-                   "{base}".format(base=config["centrifuge_base"]))
+        min_score=config["centrifuge"]["min_score"],
+        prefix=opj(config["centrifuge"]["dir"],
+                   "{base}".format(base=config["centrifuge"]["base"]))
     conda:
         "../envs/centrifuge.yml"
     shell:
@@ -237,13 +239,13 @@ rule build_metaphlan:
     """
     output:
         expand(opj("resources", "metaphlan", "{index}.{s}.bt2"),
-               index=config["metaphlan_index"], 
+               index=config["metaphlan"]["index"],
                s=["1", "2", "3", "4", "rev.1", "rev.2"])
     log:
         opj("resources", "metaphlan", "mpa.log")
     params:
         dir=opj("resources", "metaphlan"),
-        index=config["metaphlan_index"]
+        index=config["metaphlan"]["index"]
     threads: 4
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*1
@@ -262,7 +264,7 @@ rule metaphlan_pe:
         R2=opj(config["paths"]["results"], "intermediate", "preprocess",
                  "{sample}_{unit}_R2"+PREPROCESS+".fastq.gz"),
         db=expand(opj("resources", "metaphlan", "{index}.{s}.bt2"),
-                  index=config["metaphlan_index"],
+                  index=config["metaphlan"]["index"],
                   s=["1", "2", "3", "4", "rev.1", "rev.2"])
     output:
         tsv=opj(config["paths"]["results"], "metaphlan", "{sample}_{unit}_pe.tsv"),
@@ -288,7 +290,7 @@ rule metaphlan_se:
         se=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_se"+PREPROCESS+".fastq.gz"),
         db=expand(opj("resources", "metaphlan", "{index}.{s}.bt2"),
-                  index = config["metaphlan_index"],
+                  index = config["metaphlan"]["index"],
                   s = ["1", "2", "3", "4", "rev.1", "rev.2"])
     output:
         tsv=opj(config["paths"]["results"], "metaphlan", "{sample}_{unit}_se.tsv"),
@@ -355,7 +357,7 @@ rule plot_metaphlan:
     output:
         opj(config["paths"]["results"], "report", "metaphlan", "metaphlan.pdf")
     params:
-        rank=config["metaphlan_plot_rank"]
+        rank=config["metaphlan"]["plot_rank"]
     conda:
         "../envs/plotting.yml"
     notebook:
