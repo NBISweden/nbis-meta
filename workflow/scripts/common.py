@@ -93,6 +93,8 @@ def parse_samples(df, config, PREPROCESS):
             for a in assem_list:
                 if a not in assemblies.keys() and a != "":
                     assemblies[a] = {}
+        else:
+            assem_list = []
         # Handling of paired and/or single end sequence files If the sample
         # annotation file has a 'pair' column, add the read files as 'R1' and
         # 'R2'
@@ -104,7 +106,7 @@ def parse_samples(df, config, PREPROCESS):
             # Add filepaths to preprocessed output files for each of the read
             # files in each of the assemblies. This will be the initial
             # input to the assembly rule
-            for a in assemblies:
+            for a in assem_list:
                 if sample not in assemblies[a].keys():
                     assemblies[a][sample] = {unit: {}}
                 if r2:
