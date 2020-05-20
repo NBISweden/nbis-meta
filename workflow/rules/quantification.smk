@@ -1,3 +1,5 @@
+from scripts.common import markdup_mem
+
 localrules:
     write_featurefile,
     normalize_featurecount,
@@ -40,15 +42,16 @@ rule remove_mark_duplicates:
         temp_bam=opj(config["temp_path"], "{group}", "{sample}_{unit}_{seq_type}.markdup.bam"),
         temp_sort_bam=opj(config["temp_path"], "{group}", "{sample}_{unit}_{seq_type}.markdup.re_sort.bam"),
         temp_dir=opj(config["temp_path"], "{group}")
+    threads: 10
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60*4
+        runtime=lambda wildcards, attempt: attempt**2*60*4,
+        mem_mb=lambda wildcards: markdup_mem(wildcards, workflow.cores)
     conda:
         "../envs/quantify.yml"
-    threads: 10
     shell:
         """
         mkdir -p {params.temp_dir}
-        java -Xms2g -Xmx64g -XX:ParallelGCThreads={threads} \
+        java -Xms2g -Xmx{resources.mem_mb}g -XX:ParallelGCThreads={threads} \
             -jar $CONDA_PREFIX/share/picard-*/picard.jar MarkDuplicates \
             I={input} M={output[2]} O={params.temp_bam} REMOVE_DUPLICATES=TRUE \
             USE_JDK_DEFLATER=TRUE USE_JDK_INFLATER=TRUE ASO=coordinate 2> {log}
