@@ -55,7 +55,7 @@ def prepost_string(config):
     else:
         config["preprocess"] = False
 
-    if config["markduplicates"]:
+    if config["remove_duplicates"]:
         POSTPROCESS += ".markdup"
 
     return PREPROCESS, POSTPROCESS, preprocess_suffices, config
