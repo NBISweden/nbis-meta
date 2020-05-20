@@ -12,9 +12,9 @@ paths:
 preprocessing:
   # run fastqc on (preprocessed) input?
   # if no preprocessing is done, fastqc will be run on the raw reads
-  fastqc: True
+  fastqc: False
   # trim reads with trimmomatic? (quality and adapter trimming)
-  trimmomatic: True
+  trimmomatic: False
   # trim reads with cutadapt? (runs instead of trimmomatic, no quality trimming)
   cutadapt: False
   # run fastuniq (removes duplicates from paired-end samples)
@@ -262,4 +262,4 @@ metaphlan:
 # this sets the number of reads to generate for example input files
 # the files are generated based on the config/samples.tsv file and stored
 # under examples/data
-example_dataset_size: 100000
+example_dataset_size: 1000000
