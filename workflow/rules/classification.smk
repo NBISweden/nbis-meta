@@ -74,10 +74,10 @@ rule kraken_pe:
         db=expand(opj(config["kraken_index_path"], "{n}.k2d"),
                   n=["hash", "opts", "taxo"])
     output:
-        opj(config["results_path"], "kraken", "{sample}_{unit}_pe.out"),
-        opj(config["results_path"], "kraken", "{sample}_{unit}_pe.kreport")
+        opj(config["paths"]["results"], "kraken", "{sample}_{unit}_pe.out"),
+        opj(config["paths"]["results"], "kraken", "{sample}_{unit}_pe.kreport")
     log:
-        opj(config["results_path"], "kraken", "{sample}_{unit}_pe.log")
+        opj(config["paths"]["results"], "kraken", "{sample}_{unit}_pe.log")
     params:
         db=opj(config["kraken_index_path"]),
         mem=config["kraken_params"]
@@ -100,10 +100,10 @@ rule kraken_se:
         db=expand(opj(config["kraken_index_path"], "{n}.k2d"),
                   n=["hash", "opts", "taxo"])
     output:
-        opj(config["results_path"], "kraken", "{sample}_{unit}_se.out"),
-        opj(config["results_path"], "kraken", "{sample}_{unit}_se.kreport")
+        opj(config["paths"]["results"], "kraken", "{sample}_{unit}_se.out"),
+        opj(config["paths"]["results"], "kraken", "{sample}_{unit}_se.kreport")
     log:
-        opj(config["results_path"], "kraken", "{sample}_{unit}_se.log")
+        opj(config["paths"]["results"], "kraken", "{sample}_{unit}_se.log")
     params:
         db=opj(config["kraken_index_path"]),
         mem=config["kraken_params"]
@@ -150,10 +150,10 @@ rule centrifuge_pe:
         db=expand(opj(config["centrifuge_dir"], "{base}.{i}.cf"),
                   i=[1, 2, 3], base=config["centrifuge_base"])
     output:
-        opj(config["results_path"], "centrifuge", "{sample}_{unit}_pe.out"),
-        opj(config["results_path"], "centrifuge", "{sample}_{unit}_pe.report")
+        opj(config["paths"]["results"], "centrifuge", "{sample}_{unit}_pe.out"),
+        opj(config["paths"]["results"], "centrifuge", "{sample}_{unit}_pe.report")
     log:
-        opj(config["results_path"], "centrifuge", "{sample}_{unit}_pe.log")
+        opj(config["paths"]["results"], "centrifuge", "{sample}_{unit}_pe.log")
     params:
         prefix=opj(config["centrifuge_dir"],
                    "{base}".format(base=config["centrifuge_base"])),
@@ -181,10 +181,10 @@ rule centrifuge_se:
         db=expand(opj(config["centrifuge_dir"], "{base}.{i}.cf"),
                   i=[1, 2, 3], base=config["centrifuge_base"])
     output:
-        opj(config["results_path"], "centrifuge", "{sample}_{unit}_se.out"),
-        opj(config["results_path"], "centrifuge", "{sample}_{unit}_se.report")
+        opj(config["paths"]["results"], "centrifuge", "{sample}_{unit}_se.out"),
+        opj(config["paths"]["results"], "centrifuge", "{sample}_{unit}_se.report")
     log:
-        opj(config["results_path"], "centrifuge", "{sample}_{unit}_se.log")
+        opj(config["paths"]["results"], "centrifuge", "{sample}_{unit}_se.log")
     params:
         prefix=opj(config["centrifuge_dir"],
                    "{base}".format(base=config["centrifuge_base"])),
@@ -207,13 +207,13 @@ rule centrifuge_se:
 
 rule centrifuge_kreport:
     input:
-        f=opj(config["results_path"], "centrifuge", 
+        f=opj(config["paths"]["results"], "centrifuge", 
               "{sample}_{unit}_{seq_type}.out"),
         db=expand(opj(config["centrifuge_dir"],
                       "{base}.{i}.cf"), 
                   i=[1, 2, 3], base=config["centrifuge_base"])
     output:
-        opj(config["results_path"], "centrifuge", 
+        opj(config["paths"]["results"], "centrifuge", 
             "{sample}_{unit}_{seq_type}.kreport")
     params:
         min_score=config["centrifuge_min_score"],
@@ -263,10 +263,10 @@ rule metaphlan_pe:
                   index=config["metaphlan_index"],
                   s=["1", "2", "3", "4", "rev.1", "rev.2"])
     output:
-        tsv=opj(config["results_path"], "metaphlan", "{sample}_{unit}_pe.tsv"),
-        bt2=opj(config["results_path"], "metaphlan", "{sample}_{unit}_pe.bt2")
+        tsv=opj(config["paths"]["results"], "metaphlan", "{sample}_{unit}_pe.tsv"),
+        bt2=opj(config["paths"]["results"], "metaphlan", "{sample}_{unit}_pe.bt2")
     log:
-        opj(config["results_path"], "metaphlan", "{sample}_{unit}_pe.log")
+        opj(config["paths"]["results"], "metaphlan", "{sample}_{unit}_pe.log")
     params:
         dir=opj(config["resource_path"], "metaphlan")
     conda:
@@ -289,10 +289,10 @@ rule metaphlan_se:
                   index = config["metaphlan_index"],
                   s = ["1", "2", "3", "4", "rev.1", "rev.2"])
     output:
-        tsv=opj(config["results_path"], "metaphlan", "{sample}_{unit}_se.tsv"),
-        bt2=opj(config["results_path"], "metaphlan", "{sample}_{unit}_se.bt2")
+        tsv=opj(config["paths"]["results"], "metaphlan", "{sample}_{unit}_se.tsv"),
+        bt2=opj(config["paths"]["results"], "metaphlan", "{sample}_{unit}_se.bt2")
     log:
-        opj(config["results_path"], "metaphlan", "{sample}_{unit}_se.log")
+        opj(config["paths"]["results"], "metaphlan", "{sample}_{unit}_se.log")
     params:
         dir = opj(config["resource_path"], "metaphlan")
     conda:
@@ -309,7 +309,7 @@ rule metaphlan_se:
 
 rule merge_metaphlan:
     input:
-        get_all_files(samples, opj(config["results_path"], "metaphlan"), ".tsv")
+        get_all_files(samples, opj(config["paths"]["results"], "metaphlan"), ".tsv")
     output:
         opj(config["report_path"], "metaphlan", "metaphlan.tsv")
     conda:
@@ -321,16 +321,16 @@ rule merge_metaphlan:
 
 rule metaphlan2krona_table:
     input:
-        opj(config["results_path"], "metaphlan", "{sample}_{unit}_{seq_type}.tsv")
+        opj(config["paths"]["results"], "metaphlan", "{sample}_{unit}_{seq_type}.tsv")
     output:
-        temp(opj(config["results_path"], "metaphlan",
+        temp(opj(config["paths"]["results"], "metaphlan",
                  "{sample}_{unit}_{seq_type}.krona"))
     script:
         "../scripts/classification_utils.py"
 
 rule metaphlan2krona:
     input:
-        files = get_all_files(samples, opj(config["results_path"], "metaphlan"), ".krona"),
+        files = get_all_files(samples, opj(config["paths"]["results"], "metaphlan"), ".krona"),
         db = opj(config["resource_path"], "krona", "taxonomy.tab")
     output:
         opj(config["report_path"], "metaphlan", "metaphlan.html")
@@ -379,11 +379,11 @@ rule krona_taxonomy:
 
 rule classifier2krona:
     input:
-        opj(config["results_path"], "{classifier}",
+        opj(config["paths"]["results"], "{classifier}",
             "{sample}_{unit}_{seq_type}.kreport"),
         opj("resources", "krona", "taxonomy.tab")
     output:
-        opj(config["results_path"], "{classifier}",
+        opj(config["paths"]["results"], "{classifier}",
             "{sample}_{unit}_{seq_type}.html")
     params:
         tax="resources/krona"
@@ -400,9 +400,9 @@ rule classifier2krona:
 
 rule all2krona:
     input:
-        f=get_all_files(samples, opj(config["results_path"],
+        f=get_all_files(samples, opj(config["paths"]["results"],
                                     "{classifier}"), ".kreport"),
-        h=get_all_files(samples, opj(config["results_path"],
+        h=get_all_files(samples, opj(config["paths"]["results"],
                                     "{classifier}"), ".html"),
         t=opj("resources", "krona", "taxonomy.tab")
     output:
