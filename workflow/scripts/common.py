@@ -234,7 +234,7 @@ def check_classifiers(config):
 # preprocessing functions
 
 def preprocessing_input(config):
-    if config["preprocess"] or config["fastqc"]:
+    if config["preprocess"] or config["preprocessing"]["fastqc"]:
         return opj(config["paths"]["results"], "report", "samples_report.html")
     return []
 
@@ -302,7 +302,7 @@ def multiqc_input(samples, config):
 
 def get_fastqc_files(sample, unit, pairs, config, pre):
     """Get all fastqc output"""
-    if config["fastqc"]:
+    if config["preprocessing"]["fastqc"]:
         files = expand(opj(config["paths"]["results"], "intermediate", "fastqc",
                            "{sample}_{unit}_{pair}{PREPROCESS}_fastqc.zip"),
                        sample=sample, unit=unit, pair=pairs, PREPROCESS=pre)
