@@ -39,9 +39,9 @@ rule remove_mark_duplicates:
     log:
         opj(config["paths"]["results"], "assembly", "{group}", "mapping", "{sample}_{unit}_{seq_type}.markdup.log")
     params:
-        temp_bam=opj(config["temp_path"], "{group}", "{sample}_{unit}_{seq_type}.markdup.bam"),
-        temp_sort_bam=opj(config["temp_path"], "{group}", "{sample}_{unit}_{seq_type}.markdup.re_sort.bam"),
-        temp_dir=opj(config["temp_path"], "{group}")
+        temp_bam=opj(config["paths"]["temp"], "{group}", "{sample}_{unit}_{seq_type}.markdup.bam"),
+        temp_sort_bam=opj(config["paths"]["temp"], "{group}", "{sample}_{unit}_{seq_type}.markdup.re_sort.bam"),
+        temp_dir=opj(config["paths"]["temp"], "{group}")
     threads: 10
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4,
@@ -81,7 +81,7 @@ rule featurecount_pe:
         opj(config["paths"]["results"], "assembly", "{group}",
             "mapping", "{sample}_{unit}_pe.fc.log")
     threads: 4
-    params: tmpdir=config["temp_path"]
+    params: tmpdir=config["paths"]["temp"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*30
     conda:
@@ -107,7 +107,7 @@ rule featurecount_se:
         opj(config["paths"]["results"], "assembly", "{group}",
             "mapping", "{sample}_{unit}_se.fc.log")
     threads: 4
-    params: tmpdir=config["temp_path"]
+    params: tmpdir=config["paths"]["temp"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*30
     conda:

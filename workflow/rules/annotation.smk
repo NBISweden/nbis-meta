@@ -203,7 +203,7 @@ rule pfam_scan:
         "../envs/annotation.yml"
     params:
         dir=opj(config["resource_path"], "pfam"),
-        tmp_out=opj(os.path.expandvars(config["scratch_path"]),
+        tmp_out=opj(os.path.expandvars(config["paths"]["temp"]),
                     "{group}.pfam.out")
     threads: 2
     resources:
@@ -272,9 +272,9 @@ rule emapper_homology_search:
     params:
         resource_dir=opj(config["resource_path"], "eggnog-mapper"),
         out="{group}",
-        tmpdir=opj(os.path.expandvars(config["scratch_path"]),
+        tmpdir=opj(os.path.expandvars(config["paths"]["temp"]),
                    "{group}-eggnog"),
-        tmp_out=opj(os.path.expandvars(config["scratch_path"]),
+        tmp_out=opj(os.path.expandvars(config["paths"]["temp"]),
                     "{group}-eggnog", "{group}"),
         flags="-m diamond --no_annot --no_file_comments"
     log:
@@ -306,7 +306,7 @@ if config["runOnUppMax"] == "yes":
                 "{group}.emapper.annotations")
         params:
             resource_dir=opj(config["resource_path"], "eggnog-mapper"),
-            tmpdir=opj(os.path.expandvars(config["scratch_path"]),
+            tmpdir=opj(os.path.expandvars(config["paths"]["temp"]),
                        "{group}-eggnog"),
             out=opj(config["paths"]["results"], "annotation", "{group}", "{group}"),
             flags="--no_file_comments"
@@ -342,7 +342,7 @@ else:
                  "{group}.emapper.annotations.log")
         params:
             resource_dir=opj(config["resource_path"], "eggnog-mapper"),
-            tmpdir=opj(os.path.expandvars(config["scratch_path"]),
+            tmpdir=opj(os.path.expandvars(config["paths"]["temp"]),
                        "{group}-eggnog"),
             out=opj(config["paths"]["results"], "annotation", "{group}", "{group}"),
             flags="--no_file_comments"

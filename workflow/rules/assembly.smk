@@ -49,7 +49,7 @@ if config["metaspades"]:
             corrected=opj(config["paths"]["results"], "intermediate","assembly",
                           "{group}","corrected"),
             additional_settings=config["metaspades_additional_settings"],
-            tmp=opj(config["temp_path"],"{group}.metaspades"),
+            tmp=opj(config["paths"]["temp"],"{group}.metaspades"),
             output_dir=opj(config["paths"]["results"],"assembly","{group}")
         threads: config["assembly_threads"]
         resources:
@@ -130,7 +130,7 @@ else:
             intermediate_contigs=opj(config["paths"]["results"], "intermediate","assembly",
                                      "{group}","intermediate_contigs"),
             additional_settings=config["megahit_additional_settings"],
-            tmp=opj(config["temp_path"],"{group}.megahit"),
+            tmp=opj(config["paths"]["temp"],"{group}.megahit"),
             output_dir=opj(config["paths"]["results"],"assembly","{group}")
         threads: config["assembly_threads"]
         resources:
@@ -226,7 +226,7 @@ rule bowtie_map_pe:
         log=opj(config["paths"]["results"],"assembly","{group}",
                 "mapping","{sample}_{unit}_pe.bam.log")
     params:
-        temp_bam=opj(config["temp_path"],"{group}-mapping-{sample}_{unit}_pe.bam"),
+        temp_bam=opj(config["paths"]["temp"],"{group}-mapping-{sample}_{unit}_pe.bam"),
         setting=config["bowtie2_params"],
         prefix=opj(config["paths"]["results"],"assembly","{group}",
                      "final_contigs.fa")
@@ -272,7 +272,7 @@ rule bowtie_map_se:
         log=opj(config["paths"]["results"],"assembly","{group}",
                 "mapping","{sample}_{unit}_se.bam.log")
     params:
-        temp_bam=opj(config["temp_path"],"{group}-mapping-{sample}_{unit}_se.bam"),
+        temp_bam=opj(config["paths"]["temp"],"{group}-mapping-{sample}_{unit}_se.bam"),
         setting=config["bowtie2_params"],
         prefix=opj(config["paths"]["results"],"assembly","{group}",
                      "final_contigs.fa")

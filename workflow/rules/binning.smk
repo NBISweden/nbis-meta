@@ -78,7 +78,7 @@ rule maxbin:
         opj(config["paths"]["results"], "binning", "maxbin", "{group}", "{l}", "maxbin.log")
     params:
         dir=opj(config["paths"]["results"], "binning", "maxbin", "{group}", "{l}"),
-        tmp_dir=opj(config["scratch_path"], "{group}", "{l}"),
+        tmp_dir=opj(config["paths"]["temp"], "{group}", "{l}"),
         reads=get_fw_reads(config, samples, PREPROCESS),
         markerset=config["maxbin_markerset"]
     threads: config["maxbin_threads"]

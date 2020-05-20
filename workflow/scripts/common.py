@@ -134,9 +134,8 @@ def check_uppmax(config):
     hostname = platform.node()
     if 'uppmax.uu.se' in hostname:
         config["runOnUppMax"] = True
-        # Set scratch_path to $TMPDIR
-        config["scratch_path"] = "$TMPDIR"
-        config["tmpdir"] = "$TMPDIR"
+        # Set temp to $TMPDIR
+        config["paths"]["temp"] = "$TMPDIR"
     else:
         config["runOnUppMax"] = False
     return config

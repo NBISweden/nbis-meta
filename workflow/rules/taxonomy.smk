@@ -76,7 +76,7 @@ rule tango_format_uniref:
     log:
         opj(config["resource_path"], "{db}", "tango_format.log")
     params:
-        tmpdir=config["scratch_path"]
+        tmpdir=config["paths"]["temp"]
     conda:
         "../envs/tango.yml"
     shell:
@@ -93,7 +93,7 @@ rule tango_format_nr:
     log:
         opj(config["resource_path"], "nr", "tango_format.log")
     params:
-        tmpdir=config["scratch_path"]
+        tmpdir=config["paths"]["temp"]
     conda:
         "../envs/tango.yml"
     shell:
@@ -157,7 +157,7 @@ rule tango_search:
     log:
         opj(config["paths"]["results"], "annotation", "{group}", "tango_search.log")
     params:
-        tmpdir=config["scratch_path"],
+        tmpdir=config["paths"]["temp"],
         min_len=config["taxonomy_min_len"],
         settings=config["tango_search_params"]
     threads: config["diamond_threads"]

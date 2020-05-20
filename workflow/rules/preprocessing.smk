@@ -75,12 +75,12 @@ rule sortmerna_merge_fastq:
         opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}.sortmerna_merge.log")
     params:
-        scratch=os.path.expandvars(config["scratch_path"]),
-        R1_unzipped=opj(os.path.expandvars(config["scratch_path"]),
+        scratch=os.path.expandvars(config["paths"]["temp"]),
+        R1_unzipped=opj(os.path.expandvars(config["paths"]["temp"]),
                           "{sample}_{unit}_R1.fastq"),
-        R2_unzipped=opj(os.path.expandvars(config["scratch_path"]),
+        R2_unzipped=opj(os.path.expandvars(config["paths"]["temp"]),
                         "{sample}_{unit}_R2.fastq"),
-        merged=opj(os.path.expandvars(config["scratch_path"]),
+        merged=opj(os.path.expandvars(config["paths"]["temp"]),
                    "{sample}_{unit}_merged.fastq")
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*6
@@ -121,9 +121,9 @@ rule sortmerna_fastq_pe:
     params:
         paired_strategy=config["sortmerna_paired_strategy"],
         score_params=config["sortmerna_params"],
-        other_prefix=opj(config["scratch_path"], "{sample}_{unit}_merged.non_rRNA"),
-        aligned_prefix=opj(config["scratch_path"], "{sample}_{unit}_merged.rRNA"),
-        scratch=config["scratch_path"],
+        other_prefix=opj(config["paths"]["temp"], "{sample}_{unit}_merged.non_rRNA"),
+        aligned_prefix=opj(config["paths"]["temp"], "{sample}_{unit}_merged.rRNA"),
+        scratch=config["paths"]["temp"],
         ref_string=get_sortmerna_ref_string(config["sortmerna_dbs"])
     threads: 10
     resources:
@@ -157,11 +157,11 @@ rule sortmerna_split_rRNA_fastq:
         opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}.sortmerna_unmerge.rRNA.log")
     params:
-        tmpdir=opj(os.path.expandvars(config["scratch_path"]),
+        tmpdir=opj(os.path.expandvars(config["paths"]["temp"]),
                    "{sample}_{unit}_sortmerna"),
-        R1=opj(os.path.expandvars(config["scratch_path"]),
+        R1=opj(os.path.expandvars(config["paths"]["temp"]),
                  "{sample}_{unit}_sortmerna", "{sample}_{unit}_R1.rRNA.fastq"),
-        R2=opj(os.path.expandvars(config["scratch_path"]),
+        R2=opj(os.path.expandvars(config["paths"]["temp"]),
                "{sample}_{unit}_sortmerna", "{sample}_{unit}_R2.rRNA.fastq")
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*6
@@ -193,11 +193,11 @@ rule sortmerna_split_other_fastq:
         opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}.sortmerna_unmerge.non_rRNA.log")
     params:
-        tmpdir=opj(os.path.expandvars(config["scratch_path"]),
+        tmpdir=opj(os.path.expandvars(config["paths"]["temp"]),
                    "{sample}_{unit}_sortmerna"),
-        R1=opj(os.path.expandvars(config["scratch_path"]),
+        R1=opj(os.path.expandvars(config["paths"]["temp"]),
                "{sample}_{unit}_sortmerna", "{sample}_{unit}_R1.non_rRNA.fastq"),
-        R2=opj(os.path.expandvars(config["scratch_path"]),
+        R2=opj(os.path.expandvars(config["paths"]["temp"]),
                "{sample}_{unit}_sortmerna", "{sample}_{unit}_R2.non_rRNA.fastq")
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*6
@@ -246,9 +246,9 @@ rule sortmerna_fastq_se:
             "{sample}_{unit}_se.sortmerna.log")
     params:
         score_params=config["sortmerna_params"],
-        other_prefix=opj(config["scratch_path"], "{sample}_{unit}_se.non_rRNA"),
-        aligned_prefix=opj(config["scratch_path"], "{sample}_{unit}_se.rRNA"),
-        scratch=config["scratch_path"],
+        other_prefix=opj(config["paths"]["temp"], "{sample}_{unit}_se.non_rRNA"),
+        aligned_prefix=opj(config["paths"]["temp"], "{sample}_{unit}_se.rRNA"),
+        scratch=config["paths"]["temp"],
         ref_string=get_sortmerna_ref_string(config["sortmerna_dbs"])
     threads: 10
     resources:
@@ -522,7 +522,7 @@ rule filter_phix_pe:
         opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_PHIX_pe"+preprocess_suffices["phixfilt"]+".log")
     params:
-        tmp_out=config["scratch_path"],
+        tmp_out=config["paths"]["temp"],
         setting=config["bowtie2_params"],
         prefix=opj(config["resource_path"], "phix", "phix")
     threads: config["bowtie2_threads"]
@@ -559,7 +559,7 @@ rule filter_phix_se:
         opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_PHIX_se"+preprocess_suffices["phixfilt"]+".log")
     params:
-        tmp_out=config["scratch_path"],
+        tmp_out=config["paths"]["temp"],
         setting=config["bowtie2_params"],
         prefix=opj(config["resource_path"], "phix", "phix")
     threads: config["bowtie2_threads"]
@@ -594,15 +594,15 @@ rule fastuniq:
         opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}.fastuniq_pe.log")
     params:
-        R1_intmp=opj(config["scratch_path"],
+        R1_intmp=opj(config["paths"]["temp"],
             "{sample}_{unit}_R1"+preprocess_suffices["fastuniq"]+".fastq"),
-        R2_intmp=opj(config["scratch_path"],
+        R2_intmp=opj(config["paths"]["temp"],
             "{sample}_{unit}_R2"+preprocess_suffices["fastuniq"]+".fastq"),
-        R1_outtmp=opj(config["scratch_path"],
+        R1_outtmp=opj(config["paths"]["temp"],
             "{sample}_{unit}_R1"+preprocess_suffices["fastuniq"]+".fastuniq.fastq"),
-        R2_outtmp=opj(config["scratch_path"],
+        R2_outtmp=opj(config["paths"]["temp"],
             "{sample}_{unit}_R2"+preprocess_suffices["fastuniq"]+".fastuniq.fastq"),
-        file_list=opj(config["scratch_path"],
+        file_list=opj(config["paths"]["temp"],
             "{sample}_{unit}.filelist")
     threads: 4
     resources:

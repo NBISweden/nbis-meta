@@ -31,11 +31,11 @@ rule download_kraken_build:
                    config["kraken_prebuilt"], "download.log")
     params:
         dir=lambda w, output: os.path.dirname(output[0]),
-        tar=opj(config["scratch_path"],
+        tar=opj(config["paths"]["temp"],
                 "{base}.tgz".format(base=config["kraken_prebuilt"])),
         url=get_kraken_index_url(config["kraken_prebuilt"]),
         db_version=get_kraken_index_url(config["kraken_prebuilt"], version=True),
-        tmpdir = opj(config["scratch_path"], "kraken_db")
+        tmpdir = opj(config["paths"]["temp"], "kraken_db")
     shell:
          """
          mkdir -p {params.tmpdir}
@@ -157,8 +157,9 @@ rule centrifuge_pe:
     params:
         prefix=opj(config["centrifuge_dir"],
                    "{base}".format(base=config["centrifuge_base"])),
-        tmp_out=opj(config["scratch_path"], "{sample}_{unit}_pe.out"),
-        tmp_report=opj(config["scratch_path"], "{sample}_{unit}_pe.report")
+        tmp_out=opj(config["paths"]["temp"], "{sample}_{unit}_pe.out"),
+        tmpdir=config["paths"]["temp"],
+        tmp_report=opj(config["paths"]["temp"], "{sample}_{unit}_pe.report")
     threads: 20
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60
@@ -166,7 +167,7 @@ rule centrifuge_pe:
         "../envs/centrifuge.yml"
     shell:
         """
-        mkdir -p {config[scratch_path]}
+        mkdir -p {params.tmpdir}
         centrifuge -k {config[centrifuge_max_assignments]} -x {params.prefix} \
             -1 {input.R1} -2 {input.R2} -S {params.tmp_out} -p {threads} \
             --report-file {params.tmp_report} > {log} 2>&1
@@ -188,8 +189,9 @@ rule centrifuge_se:
     params:
         prefix=opj(config["centrifuge_dir"],
                    "{base}".format(base=config["centrifuge_base"])),
-        tmp_out=opj(config["scratch_path"], "{sample}_{unit}_se.out"),
-        tmp_report=opj(config["scratch_path"], "{sample}_{unit}_se.report")
+        tmp_out=opj(config["paths"]["temp"], "{sample}_{unit}_se.out"),
+        tmpdir=config["paths"]["temp"],
+        tmp_report=opj(config["paths"]["temp"], "{sample}_{unit}_se.report")
     threads: 20
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60
@@ -197,7 +199,7 @@ rule centrifuge_se:
         "../envs/centrifuge.yml"
     shell:
         """
-        mkdir -p {config[scratch_path]}
+        mkdir -p {params.tmpdir}
         centrifuge -k {config[centrifuge_max_assignments]} -U {input.se} \
             -x {params.prefix} -S {params.tmp_out} -p {threads} \
             --report-file {params.tmp_report} > {log} 2>&1
