@@ -224,7 +224,7 @@ rule sourmash_compute:
     conda:
         "../envs/sourmash.yml"
     params:
-        frac=config["sourmash_fraction"]
+        frac=config["taxonomy"]["sourmash_fraction"]
     shell:
         """
         sourmash compute --singleton --scaled {params.frac} \
@@ -243,7 +243,7 @@ rule sourmash_classify:
         opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
             "sourmash.log")
     params:
-        frac=config["sourmash_fraction"]
+        frac=config["taxonomy"]["sourmash_fraction"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*30
     conda:
