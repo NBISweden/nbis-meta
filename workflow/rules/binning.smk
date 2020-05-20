@@ -57,7 +57,7 @@ rule metabat:
         n=opj(config["paths"]["results"], "binning", "metabat", "{group}", "{l}", "metabat")
     conda:
         "../envs/metabat.yml"
-    threads: 8
+    threads: config["binning"]["threads"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     shell:
@@ -80,8 +80,8 @@ rule maxbin:
         dir=opj(config["paths"]["results"], "binning", "maxbin", "{group}", "{l}"),
         tmp_dir=opj(config["paths"]["temp"], "{group}", "{l}"),
         reads=get_fw_reads(config, samples, PREPROCESS),
-        markerset=config["maxbin_markerset"]
-    threads: config["maxbin_threads"]
+        markerset=config["maxbin"]["markerset"]
+    threads: config["binning"]["threads"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*5
     conda:
@@ -169,7 +169,7 @@ rule concoct:
     params:
         basename=lambda wildcards, output: os.path.dirname(output[0]),
         length="{l}"
-    threads: config["concoct_threads"]
+    threads: config["binning"]["threads"]
     conda:
         "../envs/concoct.yml"
     resources:
@@ -266,7 +266,7 @@ rule download_checkm:
         checkm data setRoot {params.dir} > {log} 2>&1
         """
 
-if config["checkm_taxonomy_wf"]:
+if config["checkm"]["taxonomy_wf"]:
     rule checkm_taxonomy_wf:
         input:
             db=opj("resources", "checkm", ".dmanifest"),
@@ -288,8 +288,8 @@ if config["checkm_taxonomy_wf"]:
             suff='fa',
             indir=lambda wildcards, input: os.path.dirname(input.tsv),
             outdir=lambda wildcards, output: os.path.dirname(output.tsv),
-            rank=config["checkm_rank"],
-            taxon=config["checkm_taxon"]
+            rank=config["checkm"]["rank"],
+            taxon=config["checkm"]["taxon"]
         shell:
             """
             bins=$(wc -l {input.tsv} | cut -f1 -d ' ')
@@ -425,7 +425,7 @@ rule aggregate_checkm_profiles:
         expand(opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm",
                   "profile.tsv"),
                group=assemblies.keys(),
-               l=config["min_contig_length"],
+               l=config["binning"]["contig_lengths"],
                binner=get_binners(config))
     output:
         tsv=opj(config["paths"]["results"], "report", "checkm", "checkm.profiles.tsv")
@@ -438,7 +438,7 @@ rule aggregate_checkm_stats:
         expand(opj(config["paths"]["results"], "binning", "{binner}", "{group}",
                    "{l}", "checkm", "genome_stats.extended.tsv"),
                group=assemblies.keys(),
-               l=config["min_contig_length"],
+               l=config["binning"]["contig_lengths"],
                binner=get_binners(config))
     output:
         tsv=opj(config["paths"]["results"], "report", "checkm", "checkm.stats.tsv")
@@ -507,7 +507,7 @@ rule aggregate_gtdbtk:
                    "{l}", "gtdbtk", "done"),
                binner=get_binners(config),
                group=assemblies.keys(),
-               l=config["min_contig_length"])
+               l=config["binning"]["contig_lengths"])
     output:
         summary=opj(config["paths"]["results"], "report", "gtdbtk", "gtdbtk.summary.tsv")
     run:
@@ -635,12 +635,12 @@ rule aggregate_bin_annot:
                         "{group}", "{l}", "tRNAscan", "tRNA.total.tsv"),
                     binner=get_binners(config),
                     group=assemblies.keys(),
-                    l=config["min_contig_length"]),
+                    l=config["binning"]["contig_lengths"]),
         rrna=expand(opj(config["paths"]["results"], "binning", "{binner}",
                         "{group}", "{l}", "barrnap", "rRNA.types.tsv"),
                     binner=get_binners(config),
                     group=assemblies.keys(),
-                    l=config["min_contig_length"])
+                    l=config["binning"]["contig_lengths"])
     output:
         trna=opj(config["paths"]["results"], "report", "bin_annotation", "tRNA.total.tsv"),
         rrna=opj(config["paths"]["results"], "report", "bin_annotation", "rRNA.types.tsv")

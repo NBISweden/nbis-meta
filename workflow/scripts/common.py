@@ -174,14 +174,7 @@ def check_assembly(config, assemblies):
             # Remove single-end only assemblies
             # that Metaspades won't be able to run
             assemblies = filter_metaspades_assemblies(assemblies)
-        # Add information on binning
-        binning = False
-        if config["maxbin"] or config["concoct"] or config["metabat"]:
-            binning = True
-        if not binning:
-            config["checkm"] = False
-            config["gtdbtk"] = False
-    return config, assemblies
+    return assemblies
 
 
 def check_classifiers(config):
@@ -453,13 +446,13 @@ def binning_input(config, assemblies):
     bin_input = expand(
         opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}",
             "summary_stats.tsv"), binner=binners, group=assemblies.keys(),
-        l=config["min_contig_length"])
+        l=config["binning"]["contig_lengths"])
 
-    if config["checkm"]:
+    if config["binning"]["checkm"]:
         bin_input.append(opj(config["paths"]["results"], "report", "checkm", "checkm.stats.tsv"))
         bin_input.append(
             opj(config["paths"]["results"], "report", "checkm", "checkm.profiles.tsv"))
-    if config["gtdbtk"]:
+    if config["binning"]["gtdbtk"]:
         bin_input.append(opj(config["paths"]["results"], "report", "gtdbtk", "gtdbtk.summary.tsv"))
         bin_input.append(
             opj(config["paths"]["results"], "report", "bin_annotation", "tRNA.total.tsv"))
@@ -498,7 +491,7 @@ def get_tree_settings(config):
     :param config:
     :return:
     """
-    if config["checkm_reduced_tree"]:
+    if config["checkm"]["reduced_tree"]:
         return "-r"
     return ""
 
@@ -510,11 +503,11 @@ def get_binners(config):
     :return:
     """
     binners = []
-    if config["metabat"]:
+    if config["binning"]["metabat"]:
         binners.append("metabat")
-    if config["concoct"]:
+    if config["binning"]["concoct"]:
         binners.append("concoct")
-    if config["maxbin"]:
+    if config["binning"]["maxbin"]:
         binners.append("maxbin")
     return binners
 
