@@ -416,9 +416,9 @@ rule cutadapt_pe:
         err = opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R2"+preprocess_suffices["trimming"]+".cutadapt.err")
     params:
-        adapter=config["adapter_sequence"],
-        rev_adapter=config["rev_adapter_sequence"],
-        error_rate=config["cutadapt_error_rate"]
+        adapter=config["cutadapt"]["adapter_sequence"],
+        rev_adapter=config["cutadapt"]["rev_adapter_sequence"],
+        error_rate=config["cutadapt"]["error_rate"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
@@ -448,8 +448,8 @@ rule cutadapt_se:
         opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_se"+preprocess_suffices["trimming"]+".cutadapt.log")
     params:
-        adapter=config["adapter_sequence"],
-        error_rate=config["cutadapt_error_rate"]
+        adapter=config["cutadapt"]["adapter_sequence"],
+        error_rate=config["cutadapt"]["error_rate"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
