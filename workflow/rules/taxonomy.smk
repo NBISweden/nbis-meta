@@ -244,6 +244,7 @@ rule sourmash_classify:
             "sourmash.log")
     params:
         frac=config["taxonomy"]["sourmash_fraction"]
+    threads: 4
     resources:
         runtime=lambda wildcards, attempt: attempt**2*30
     conda:
