@@ -181,7 +181,7 @@ rule quantify_features:
 rule sum_to_taxa:
     input:
         tax=opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
-            "orfs.{db}.taxonomy.tsv".format(db=config["taxdb"])),
+            "orfs.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"])),
         abund=opj(config["paths"]["results"], "annotation", "{group}", "fc.{fc_type}.tsv")
     output:
         opj(config["paths"]["results"], "annotation", "{group}", "taxonomy", "tax.{fc_type}.tsv")

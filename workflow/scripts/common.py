@@ -148,8 +148,7 @@ def check_annotation(config):
     :return: Updated config dict
     """
     # Check whether to set annotation downstream of assembly
-    tools = [config["pfam"], config["taxonomic_annotation"], config["infernal"],
-             config["eggnog"], config["rgi"]]
+    tools = [config["annotation"][key] for key in config["annotation"].keys()]
     if True in tools:
         config["run_annotation"] = True
         # if True also assume the user wants assembly
@@ -158,7 +157,7 @@ def check_annotation(config):
         if not config["assembly"]["megahit"] and not config["assembly"]["metaspades"]:
             config["assembly"]["megahit"] = True
     else:
-        config["annotation"] = False
+        config["run_annotation"] = False
     return config
 
 
@@ -576,29 +575,29 @@ def annotation_input(config, assemblies):
         # Add orfcalling results
         input.append(opj(config["paths"]["results"], "annotation", group,
                          "final_contigs.gff"))
-        if config["infernal"]:
+        if config["annotation"]["infernal"]:
             input.append(opj(config["paths"]["results"], "annotation", group,
                              "final_contigs.cmscan"))
-        if config["tRNAscan"]:
+        if config["annotation"]["tRNAscan"]:
             input.append(
                 opj(config["paths"]["results"], "annotation", group, "tRNA.out"))
         # Add EGGNOG annotation
-        if config["eggnog"]:
+        if config["annotation"]["eggnog"]:
             input += expand(opj(config["paths"]["results"], "annotation", group,
                                 "{db}.parsed.{fc}.tsv"),
                             db=["enzymes", "pathways", "kos", "modules"],
                             fc=["raw", "tpm"])
         # Add PFAM annotation
-        if config["pfam"]:
+        if config["annotation"]["pfam"]:
             input += expand(opj(config["paths"]["results"], "annotation", group,
                                 "pfam.parsed.{fc}.tsv"), fc=["tpm", "raw"])
         # Add taxonomic annotation
-        if config["taxonomic_annotation"]:
+        if config["annotation"]["taxonomy"]:
             input += expand(
                 opj(config["paths"]["results"], "annotation", group, "taxonomy",
                     "tax.{fc}.tsv"), fc=["tpm", "raw"])
         # Add Resistance Gene Identifier output
-        if config["rgi"]:
+        if config["annotation"]["rgi"]:
             input += expand(opj(config["paths"]["results"], "annotation", group,
                                 "rgi.{fc}.tsv"), fc=["raw", "tpm"])
             input.append(

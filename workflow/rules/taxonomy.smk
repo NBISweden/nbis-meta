@@ -14,7 +14,7 @@ rule taxonomy:
     input:
         expand(opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
                    "orfs.{db}.taxonomy.tsv"),
-               group=assemblies.keys(), db=config["taxdb"])
+               group=assemblies.keys(), db=config["taxonomy"]["database"])
 
 ##### tango #####
 
@@ -135,7 +135,7 @@ rule tango_build:
         opj("resources", "{db}", "diamond.dmnd")
     log:
         opj("resources", "{db}", "diamond.log")
-    threads: config["diamond_threads"]
+    threads: 20
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*10
     conda:
@@ -148,19 +148,19 @@ rule tango_build:
 
 rule tango_search:
     input:
-        db=opj("resources", config["taxdb"], "diamond.dmnd"),
+        db=opj("resources", config["taxonomy"]["database"], "diamond.dmnd"),
         fasta=opj(config["paths"]["results"], "assembly", "{group}",
                   "final_contigs.fa")
     output:
         opj(config["paths"]["results"], "annotation", "{group}",
-            "final_contigs.{db}.tsv.gz".format(db=config["taxdb"]))
+            "final_contigs.{db}.tsv.gz".format(db=config["taxonomy"]["database"]))
     log:
         opj(config["paths"]["results"], "annotation", "{group}", "tango_search.log")
     params:
         tmpdir=config["paths"]["temp"],
-        min_len=config["taxonomy_min_len"],
-        settings=config["tango_search_params"]
-    threads: config["diamond_threads"]
+        min_len=config["taxonomy"]["min_len"],
+        settings=config["taxonomy"]["search_params"]
+    threads: 20
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*10
     conda:
@@ -175,18 +175,18 @@ rule tango_search:
 rule tango_assign:
     input:
         opj(config["paths"]["results"], "annotation", "{group}",
-            "final_contigs.{db}.tsv.gz".format(db=config["taxdb"])),
+            "final_contigs.{db}.tsv.gz".format(db=config["taxonomy"]["database"])),
         ancient(opj("resources", "taxonomy", "taxonomy.sqlite"))
     output:
         opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
-            "tango.{db}.taxonomy.tsv".format(db=config["taxdb"]))
+            "tango.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"]))
     log:
         opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
             "tango_assign.log")
     params:
-        taxonomy_ranks=config["taxonomy_ranks"],
+        taxonomy_ranks=" ".join(config["taxonomy"]["ranks"]),
         taxdir=opj("resources", "taxonomy"),
-        settings=config["tango_assign_params"]
+        settings=config["taxonomy"]["assign_params"]
     threads: 4
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*6
@@ -261,7 +261,7 @@ rule merge_tango_sourmash:
         smash=opj(config["paths"]["results"], "annotation", "{group}",
                     "taxonomy", "sourmash.taxonomy.csv"),
         tango=opj(config["paths"]["results"], "annotation", "{group}",
-                    "taxonomy", "tango.{db}.taxonomy.tsv".format(db=config["taxdb"]))
+                    "taxonomy", "tango.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"]))
     output:
         opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
         "final_contigs.taxonomy.tsv")
@@ -278,6 +278,6 @@ rule tango_assign_orfs:
                 "final_contigs.gff")
     output:
         tax=opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
-            "orfs.{db}.taxonomy.tsv".format(db=config["taxdb"]))
+            "orfs.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"]))
     script:
         "../scripts/taxonomy_utils.py"
