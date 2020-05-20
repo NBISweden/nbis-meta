@@ -347,20 +347,22 @@ def get_trimmomatic_string(seq_type, config):
     Generates trimsetting string for Trimmomatic
 
     :param seq_type: PE or SE depending on sequencing type
-    :return: trimsettings string
+    :return: string
     """
-    trim_adapters = config["trim_adapters"]
+    trim_adapters = config["trimmomatic"]["trim_adapters"]
     adapter_fasta_dir = "$CONDA_PREFIX/share/trimmomatic/adapters"
-    adapter = "{}/{}.fa".format(adapter_fasta_dir, config[
-        "trimmomatic_{}_adapter".format(seq_type)])
-    adapter_params = config["{}_adapter_params".format(seq_type)]
-    pre_adapter_params = config["{}_pre_adapter_params".format(seq_type)]
-    post_adapter_params = config["{}_post_adapter_params".format(seq_type)]
+    # Get params based on sequencing type
+    param_dict = config["trimmomatic"][seq_type]
+    # Set path to adapter
+    adapter = "{}/{}.fa".format(adapter_fasta_dir, param_dict["adapter"])
+    adapter_params = param_dict["adapter_params"]
+    pre_adapter_params = param_dict["pre_adapter_params"]
+    post_adapter_params = param_dict["post_adapter_params"]
     trimsettings = pre_adapter_params
     if trim_adapters:
-        trimsettings += " ILLUMINACLIP:" + adapter + ":" + adapter_params
-    trimsettings += " " + post_adapter_params
-    return trimsettings
+        trimsettings = " {} ILLUMINACLIP:{}:{}".format(pre_adapter_params,
+                                                       adapter, adapter_params)
+    return "{} {}".format(trimsettings, post_adapter_params)
 
 
 def get_sortmerna_ref_string(dbs):
