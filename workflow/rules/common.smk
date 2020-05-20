@@ -19,7 +19,7 @@ from scripts.common import prepost_string
 PREPROCESS, POSTPROCESS, preprocess_suffices, config = prepost_string(config)
 
 ##### load and validate samples #####
-df = pd.read_csv(config["sample_list"], sep="\t")
+df = pd.read_csv(config["path"]["sample_list"], sep="\t")
 validate(df, schema="../schemas/samples.schema.yaml")
 
 ##### parse samples #####
