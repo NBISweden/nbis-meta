@@ -174,9 +174,9 @@ rule tango_search:
 
 rule tango_assign:
     input:
-        opj(config["paths"]["results"], "annotation", "{group}",
+        tsv=opj(config["paths"]["results"], "annotation", "{group}",
             "final_contigs.{db}.tsv.gz".format(db=config["taxonomy"]["database"])),
-        ancient(opj("resources", "taxonomy", "taxonomy.sqlite"))
+        sql=ancient(opj("resources", "taxonomy", "taxonomy.sqlite"))
     output:
         opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
             "tango.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"]))
@@ -196,7 +196,7 @@ rule tango_assign:
          """
          tango assign {params.settings} -p {threads} -m rank_lca \
             --reportranks {params.taxonomy_ranks} -t {params.taxdir} \
-            {input} {output} > {log} 2>&1
+            {input.tsv} {output} > {log} 2>&1
          """
 
 ##### sourmash #####
