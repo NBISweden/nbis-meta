@@ -107,9 +107,10 @@ def generate_stat_df(contig_lengths):
     index = ["contigs", "total_size_bp", "min_length", "max_length",
              "avg_length", "median_length", "N50_length", "N90_length"]
     stat_items = calculate_length_stats(contig_lengths)
+    n50_length, n90_length = calculate_n_stats(contig_lengths)
     stat_df = pd.DataFrame([stat_items[0], stat_items[1], stat_items[2],
                             stat_items[3], stat_items[4], stat_items[5],
-                            stat_items[6], stat_items[7]], index=index).T
+                            n50_length, n90_length], index=index).T
     return stat_df
 
 
