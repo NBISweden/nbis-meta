@@ -12,7 +12,7 @@ localrules:
 ##### taxonomy master rule #####
 rule taxonomy:
     input:
-        expand(opj(config["results_path"], "annotation", "{group}", "taxonomy",
+        expand(opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
                    "orfs.{db}.taxonomy.tsv"),
                group=assemblies.keys(), db=config["taxdb"])
 
@@ -149,13 +149,13 @@ rule tango_build:
 rule tango_search:
     input:
         db=opj(config["resource_path"], config["taxdb"], "diamond.dmnd"),
-        fasta=opj(config["results_path"], "assembly", "{group}",
+        fasta=opj(config["paths"]["results"], "assembly", "{group}",
                   "final_contigs.fa")
     output:
-        opj(config["results_path"], "annotation", "{group}",
+        opj(config["paths"]["results"], "annotation", "{group}",
             "final_contigs.{db}.tsv.gz".format(db=config["taxdb"]))
     log:
-        opj(config["results_path"], "annotation", "{group}", "tango_search.log")
+        opj(config["paths"]["results"], "annotation", "{group}", "tango_search.log")
     params:
         tmpdir=config["scratch_path"],
         min_len=config["taxonomy_min_len"],
@@ -174,14 +174,14 @@ rule tango_search:
 
 rule tango_assign:
     input:
-        opj(config["results_path"], "annotation", "{group}",
+        opj(config["paths"]["results"], "annotation", "{group}",
             "final_contigs.{db}.tsv.gz".format(db=config["taxdb"])),
         ancient(opj(config["resource_path"], "taxonomy", "taxonomy.sqlite"))
     output:
-        opj(config["results_path"], "annotation", "{group}", "taxonomy",
+        opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
             "tango.{db}.taxonomy.tsv".format(db=config["taxdb"]))
     log:
-        opj(config["results_path"], "annotation", "{group}", "taxonomy",
+        opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
             "tango_assign.log")
     params:
         taxonomy_ranks=config["taxonomy_ranks"],
@@ -216,11 +216,11 @@ rule download_sourmash_db:
 
 rule sourmash_compute:
     input:
-        opj(config["results_path"], "assembly", "{group}", "final_contigs.fa")
+        opj(config["paths"]["results"], "assembly", "{group}", "final_contigs.fa")
     output:
-        opj(config["results_path"], "assembly", "{group}", "final_contigs.fa.sig")
+        opj(config["paths"]["results"], "assembly", "{group}", "final_contigs.fa.sig")
     log:
-        opj(config["results_path"], "assembly", "{group}", "sourmash_compute.log")
+        opj(config["paths"]["results"], "assembly", "{group}", "sourmash_compute.log")
     conda:
         "../envs/sourmash.yml"
     params:
@@ -233,14 +233,14 @@ rule sourmash_compute:
 
 rule sourmash_classify:
     input:
-        sig=opj(config["results_path"], "assembly", "{group}",
+        sig=opj(config["paths"]["results"], "assembly", "{group}",
                  "final_contigs.fa.sig"),
         db=opj(config["resource_path"], "sourmash", "genbank-k31.lca.json")
     output:
-        csv=opj(config["results_path"], "annotation", "{group}", "taxonomy",
+        csv=opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
                   "sourmash.taxonomy.csv")
     log:
-        opj(config["results_path"], "annotation", "{group}", "taxonomy",
+        opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
             "sourmash.log")
     params:
         frac=config["sourmash_fraction"]
@@ -258,26 +258,26 @@ rule sourmash_classify:
 
 rule merge_tango_sourmash:
     input:
-        smash=opj(config["results_path"], "annotation", "{group}",
+        smash=opj(config["paths"]["results"], "annotation", "{group}",
                     "taxonomy", "sourmash.taxonomy.csv"),
-        tango=opj(config["results_path"], "annotation", "{group}",
+        tango=opj(config["paths"]["results"], "annotation", "{group}",
                     "taxonomy", "tango.{db}.taxonomy.tsv".format(db=config["taxdb"]))
     output:
-        opj(config["results_path"], "annotation", "{group}", "taxonomy",
+        opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
         "final_contigs.taxonomy.tsv")
     log:
-        opj(config["results_path"], "annotation", "{group}", "taxonomy", "merge.log")
+        opj(config["paths"]["results"], "annotation", "{group}", "taxonomy", "merge.log")
     script:
         "../scripts/taxonomy_utils.py"
 
 rule tango_assign_orfs:
     input:
-        tax=opj(config["results_path"], "annotation", "{group}", "taxonomy",
+        tax=opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
             "final_contigs.taxonomy.tsv"),
-        gff=opj(config["results_path"], "annotation", "{group}",
+        gff=opj(config["paths"]["results"], "annotation", "{group}",
                 "final_contigs.gff")
     output:
-        tax=opj(config["results_path"], "annotation", "{group}", "taxonomy",
+        tax=opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
             "orfs.{db}.taxonomy.tsv".format(db=config["taxdb"]))
     script:
         "../scripts/taxonomy_utils.py"
