@@ -48,7 +48,7 @@ def prepost_string(config):
         preprocess_suffices["fastuniq"] = preprocess_suffices["phixfilt"]
 
     # Deduplication
-    if config["fastuniq"]:
+    if config["preprocessing"]["fastuniq"]:
         PREPROCESS += ".fastuniq"
 
     if PREPROCESS != "":
