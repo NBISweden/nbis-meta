@@ -51,9 +51,9 @@ def prepost_string(config):
         PREPROCESS += ".fastuniq"
 
     if PREPROCESS != "":
-        config["preprocess"] = True
+        config["run_preprocessing"] = True
     else:
-        config["preprocess"] = False
+        config["run_preprocessing"] = False
 
     if config["remove_duplicates"]:
         POSTPROCESS += ".markdup"
@@ -207,7 +207,7 @@ def check_classifiers(config):
 
     config["kraken"]["index_path"] = ""
     config["kraken"]["mem"] = ""
-    if config["classificaton"]["kraken"]:
+    if config["classification"]["kraken"]:
         # Check if custom database exists
         custom = expand(opj(config["kraken"]["custom"], "{n}.k2d"),
                         n=["hash", "opts", "taxo"])
@@ -229,7 +229,7 @@ def check_classifiers(config):
 # preprocessing functions
 
 def preprocessing_input(config):
-    if config["preprocess"] or config["preprocessing"]["fastqc"]:
+    if config["run_preprocessing"] or config["preprocessing"]["fastqc"]:
         return opj(config["paths"]["results"], "report", "samples_report.html")
     return []
 
