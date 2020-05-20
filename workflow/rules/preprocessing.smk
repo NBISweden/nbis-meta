@@ -109,7 +109,7 @@ rule sortmerna_fastq_pe:
         db=expand(opj("resources", "rRNA_databases",
                       "{file}.{suffix}"),
                   suffix=["bursttrie_0.dat", "kmer_0.dat", "pos_0.dat", "stats"],
-                  file=config["sortmerna_dbs"])
+                  file=config["sortmerna"]["dbs"])
     output:
         aligned=temp(opj(config["paths"]["results"], "intermediate", "preprocess",
                          "{sample}_{unit}_merged.rRNA.fastq")),
@@ -119,12 +119,12 @@ rule sortmerna_fastq_pe:
         opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_pe.sortmerna.log")
     params:
-        paired_strategy=config["sortmerna_paired_strategy"],
-        score_params=config["sortmerna_params"],
+        paired_strategy=config["sortmerna"]["paired_strategy"],
+        score_params=config["sortmerna"]["extra_settings"],
         other_prefix=opj(config["paths"]["temp"], "{sample}_{unit}_merged.non_rRNA"),
         aligned_prefix=opj(config["paths"]["temp"], "{sample}_{unit}_merged.rRNA"),
         scratch=config["paths"]["temp"],
-        ref_string=get_sortmerna_ref_string(config["sortmerna_dbs"])
+        ref_string=get_sortmerna_ref_string(config["sortmerna"]["dbs"])
     threads: 10
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
@@ -235,7 +235,7 @@ rule sortmerna_fastq_se:
         db=expand(opj("resources", "rRNA_databases",
                       "{file}.{suffix}"),
             suffix=["bursttrie_0.dat", "kmer_0.dat", "pos_0.dat", "stats"],
-            file=config["sortmerna_dbs"])
+            file=config["sortmerna"]["dbs"])
     output:
         aligned=temp(opj(config["paths"]["results"], "intermediate", "preprocess",
                          "{sample}_{unit}_se.rRNA.fastq")),
@@ -245,11 +245,11 @@ rule sortmerna_fastq_se:
         opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_se.sortmerna.log")
     params:
-        score_params=config["sortmerna_params"],
+        score_params=config["sortmerna"]["extra_settings"],
         other_prefix=opj(config["paths"]["temp"], "{sample}_{unit}_se.non_rRNA"),
         aligned_prefix=opj(config["paths"]["temp"], "{sample}_{unit}_se.rRNA"),
         scratch=config["paths"]["temp"],
-        ref_string=get_sortmerna_ref_string(config["sortmerna_dbs"])
+        ref_string=get_sortmerna_ref_string(config["sortmerna"]["dbs"])
     threads: 10
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
@@ -302,9 +302,9 @@ rule sortmerna_zip_other_fastq:
 rule sortmerna_link_pe:
     input:
         R1=opj(config["paths"]["results"], "intermediate", "preprocess",
-               "{sample}_{unit}_R1."+config["sortmerna_keep"]+".fastq.gz"),
+               "{sample}_{unit}_R1."+config["sortmerna"]["keep"]+".fastq.gz"),
         R2=opj(config["paths"]["results"], "intermediate", "preprocess",
-               "{sample}_{unit}_R2."+config["sortmerna_keep"]+".fastq.gz")
+               "{sample}_{unit}_R2."+config["sortmerna"]["keep"]+".fastq.gz")
     output:
         R1=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_R1.sortmerna.fastq.gz"),
@@ -317,7 +317,7 @@ rule sortmerna_link_pe:
 rule sortmerna_link_se:
     input:
         se=opj(config["paths"]["results"], "intermediate", "preprocess",
-                 "{sample}_{unit}_se."+config["sortmerna_keep"]+".fastq.gz")
+                 "{sample}_{unit}_se."+config["sortmerna"]["keep"]+".fastq.gz")
     output:
         se=opj(config["paths"]["results"], "intermediate", "preprocess",
                  "{sample}_{unit}_se.sortmerna.fastq.gz")

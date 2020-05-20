@@ -22,10 +22,9 @@ def prepost_string(config):
                            "fastuniq": ""}
 
     # SortMeRNA rRNA filtering
-    if config["sortmerna"]:
+    if config["preprocessing"]["sortmerna"]:
         PREPROCESS += ".sortmerna"
-        if config["sortmerna_keep"].lower() in ["non_rrna", "rrna"]:
-            preprocess_suffices["trimming"] = ".sortmerna"
+        preprocess_suffices["trimming"] = ".sortmerna"
 
     # Trimming
     if config["preprocessing"]["trimmomatic"]:
@@ -334,7 +333,7 @@ def get_filt_logs(sample, unit, seq_type, config, d):
 
 
 def get_sortmerna_logs(sample, unit, seq_type, config):
-    if not config["sortmerna"]:
+    if not config["preprocessing"]["sortmerna"]:
         return []
     files = expand(opj(config["paths"]["results"], "intermediate", "preprocess",
                        "{sample}_{unit}_{seq_type}.sortmerna.log"),
