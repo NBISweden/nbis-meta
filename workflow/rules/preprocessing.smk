@@ -523,9 +523,9 @@ rule filter_phix_pe:
             "{sample}_{unit}_PHIX_pe"+preprocess_suffices["phixfilt"]+".log")
     params:
         tmp_out=config["paths"]["temp"],
-        setting=config["bowtie2_params"],
+        setting=config["bowtie2"]["extra_settings"],
         prefix=opj("resources", "phix", "phix")
-    threads: config["bowtie2_threads"]
+    threads: config["bowtie2"]["threads"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60
     conda:
@@ -560,9 +560,9 @@ rule filter_phix_se:
             "{sample}_{unit}_PHIX_se"+preprocess_suffices["phixfilt"]+".log")
     params:
         tmp_out=config["paths"]["temp"],
-        setting=config["bowtie2_params"],
+        setting=config["bowtie2"]["extra_settings"],
         prefix=opj("resources", "phix", "phix")
-    threads: config["bowtie2_threads"]
+    threads: config["bowtie2"]["threads"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60
     conda:

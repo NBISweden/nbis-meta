@@ -195,7 +195,7 @@ rule bowtie_build:
     output:
         expand(opj(config["paths"]["results"],"assembly","{{group}}","final_contigs.fa.{index}.bt2l"),index=range(1,5))
     params: prefix=opj(config["paths"]["results"],"assembly","{group}","final_contigs.fa")
-    threads: config["bowtie2_threads"]
+    threads: config["bowtie2"]["threads"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
@@ -227,10 +227,10 @@ rule bowtie_map_pe:
                 "mapping","{sample}_{unit}_pe.bam.log")
     params:
         temp_bam=opj(config["paths"]["temp"],"{group}-mapping-{sample}_{unit}_pe.bam"),
-        setting=config["bowtie2_params"],
+        setting=config["bowtie2"]["extra_settings"],
         prefix=opj(config["paths"]["results"],"assembly","{group}",
                      "final_contigs.fa")
-    threads: config["bowtie2_threads"]
+    threads: config["bowtie2"]["threads"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
@@ -273,10 +273,10 @@ rule bowtie_map_se:
                 "mapping","{sample}_{unit}_se.bam.log")
     params:
         temp_bam=opj(config["paths"]["temp"],"{group}-mapping-{sample}_{unit}_se.bam"),
-        setting=config["bowtie2_params"],
+        setting=config["bowtie2"]["extra_settings"],
         prefix=opj(config["paths"]["results"],"assembly","{group}",
                      "final_contigs.fa")
-    threads: config["bowtie2_threads"]
+    threads: config["bowtie2"]["threads"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
