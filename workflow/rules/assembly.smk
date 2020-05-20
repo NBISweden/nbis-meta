@@ -51,7 +51,7 @@ if config["metaspades"]:
             additional_settings=config["metaspades_additional_settings"],
             tmp=opj(config["paths"]["temp"],"{group}.metaspades"),
             output_dir=opj(config["paths"]["results"],"assembly","{group}")
-        threads: config["assembly_threads"]
+        threads: config["metaspades"]["threads"]
         resources:
             runtime=lambda wildcards, attempt: attempt**2*60*4
         conda:
@@ -129,10 +129,10 @@ else:
         params:
             intermediate_contigs=opj(config["paths"]["results"], "intermediate","assembly",
                                      "{group}","intermediate_contigs"),
-            additional_settings=config["megahit_additional_settings"],
+            additional_settings=config["megahit"]["extra_settings"],
             tmp=opj(config["paths"]["temp"],"{group}.megahit"),
             output_dir=opj(config["paths"]["results"],"assembly","{group}")
-        threads: config["assembly_threads"]
+        threads: config["megahit"]["threads"]
         resources:
             runtime=lambda wildcards, attempt: attempt**2*60*4
         conda:
@@ -162,7 +162,7 @@ else:
                 {params.additional_settings} >{log} 2>&1
             
             # Sync intermediate contigs if asked for
-            if [ "{config[megahit_keep_intermediate]}" == "True" ]; then
+            if [ "{config[megahit][keep_intermediate]}" == "True" ]; then
                 mkdir -p {params.intermediate_contigs}
                 cp -r {params.tmp}/intermediate_contigs/* {params.intermediate_contigs}
             fi

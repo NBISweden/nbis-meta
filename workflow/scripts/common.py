@@ -151,12 +151,12 @@ def check_annotation(config):
     tools = [config["pfam"], config["taxonomic_annotation"], config["infernal"],
              config["eggnog"], config["rgi"]]
     if True in tools:
-        config["annotation"] = True
+        config["run_annotation"] = True
         # if True also assume the user wants assembly
-        config["assembly"] = True
+        config["run_assembly"] = True
         # Set megahit as default unless metaspades is set
-        if not config["megahit"] and not config["metaspades"]:
-            config["megahit"] = True
+        if not config["assembly"]["megahit"] and not config["assembly"]["metaspades"]:
+            config["assembly"]["megahit"] = True
     else:
         config["annotation"] = False
     return config
