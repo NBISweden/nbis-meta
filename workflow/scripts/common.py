@@ -40,7 +40,7 @@ def prepost_string(config):
         preprocess_suffices["phixfilt"] = preprocess_suffices["trimming"]
 
     # Filtering
-    if config["phix_filter"]:
+    if config["preprocessing"]["phix_filter"]:
         preprocess_suffices["fastuniq"] = preprocess_suffices[
                                               "phixfilt"] + ".phixfilt"
         PREPROCESS += ".phixfilt"
@@ -325,7 +325,7 @@ def get_trim_logs(sample, unit, pairs, config, d):
 
 
 def get_filt_logs(sample, unit, seq_type, config, d):
-    if not config["phix_filter"]:
+    if not config["preprocessing"]["phix_filter"]:
         return []
     files = expand(opj(config["paths"]["results"], "intermediate", "preprocess",
                        "{sample}_{unit}_PHIX_{seq_type}{s}.log"), sample=sample,
