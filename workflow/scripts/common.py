@@ -28,7 +28,7 @@ def prepost_string(config):
             preprocess_suffices["trimming"] = ".sortmerna"
 
     # Trimming
-    if config["trimmomatic"]:
+    if config["preprocessing"]["trimmomatic"]:
         PREPROCESS += ".trimmomatic"
         preprocess_suffices["phixfilt"] = preprocess_suffices[
                                               "trimming"] + ".trimmomatic"
@@ -311,9 +311,9 @@ def get_fastqc_files(sample, unit, pairs, config, pre):
 
 
 def get_trim_logs(sample, unit, pairs, config, d):
-    if not config["trimmomatic"] and not config["cutadapt"]:
+    if not config["preprocessing"]["trimmomatic"] and not config["cutadapt"]:
         return []
-    if config["trimmomatic"]:
+    if config["preprocessing"]["trimmomatic"]:
         trimmer = "trimmomatic"
     else:
         trimmer = "cutadapt"
