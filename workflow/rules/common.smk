@@ -39,5 +39,5 @@ from scripts.common import check_uppmax, check_annotation, check_assembly, check
 
 config = check_uppmax(config)
 config = check_annotation(config)
-config, assemblies = check_assembly(config, assemblies)
+assemblies = check_assembly(config, assemblies)
 config = check_classifiers(config)

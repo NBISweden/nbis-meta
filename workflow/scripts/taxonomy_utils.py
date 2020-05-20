@@ -69,16 +69,16 @@ def tango_mash(sm):
     # Get contigs in sourmash missing from blast
     missing1 = set(df1.index).difference(set(df2.index))
     if len(missing1) > 0:
-        stats['added']+=len(missing)
-        df2 = pd.concat([df2, df1.loc[missing]])
+        stats['added'] += len(missing1)
+        df2 = pd.concat([df2, df1.loc[missing1]])
     df2 = add_lower(df2, df2.columns)
     df2.to_csv(sm.output[0], sep="\t")
     # Write to log
-    with open(sm.log, 'w') as fhout:
+    with open(sm.log[0], 'w') as fhout:
         fhout.write("Total:       {}\n".format(stats['total']))
         fhout.write("Resolved:    {}\n".format(stats['resolved']))
-        fhout..write("Transferred: {}\n".format(stats["transferred"]))
-        fhout..write("Added:       {}\n".format(stats['added']))
+        fhout.write("Transferred: {}\n".format(stats["transferred"]))
+        fhout.write("Added:       {}\n".format(stats['added']))
 
 
 def tango_assign_orfs(sm):
@@ -110,7 +110,7 @@ def tango_assign_orfs(sm):
 
 
 def main(sm):
-    toolbox = {"tango_mash": tango_mash,
+    toolbox = {"merge_tango_sourmash": tango_mash,
                "tango_assign_orfs": tango_assign_orfs}
     toolbox[sm.rule](sm)
 

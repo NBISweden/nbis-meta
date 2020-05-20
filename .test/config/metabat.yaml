@@ -164,7 +164,7 @@ binning:
     #- 2500
     #- 5000
   # run Metabat2 binner?
-  metabat: False
+  metabat: True
   # run CONCOCT binner?
   concoct: False
   # run MaxBin2 binner?

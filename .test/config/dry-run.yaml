@@ -18,11 +18,11 @@ preprocessing:
   # trim reads with cutadapt? (runs instead of trimmomatic, no quality trimming)
   cutadapt: False
   # run fastuniq (removes duplicates from paired-end samples)
-  fastuniq: False
+  fastuniq: True
   # map reads agains the phix genome and keep only reads that do not map concordantly
-  phix_filter: False
+  phix_filter: True
   # run SortMeRNA to identify (and filter) rRNA sequences
-  sortmerna: False
+  sortmerna: True
 
 # parameters for trimmomatic
 trimmomatic:
@@ -115,17 +115,17 @@ metaspades:
 
 annotation:
   # run tRNAscan-SE?
-  tRNAscan: False
+  tRNAscan: True
   # run infernal for rRNA identification?
   infernal: True
   # run eggnog-mapper to infer KEGG orthologs, pathways and modules?
-  eggnog: False
+  eggnog: True
   # run PFAM-scan to infer protein families from PFAM?
   pfam: True
   # run Resistance gene identifier?
-  rgi: False
+  rgi: True
   # run taxonomic annotation of assembled contigs (using tango + sourmash)?
-  taxonomy: False
+  taxonomy: True
 
 # params for taxonomic annotation of contigs/orfs
 taxonomy:
@@ -164,17 +164,17 @@ binning:
     #- 2500
     #- 5000
   # run Metabat2 binner?
-  metabat: False
+  metabat: True
   # run CONCOCT binner?
-  concoct: False
+  concoct: True
   # run MaxBin2 binner?
-  maxbin: False
+  maxbin: True
   # maximum threads for binners
   threads: 20
   # run Checkm to assess quality of bins?
-  checkm: False
+  checkm: True
   # run gtdbtk to classify bins phylogenetically?
-  gtdbtk: False
+  gtdbtk: True
 
 # parameters for MaxBin2
 maxbin:
@@ -208,9 +208,9 @@ classification:
   # run kraken2 read classifier?
   kraken: True
   # run centrifuge to classify reads
-  centrifuge: False
+  centrifuge: True
   # run metaphlan profiler?
-  metaphlan: False
+  metaphlan: True
 
 # parameters for kraken
 kraken:

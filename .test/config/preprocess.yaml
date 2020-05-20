@@ -18,9 +18,9 @@ preprocessing:
   # trim reads with cutadapt? (runs instead of trimmomatic, no quality trimming)
   cutadapt: False
   # run fastuniq (removes duplicates from paired-end samples)
-  fastuniq: False
+  fastuniq: True
   # map reads agains the phix genome and keep only reads that do not map concordantly
-  phix_filter: False
+  phix_filter: True
   # run SortMeRNA to identify (and filter) rRNA sequences
   sortmerna: False
 

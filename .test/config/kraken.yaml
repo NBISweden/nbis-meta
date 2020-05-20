@@ -223,14 +223,14 @@ kraken:
   standard_db: False
   # download a prebuilt kraken2 database from the CCB servers
   # choose from "minikraken_8GB","16S_Greengenes","16S_RDP","16S_Silva"
-  prebuilt: "minikraken_8GB"
+  prebuilt: "16S_Greengenes"
   # if you already have access to a built kraken database you may specify the
   # database path here (path must contain hash.k2d, opts.k2d and taxo.k2d files
   custom: ""
   # should kraken2 run with reduced memory requirements?
   # setting reduce_memory to True makes kraken2 run in "--memory-mapping" mode
   # which avoids loading database into RAM and uses less memory
-  reduce_memory: False
+  reduce_memory: True
 
 # centrifuge params
 centrifuge:

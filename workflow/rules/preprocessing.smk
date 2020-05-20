@@ -24,7 +24,7 @@ rule link_files:
     input:
         lambda wildcards: samples[wildcards.sample][wildcards.unit][wildcards.pair]
     output:
-        opj(config["intermediate_path"], "preprocess", "{sample}_{unit}_{pair}.fastq.gz")
+        opj(config["paths"]["results"], "intermediate", "preprocess", "{sample}_{unit}_{pair}.fastq.gz")
     message: "Linking {wildcards.sample}_{wildcards.unit}_{wildcards.pair}.fastq.gz"
     run:
         link(input[0], output[0])
@@ -33,9 +33,9 @@ rule link_files:
 
 rule download_rRNA_database:
     output:
-        opj(config["resource_path"], "rRNA_databases", "{file}.fasta")
+        opj("resources", "rRNA_databases", "{file}.fasta")
     log:
-        opj(config["resource_path"], "rRNA_databases", "{file}.dl.log")
+        opj("resources", "rRNA_databases", "{file}.dl.log")
     params:
         url="https://raw.githubusercontent.com/biocore/sortmerna/master/data/rRNA_databases/{file}.fasta"
     shell:
@@ -45,13 +45,13 @@ rule download_rRNA_database:
 
 rule index_db:
     input:
-        fasta=opj(config["resource_path"], "rRNA_databases", "{file}.fasta")
+        fasta=opj("resources", "rRNA_databases", "{file}.fasta")
     output:
-        expand(opj(config["resource_path"], "rRNA_databases",
+        expand(opj("resources", "rRNA_databases",
                    "{{file}}.fasta.{suffix}"),
                suffix=["bursttrie_0.dat", "kmer_0.dat", "pos_0.dat", "stats"])
     log:
-        opj(config["resource_path"], "rRNA_databases", "{file}.index.log")
+        opj("resources", "rRNA_databases", "{file}.index.log")
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*5
     conda:
@@ -64,23 +64,23 @@ rule index_db:
 rule sortmerna_merge_fastq:
     """Merge fastq output from SortMeRNA"""
     input:
-        R1=opj(config["intermediate_path"], "preprocess",
+        R1=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_R1.fastq.gz"),
-        R2=opj(config["intermediate_path"], "preprocess",
+        R2=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_R2.fastq.gz")
     output:
-        temp(opj(config["intermediate_path"], "preprocess",
+        temp(opj(config["paths"]["results"], "intermediate", "preprocess",
                  "{sample}_{unit}_merged.fastq"))
     log:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}.sortmerna_merge.log")
     params:
-        scratch=os.path.expandvars(config["scratch_path"]),
-        R1_unzipped=opj(os.path.expandvars(config["scratch_path"]),
+        scratch=os.path.expandvars(config["paths"]["temp"]),
+        R1_unzipped=opj(os.path.expandvars(config["paths"]["temp"]),
                           "{sample}_{unit}_R1.fastq"),
-        R2_unzipped=opj(os.path.expandvars(config["scratch_path"]),
+        R2_unzipped=opj(os.path.expandvars(config["paths"]["temp"]),
                         "{sample}_{unit}_R2.fastq"),
-        merged=opj(os.path.expandvars(config["scratch_path"]),
+        merged=opj(os.path.expandvars(config["paths"]["temp"]),
                    "{sample}_{unit}_merged.fastq")
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*6
@@ -104,27 +104,27 @@ rule sortmerna_merge_fastq:
 rule sortmerna_fastq_pe:
     """Run SortMeRNA on paired end input"""
     input:
-        fastq=opj(config["intermediate_path"], "preprocess",
+        fastq=opj(config["paths"]["results"], "intermediate", "preprocess",
                   "{sample}_{unit}_merged.fastq"),
-        db=expand(opj(config["resource_path"], "rRNA_databases",
+        db=expand(opj("resources", "rRNA_databases",
                       "{file}.{suffix}"),
                   suffix=["bursttrie_0.dat", "kmer_0.dat", "pos_0.dat", "stats"],
-                  file=config["sortmerna_dbs"])
+                  file=config["sortmerna"]["dbs"])
     output:
-        aligned=temp(opj(config["intermediate_path"], "preprocess",
+        aligned=temp(opj(config["paths"]["results"], "intermediate", "preprocess",
                          "{sample}_{unit}_merged.rRNA.fastq")),
-        other=temp(opj(config["intermediate_path"], "preprocess",
+        other=temp(opj(config["paths"]["results"], "intermediate", "preprocess",
                        "{sample}_{unit}_merged.non_rRNA.fastq"))
     log:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_pe.sortmerna.log")
     params:
-        paired_strategy=config["sortmerna_paired_strategy"],
-        score_params=config["sortmerna_params"],
-        other_prefix=opj(config["scratch_path"], "{sample}_{unit}_merged.non_rRNA"),
-        aligned_prefix=opj(config["scratch_path"], "{sample}_{unit}_merged.rRNA"),
-        scratch=config["scratch_path"],
-        ref_string=get_sortmerna_ref_string(config["sortmerna_dbs"])
+        paired_strategy=config["sortmerna"]["paired_strategy"],
+        score_params=config["sortmerna"]["extra_settings"],
+        other_prefix=opj(config["paths"]["temp"], "{sample}_{unit}_merged.non_rRNA"),
+        aligned_prefix=opj(config["paths"]["temp"], "{sample}_{unit}_merged.rRNA"),
+        scratch=config["paths"]["temp"],
+        ref_string=get_sortmerna_ref_string(config["sortmerna"]["dbs"])
     threads: 10
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*4
@@ -146,22 +146,22 @@ rule sortmerna_fastq_pe:
 
 rule sortmerna_split_rRNA_fastq:
     input:
-        aligned=opj(config["intermediate_path"], "preprocess",
+        aligned=opj(config["paths"]["results"], "intermediate", "preprocess",
                     "{sample}_{unit}_merged.rRNA.fastq"),
     output:
-        R1=opj(config["intermediate_path"], "preprocess",
+        R1=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_R1.rRNA.fastq.gz"),
-        R2=opj(config["intermediate_path"], "preprocess",
+        R2=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_R2.rRNA.fastq.gz")
     log:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}.sortmerna_unmerge.rRNA.log")
     params:
-        tmpdir=opj(os.path.expandvars(config["scratch_path"]),
+        tmpdir=opj(os.path.expandvars(config["paths"]["temp"]),
                    "{sample}_{unit}_sortmerna"),
-        R1=opj(os.path.expandvars(config["scratch_path"]),
+        R1=opj(os.path.expandvars(config["paths"]["temp"]),
                  "{sample}_{unit}_sortmerna", "{sample}_{unit}_R1.rRNA.fastq"),
-        R2=opj(os.path.expandvars(config["scratch_path"]),
+        R2=opj(os.path.expandvars(config["paths"]["temp"]),
                "{sample}_{unit}_sortmerna", "{sample}_{unit}_R2.rRNA.fastq")
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*6
@@ -182,22 +182,22 @@ rule sortmerna_split_rRNA_fastq:
 
 rule sortmerna_split_other_fastq:
     input:
-        other=opj(config["intermediate_path"], "preprocess",
+        other=opj(config["paths"]["results"], "intermediate", "preprocess",
                   "{sample}_{unit}_merged.non_rRNA.fastq")
     output:
-        R1=opj(config["intermediate_path"], "preprocess",
+        R1=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_R1.non_rRNA.fastq.gz"),
-        R2=opj(config["intermediate_path"], "preprocess",
+        R2=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_R2.non_rRNA.fastq.gz")
     log:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}.sortmerna_unmerge.non_rRNA.log")
     params:
-        tmpdir=opj(os.path.expandvars(config["scratch_path"]),
+        tmpdir=opj(os.path.expandvars(config["paths"]["temp"]),
                    "{sample}_{unit}_sortmerna"),
-        R1=opj(os.path.expandvars(config["scratch_path"]),
+        R1=opj(os.path.expandvars(config["paths"]["temp"]),
                "{sample}_{unit}_sortmerna", "{sample}_{unit}_R1.non_rRNA.fastq"),
-        R2=opj(os.path.expandvars(config["scratch_path"]),
+        R2=opj(os.path.expandvars(config["paths"]["temp"]),
                "{sample}_{unit}_sortmerna", "{sample}_{unit}_R2.non_rRNA.fastq")
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*6
@@ -215,13 +215,13 @@ rule sortmerna_split_other_fastq:
 
 rule sortmerna_unzip_fastq:
     input:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_se.fastq.gz")
     output:
-        temp(opj(config["intermediate_path"], "preprocess",
+        temp(opj(config["paths"]["results"], "intermediate", "preprocess",
                  "{sample}_{unit}_se.fastq"))
     log:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_se.sortmerna_unzip.log")
     shell:
         """
@@ -230,26 +230,26 @@ rule sortmerna_unzip_fastq:
 
 rule sortmerna_fastq_se:
     input:
-        fastq=opj(config["intermediate_path"], "preprocess",
+        fastq=opj(config["paths"]["results"], "intermediate", "preprocess",
                   "{sample}_{unit}_se.fastq"),
-        db=expand(opj(config["resource_path"], "rRNA_databases",
+        db=expand(opj("resources", "rRNA_databases",
                       "{file}.{suffix}"),
             suffix=["bursttrie_0.dat", "kmer_0.dat", "pos_0.dat", "stats"],
-            file=config["sortmerna_dbs"])
+            file=config["sortmerna"]["dbs"])
     output:
-        aligned=temp(opj(config["intermediate_path"], "preprocess",
+        aligned=temp(opj(config["paths"]["results"], "intermediate", "preprocess",
                          "{sample}_{unit}_se.rRNA.fastq")),
-        other=temp(opj(config["intermediate_path"], "preprocess",
+        other=temp(opj(config["paths"]["results"], "intermediate", "preprocess",
                        "{sample}_{unit}_se.non_rRNA.fastq"))
     log:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_se.sortmerna.log")
     params:
-        score_params=config["sortmerna_params"],
-        other_prefix=opj(config["scratch_path"], "{sample}_{unit}_se.non_rRNA"),
-        aligned_prefix=opj(config["scratch_path"], "{sample}_{unit}_se.rRNA"),
-        scratch=config["scratch_path"],
-        ref_string=get_sortmerna_ref_string(config["sortmerna_dbs"])
+        score_params=config["sortmerna"]["extra_settings"],
+        other_prefix=opj(config["paths"]["temp"], "{sample}_{unit}_se.non_rRNA"),
+        aligned_prefix=opj(config["paths"]["temp"], "{sample}_{unit}_se.rRNA"),
+        scratch=config["paths"]["temp"],
+        ref_string=get_sortmerna_ref_string(config["sortmerna"]["dbs"])
     threads: 10
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
@@ -271,13 +271,13 @@ rule sortmerna_fastq_se:
 
 rule sortmerna_zip_aligned_fastq:
     input:
-        fastq=opj(config["intermediate_path"], "preprocess",
+        fastq=opj(config["paths"]["results"], "intermediate", "preprocess",
                   "{sample}_{unit}_se.rRNA.fastq")
     output:
-        fastq=opj(config["intermediate_path"], "preprocess",
+        fastq=opj(config["paths"]["results"], "intermediate", "preprocess",
                     "{sample}_{unit}_se.rRNA.fastq.gz")
     log:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
                     "{sample}_{unit}_se.sortmerna_zip_rRNA.log")
     shell:
         """
@@ -286,13 +286,13 @@ rule sortmerna_zip_aligned_fastq:
 
 rule sortmerna_zip_other_fastq:
     input:
-        fastq=opj(config["intermediate_path"], "preprocess",
+        fastq=opj(config["paths"]["results"], "intermediate", "preprocess",
                   "{sample}_{unit}_se.non_rRNA.fastq")
     output:
-        fastq=opj(config["intermediate_path"], "preprocess",
+        fastq=opj(config["paths"]["results"], "intermediate", "preprocess",
                     "{sample}_{unit}_se.non_rRNA.fastq.gz")
     log:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
                     "{sample}_{unit}_se.sortmerna_zip_non_rRNA.log")
     shell:
         """
@@ -301,14 +301,14 @@ rule sortmerna_zip_other_fastq:
 
 rule sortmerna_link_pe:
     input:
-        R1=opj(config["intermediate_path"], "preprocess",
-               "{sample}_{unit}_R1."+config["sortmerna_keep"]+".fastq.gz"),
-        R2=opj(config["intermediate_path"], "preprocess",
-               "{sample}_{unit}_R2."+config["sortmerna_keep"]+".fastq.gz")
+        R1=opj(config["paths"]["results"], "intermediate", "preprocess",
+               "{sample}_{unit}_R1."+config["sortmerna"]["keep"]+".fastq.gz"),
+        R2=opj(config["paths"]["results"], "intermediate", "preprocess",
+               "{sample}_{unit}_R2."+config["sortmerna"]["keep"]+".fastq.gz")
     output:
-        R1=opj(config["intermediate_path"], "preprocess",
+        R1=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_R1.sortmerna.fastq.gz"),
-        R2=opj(config["intermediate_path"], "preprocess",
+        R2=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_R2.sortmerna.fastq.gz")
     run:
         link(input.R1, output.R1)
@@ -316,10 +316,10 @@ rule sortmerna_link_pe:
 
 rule sortmerna_link_se:
     input:
-        se=opj(config["intermediate_path"], "preprocess",
-                 "{sample}_{unit}_se."+config["sortmerna_keep"]+".fastq.gz")
+        se=opj(config["paths"]["results"], "intermediate", "preprocess",
+                 "{sample}_{unit}_se."+config["sortmerna"]["keep"]+".fastq.gz")
     output:
-        se=opj(config["intermediate_path"], "preprocess",
+        se=opj(config["paths"]["results"], "intermediate", "preprocess",
                  "{sample}_{unit}_se.sortmerna.fastq.gz")
     run:
         link(input.se, output.se)
@@ -330,23 +330,23 @@ from scripts.common import get_trimmomatic_string
 
 rule trimmomatic_pe:
     input:
-        R1=opj(config["intermediate_path"], "preprocess",
+        R1=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R1"+preprocess_suffices["trimming"]+".fastq.gz"),
-        R2=opj(config["intermediate_path"], "preprocess",
+        R2=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R2"+preprocess_suffices["trimming"]+".fastq.gz")
     output:
-        R1P=opj(config["intermediate_path"], "preprocess",
+        R1P=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R1"+preprocess_suffices["trimming"]+".trimmomatic.fastq.gz"),
-        R1U=opj(config["intermediate_path"], "preprocess",
+        R1U=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R1"+preprocess_suffices["trimming"]+".trimmomatic.U.fastq.gz"),
-        R2P=opj(config["intermediate_path"], "preprocess",
+        R2P=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R2"+preprocess_suffices["trimming"]+".trimmomatic.fastq.gz"),
-        R2U=opj(config["intermediate_path"], "preprocess",
+        R2U=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R2"+preprocess_suffices["trimming"]+".trimmomatic.U.fastq.gz"),
     log:
-        R1log=opj(config["intermediate_path"], "preprocess",
+        R1log=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R1"+preprocess_suffices["trimming"]+".trimmomatic.log"),
-        R2log=opj(config["intermediate_path"], "preprocess",
+        R2log=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R2"+preprocess_suffices["trimming"]+".trimmomatic.log")
     params:
         trim_string=get_trimmomatic_string("pe", config)
@@ -372,13 +372,13 @@ rule trimmomatic_pe:
 rule trimmomatic_se:
     """Run Trimmomatic on single-end input"""
     input:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_se"+preprocess_suffices["trimming"]+".fastq.gz")
     output:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_se"+preprocess_suffices["trimming"]+".trimmomatic.fastq.gz"),
     log:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_se"+preprocess_suffices["trimming"]+".trimmomatic.log")
     params:
         trim_string=get_trimmomatic_string("se", config)
@@ -399,26 +399,26 @@ rule trimmomatic_se:
 
 rule cutadapt_pe:
     input:
-        R1=opj(config["intermediate_path"], "preprocess",
+        R1=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R1"+preprocess_suffices["trimming"]+".fastq.gz"),
-        R2=opj(config["intermediate_path"], "preprocess",
+        R2=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R2"+preprocess_suffices["trimming"]+".fastq.gz")
     output:
-        fastq1=opj(config["intermediate_path"], "preprocess",
+        fastq1=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R1"+preprocess_suffices["trimming"]+".cutadapt.fastq.gz"),
-        fastq2=opj(config["intermediate_path"],
+        fastq2=opj(config["paths"]["results"], "intermediate",
             "preprocess", "{sample}_{unit}_R2"+preprocess_suffices["trimming"]+".cutadapt.fastq.gz"),
     log:
-        R1log=opj(config["intermediate_path"], "preprocess",
+        R1log=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R1"+preprocess_suffices["trimming"]+".cutadapt.log"),
-        R2log=opj(config["intermediate_path"], "preprocess",
+        R2log=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R2"+preprocess_suffices["trimming"]+".cutadapt.log"),
-        err = opj(config["intermediate_path"], "preprocess",
+        err = opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R2"+preprocess_suffices["trimming"]+".cutadapt.err")
     params:
-        adapter=config["adapter_sequence"],
-        rev_adapter=config["rev_adapter_sequence"],
-        error_rate=config["cutadapt_error_rate"]
+        adapter=config["cutadapt"]["adapter_sequence"],
+        rev_adapter=config["cutadapt"]["rev_adapter_sequence"],
+        error_rate=config["cutadapt"]["error_rate"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
@@ -439,17 +439,17 @@ rule cutadapt_pe:
 
 rule cutadapt_se:
     input:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_se"+preprocess_suffices["trimming"]+".fastq.gz")
     output:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_se"+preprocess_suffices["trimming"]+".cutadapt.fastq.gz")
     log:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_se"+preprocess_suffices["trimming"]+".cutadapt.log")
     params:
-        adapter=config["adapter_sequence"],
-        error_rate=config["cutadapt_error_rate"]
+        adapter=config["cutadapt"]["adapter_sequence"],
+        error_rate=config["cutadapt"]["error_rate"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
@@ -467,9 +467,9 @@ rule cutadapt_se:
 rule download_phix:
     """Downloads the phiX genome"""
     output:
-        opj(config["resource_path"], "phix", "phix.fasta")
+        opj("resources", "phix", "phix.fasta")
     log:
-        opj(config["resource_path"], "phix", "phix.log")
+        opj("resources", "phix", "phix.log")
     params:
         url_base="ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/819/615/GCF_000819615.1_ViralProj14015"
     shell:
@@ -486,12 +486,12 @@ rule download_phix:
 rule bowtie_build_phix:
     """Build bowtie2 index for phiX"""
     input:
-        fasta = opj(config["resource_path"], "phix", "phix.fasta")
+        fasta = opj("resources", "phix", "phix.fasta")
     output:
-        expand(opj(config["resource_path"], "phix", "phix.{index}.bt2"),
+        expand(opj("resources", "phix", "phix.{index}.bt2"),
                index=range(1, 5))
     log:
-        opj(config["resource_path"], "phix", "bowtie_build.log")
+        opj("resources", "phix", "bowtie_build.log")
     params:
         prefix = lambda w, input: os.path.splitext(input.fasta)[0]
     threads: 1
@@ -507,25 +507,25 @@ rule bowtie_build_phix:
 rule filter_phix_pe:
     """Maps reads against the phiX genome, keeping non-concordantly mapped"""
     input:
-        bt_index=expand(opj(config["resource_path"], "phix",
+        bt_index=expand(opj("resources", "phix",
                             "phix.{index}.bt2"), index=range(1, 5)),
-        R1=opj(config["intermediate_path"], "preprocess",
+        R1=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R1"+preprocess_suffices["phixfilt"]+".fastq.gz"),
-        R2=opj(config["intermediate_path"], "preprocess",
+        R2=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R2"+preprocess_suffices["phixfilt"]+".fastq.gz")
     output:
-        R1=opj(config["intermediate_path"], "preprocess",
+        R1=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R1"+preprocess_suffices["phixfilt"]+".phixfilt.fastq.gz"),
-        R2=opj(config["intermediate_path"], "preprocess",
+        R2=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R2"+preprocess_suffices["phixfilt"]+".phixfilt.fastq.gz"),
     log:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_PHIX_pe"+preprocess_suffices["phixfilt"]+".log")
     params:
-        tmp_out=config["scratch_path"],
-        setting=config["bowtie2_params"],
-        prefix=opj(config["resource_path"], "phix", "phix")
-    threads: config["bowtie2_threads"]
+        tmp_out=config["paths"]["temp"],
+        setting=config["bowtie2"]["extra_settings"],
+        prefix=opj("resources", "phix", "phix")
+    threads: config["bowtie2"]["threads"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60
     conda:
@@ -548,21 +548,21 @@ rule filter_phix_pe:
 rule filter_phix_se:
     """Maps reads against the phiX genome, keeping non-concordantly mapped"""
     input:
-        bt_index=expand(opj(config["resource_path"], "phix",
+        bt_index=expand(opj("resources", "phix",
                             "phix.{index}.bt2"), index=range(1, 5)),
-        se=opj(config["intermediate_path"], "preprocess",
+        se=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_se"+preprocess_suffices["phixfilt"]+".fastq.gz")
     output:
-        se=opj(config["intermediate_path"], "preprocess",
+        se=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_se"+preprocess_suffices["phixfilt"]+".phixfilt.fastq.gz"),
     log:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_PHIX_se"+preprocess_suffices["phixfilt"]+".log")
     params:
-        tmp_out=config["scratch_path"],
-        setting=config["bowtie2_params"],
-        prefix=opj(config["resource_path"], "phix", "phix")
-    threads: config["bowtie2_threads"]
+        tmp_out=config["paths"]["temp"],
+        setting=config["bowtie2"]["extra_settings"],
+        prefix=opj("resources", "phix", "phix")
+    threads: config["bowtie2"]["threads"]
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60
     conda:
@@ -581,28 +581,28 @@ rule filter_phix_se:
 
 rule fastuniq:
     input:
-        R1=opj(config["intermediate_path"], "preprocess",
+        R1=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R1"+preprocess_suffices["fastuniq"]+".fastq.gz"),
-        R2=opj(config["intermediate_path"], "preprocess",
+        R2=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R2"+preprocess_suffices["fastuniq"]+".fastq.gz")
     output:
-        R1=opj(config["intermediate_path"], "preprocess",
+        R1=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R1"+preprocess_suffices["fastuniq"]+".fastuniq.fastq.gz"),
-        R2=opj(config["intermediate_path"], "preprocess",
+        R2=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_R2"+preprocess_suffices["fastuniq"]+".fastuniq.fastq.gz")
     log:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}.fastuniq_pe.log")
     params:
-        R1_intmp=opj(config["scratch_path"],
+        R1_intmp=opj(config["paths"]["temp"],
             "{sample}_{unit}_R1"+preprocess_suffices["fastuniq"]+".fastq"),
-        R2_intmp=opj(config["scratch_path"],
+        R2_intmp=opj(config["paths"]["temp"],
             "{sample}_{unit}_R2"+preprocess_suffices["fastuniq"]+".fastq"),
-        R1_outtmp=opj(config["scratch_path"],
+        R1_outtmp=opj(config["paths"]["temp"],
             "{sample}_{unit}_R1"+preprocess_suffices["fastuniq"]+".fastuniq.fastq"),
-        R2_outtmp=opj(config["scratch_path"],
+        R2_outtmp=opj(config["paths"]["temp"],
             "{sample}_{unit}_R2"+preprocess_suffices["fastuniq"]+".fastuniq.fastq"),
-        file_list=opj(config["scratch_path"],
+        file_list=opj(config["paths"]["temp"],
             "{sample}_{unit}.filelist")
     threads: 4
     resources:
@@ -627,13 +627,13 @@ rule fastuniq:
 rule fastuniq_se:
     """Dummy rule for fastuniq on single-end input"""
     input:
-        se=opj(config["intermediate_path"], "preprocess",
+        se=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_se"+preprocess_suffices["fastuniq"]+".fastq.gz")
     output:
-        se=opj(config["intermediate_path"], "preprocess",
+        se=opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_se"+preprocess_suffices["fastuniq"]+".fastuniq.fastq.gz")
     log:
-        opj(config["intermediate_path"], "preprocess",
+        opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}.fastuniq_se.log")
     run:
         link(input.se, output.se)
@@ -641,13 +641,13 @@ rule fastuniq_se:
 rule fastqc:
     """Run fastqc on preprocessed data"""
     input:
-        fastq = opj(config["intermediate_path"], "preprocess",
+        fastq = opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}_{pair}"+PREPROCESS+".fastq.gz")
     output:
-        zip = opj(config["intermediate_path"], "fastqc",
+        zip = opj(config["paths"]["results"], "intermediate", "fastqc",
             "{sample}_{unit}_{pair}"+PREPROCESS+"_fastqc.zip")
     log:
-        opj(config["intermediate_path"], "fastqc",
+        opj(config["paths"]["results"], "intermediate", "fastqc",
             "{sample}_{unit}_{pair}.log")
     params:
         dir=lambda w, output: os.path.dirname(output.zip)
@@ -666,11 +666,11 @@ rule multiqc:
     input:
         multiqc_input(samples, config)
     output:
-        html=opj(config["report_path"], "samples_report.html"),
-        txt=opj(config["report_path"], "samples_report_data",
+        html=opj(config["paths"]["results"], "report", "samples_report.html"),
+        txt=opj(config["paths"]["results"], "report", "samples_report_data",
             "multiqc_general_stats.txt")
     log:
-        opj(config["report_path"], "multiqc.log")
+        opj(config["paths"]["results"], "report", "multiqc.log")
     shadow:
         "shallow"
     params:

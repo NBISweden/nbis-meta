@@ -164,11 +164,11 @@ binning:
     #- 2500
     #- 5000
   # run Metabat2 binner?
-  metabat: False
+  metabat: True
   # run CONCOCT binner?
-  concoct: False
+  concoct: True
   # run MaxBin2 binner?
-  maxbin: False
+  maxbin: True
   # maximum threads for binners
   threads: 20
   # run Checkm to assess quality of bins?

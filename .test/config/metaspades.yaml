@@ -93,7 +93,7 @@ assembly:
   # run Megahit assembler?
   megahit: True
   # Use Metaspades instead of Megahit for assembly?
-  metaspades: False
+  metaspades: True
 
 megahit:
   # maximum threads for megahit
