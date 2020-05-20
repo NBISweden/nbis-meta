@@ -44,9 +44,9 @@ if config["metaspades"]:
         log:
             opj(config["paths"]["results"],"assembly","{group}","spades.log")
         params:
-            intermediate_contigs=opj(config["intermediate_path"],"assembly",
+            intermediate_contigs=opj(config["paths"]["results"], "intermediate","assembly",
                                      "{group}","intermediate_contigs"),
-            corrected=opj(config["intermediate_path"],"assembly",
+            corrected=opj(config["paths"]["results"], "intermediate","assembly",
                           "{group}","corrected"),
             additional_settings=config["metaspades_additional_settings"],
             tmp=opj(config["temp_path"],"{group}.metaspades"),
@@ -127,7 +127,7 @@ else:
         log:
             opj(config["paths"]["results"],"assembly","{group}","log")
         params:
-            intermediate_contigs=opj(config["intermediate_path"],"assembly",
+            intermediate_contigs=opj(config["paths"]["results"], "intermediate","assembly",
                                      "{group}","intermediate_contigs"),
             additional_settings=config["megahit_additional_settings"],
             tmp=opj(config["temp_path"],"{group}.megahit"),
@@ -214,9 +214,9 @@ rule bowtie_map_pe:
         bt_index=expand(opj(config["paths"]["results"],"assembly","{{group}}",
                               "final_contigs.fa.{index}.bt2l"),
                           index=range(1,5)),
-        R1=expand(opj(config["intermediate_path"], "preprocess",
+        R1=expand(opj(config["paths"]["results"], "intermediate", "preprocess",
                         "{{sample}}_{{unit}}_R1{p}.fastq.gz"), p=PREPROCESS),
-        R2=expand(opj(config["intermediate_path"], "preprocess",
+        R2=expand(opj(config["paths"]["results"], "intermediate", "preprocess",
                         "{{sample}}_{{unit}}_R2{p}.fastq.gz"), p=PREPROCESS)
     output:
         bam=temp(opj(config["paths"]["results"],"assembly","{group}",
@@ -262,7 +262,7 @@ rule bowtie_map_se:
         bt_index=expand(opj(config["paths"]["results"],"assembly","{{group}}",
                               "final_contigs.fa.{index}.bt2l"),
                           index=range(1,5)),
-        se=expand(opj(config["intermediate_path"], "preprocess",
+        se=expand(opj(config["paths"]["results"], "intermediate", "preprocess",
                         "{{sample}}_{{unit}}_se{p}.fastq.gz"), p=PREPROCESS)
     output:
         bam=temp(opj(config["paths"]["results"],"assembly","{group}",

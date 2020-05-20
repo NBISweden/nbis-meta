@@ -81,11 +81,11 @@ def parse_samples(df, config, PREPROCESS):
         r2 = False
 
         # Set preprocessed file paths
-        R1_p = opj(config["intermediate_path"], "preprocess",
+        R1_p = opj(config["paths"]["results"], "intermediate", "preprocess",
                    "{}_{}_R1{}.fastq.gz".format(sample, unit, PREPROCESS))
-        R2_p = opj(config["intermediate_path"], "preprocess",
+        R2_p = opj(config["paths"]["results"], "intermediate", "preprocess",
                    "{}_{}_R2{}.fastq.gz".format(sample, unit, PREPROCESS))
-        se_p = opj(config["intermediate_path"], "preprocess",
+        se_p = opj(config["paths"]["results"], "intermediate", "preprocess",
                    "{}_{}_se{}.fastq.gz".format(sample, unit, PREPROCESS))
 
         # Initiate keys for all assembly group values
@@ -304,7 +304,7 @@ def multiqc_input(samples, config):
 def get_fastqc_files(sample, unit, pairs, config, pre):
     """Get all fastqc output"""
     if config["fastqc"]:
-        files = expand(opj(config["intermediate_path"], "fastqc",
+        files = expand(opj(config["paths"]["results"], "intermediate", "fastqc",
                            "{sample}_{unit}_{pair}{PREPROCESS}_fastqc.zip"),
                        sample=sample, unit=unit, pair=pairs, PREPROCESS=pre)
         return files
@@ -318,7 +318,7 @@ def get_trim_logs(sample, unit, pairs, config, d):
         trimmer = "trimmomatic"
     else:
         trimmer = "cutadapt"
-    files = expand(opj(config["intermediate_path"], "preprocess",
+    files = expand(opj(config["paths"]["results"], "intermediate", "preprocess",
                        "{sample}_{unit}_{pair}{s}.{trimmer}.log"),
                    sample=sample, unit=unit, pair=pairs, s=d["trimming"],
                    trimmer=trimmer)
@@ -328,7 +328,7 @@ def get_trim_logs(sample, unit, pairs, config, d):
 def get_filt_logs(sample, unit, seq_type, config, d):
     if not config["phix_filter"]:
         return []
-    files = expand(opj(config["intermediate_path"], "preprocess",
+    files = expand(opj(config["paths"]["results"], "intermediate", "preprocess",
                        "{sample}_{unit}_PHIX_{seq_type}{s}.log"), sample=sample,
                    unit=unit, seq_type=seq_type, s=d["phixfilt"])
     return files
@@ -337,7 +337,7 @@ def get_filt_logs(sample, unit, seq_type, config, d):
 def get_sortmerna_logs(sample, unit, seq_type, config):
     if not config["sortmerna"]:
         return []
-    files = expand(opj(config["intermediate_path"], "preprocess",
+    files = expand(opj(config["paths"]["results"], "intermediate", "preprocess",
                        "{sample}_{unit}_{seq_type}.sortmerna.log"),
                    sample=sample, unit=unit, seq_type=seq_type)
     return files
@@ -478,11 +478,11 @@ def get_fw_reads(config, samples, p):
     for sample in samples.keys():
         for unit in samples[sample].keys():
             if "R1" in samples[sample][unit].keys():
-                f = opj(config["intermediate_path"], "preprocess",
+                f = opj(config["paths"]["results"], "intermediate", "preprocess",
                         "{sample}_{unit}_R1{p}.fastq.gz".format(sample=sample,
                                                                 unit=unit, p=p))
             else:
-                f = opj(config["intermediate_path"], "preprocess",
+                f = opj(config["paths"]["results"], "intermediate", "preprocess",
                         "{sample}_{unit}_se{p}.fastq.gz".format(sample=sample,
                                                                 unit=unit, p=p))
             files.append(f)

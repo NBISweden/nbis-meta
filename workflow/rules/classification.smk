@@ -67,9 +67,9 @@ rule kraken_build_standard:
 
 rule kraken_pe:
     input:
-        R1=opj(config["intermediate_path"], "preprocess",
+        R1=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_R1"+PREPROCESS+".fastq.gz"),
-        R2=opj(config["intermediate_path"], "preprocess",
+        R2=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_R2"+PREPROCESS+".fastq.gz"),
         db=expand(opj(config["kraken_index_path"], "{n}.k2d"),
                   n=["hash", "opts", "taxo"])
@@ -95,7 +95,7 @@ rule kraken_pe:
 
 rule kraken_se:
     input:
-        se=opj(config["intermediate_path"], "preprocess",
+        se=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_se"+PREPROCESS+".fastq.gz"),
         db=expand(opj(config["kraken_index_path"], "{n}.k2d"),
                   n=["hash", "opts", "taxo"])
@@ -143,9 +143,9 @@ rule download_centrifuge_build:
     
 rule centrifuge_pe:
     input:
-        R1=opj(config["intermediate_path"], "preprocess",
+        R1=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_R1"+PREPROCESS+".fastq.gz"),
-        R2=opj(config["intermediate_path"], "preprocess",
+        R2=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_R2"+PREPROCESS+".fastq.gz"),
         db=expand(opj(config["centrifuge_dir"], "{base}.{i}.cf"),
                   i=[1, 2, 3], base=config["centrifuge_base"])
@@ -176,7 +176,7 @@ rule centrifuge_pe:
 
 rule centrifuge_se:
     input:
-        se=opj(config["intermediate_path"], "preprocess",
+        se=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_se"+PREPROCESS+".fastq.gz"),
         db=expand(opj(config["centrifuge_dir"], "{base}.{i}.cf"),
                   i=[1, 2, 3], base=config["centrifuge_base"])
@@ -255,9 +255,9 @@ rule build_metaphlan:
 
 rule metaphlan_pe:
     input:
-        R1=opj(config["intermediate_path"], "preprocess",
+        R1=opj(config["paths"]["results"], "intermediate", "preprocess",
                  "{sample}_{unit}_R1"+PREPROCESS+".fastq.gz"),
-        R2=opj(config["intermediate_path"], "preprocess",
+        R2=opj(config["paths"]["results"], "intermediate", "preprocess",
                  "{sample}_{unit}_R2"+PREPROCESS+".fastq.gz"),
         db=expand(opj(config["resource_path"], "metaphlan", "{index}.{s}.bt2"),
                   index=config["metaphlan_index"],
@@ -283,7 +283,7 @@ rule metaphlan_pe:
 
 rule metaphlan_se:
     input:
-        se=opj(config["intermediate_path"], "preprocess",
+        se=opj(config["paths"]["results"], "intermediate", "preprocess",
                "{sample}_{unit}_se"+PREPROCESS+".fastq.gz"),
         db=expand(opj(config["resource_path"], "metaphlan", "{index}.{s}.bt2"),
                   index = config["metaphlan_index"],
