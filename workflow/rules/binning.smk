@@ -203,8 +203,8 @@ rule extract_fasta:
         opj(config["paths"]["results"], "binning", "concoct", "{group}",
             "{l}", "clustering_gt{l}_merged.csv")
     output:
-        temp(opj(config["paths"]["results"], "binning", "concoct", "{group}",
-                  "{l}", "done"))
+        touch(temp(opj(config["paths"]["results"], "binning", "concoct",
+                       "{group}", "{l}", "done")))
     log:
         opj(config["paths"]["results"], "binning", "concoct", "{group}",
                   "{l}", "extract_fasta.log")
