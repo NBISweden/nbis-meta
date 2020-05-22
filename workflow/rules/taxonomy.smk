@@ -31,7 +31,7 @@ rule tango_download_taxonomy:
     params:
         taxdir=lambda wildcards, output: os.path.dirname(output.sqlite)
     conda:
-        "../envs/tango.yml"
+        "../envs/taxonomy.yml"
     shell:
         """
         tango download taxonomy -t {params.taxdir} >{log} 2>&1
@@ -46,7 +46,7 @@ rule tango_download:
         dldir=lambda wildcards, output: os.path.dirname(output.fasta),
         tmpdir="$TMPDIR"
     conda:
-        "../envs/tango.yml"
+        "../envs/taxonomy.yml"
     shell:
         """
         tango download {wildcards.db} --tmpdir {params.tmpdir} \
@@ -61,7 +61,7 @@ rule tango_download_nr_idmap:
     params:
         dldir=lambda wildcards, output: os.path.dirname(output.idmap)
     conda:
-        "../envs/tango.yml"
+        "../envs/taxonomy.yml"
     shell:
         """
         tango download idmap -d {params.dldir} > {log} 2>&1
@@ -78,7 +78,7 @@ rule tango_format_uniref:
     params:
         tmpdir=config["paths"]["temp"]
     conda:
-        "../envs/tango.yml"
+        "../envs/taxonomy.yml"
     shell:
         """
         tango format -m {output.idmap} --tmpdir {params.tmpdir} \
@@ -95,7 +95,7 @@ rule tango_format_nr:
     params:
         tmpdir=config["paths"]["temp"]
     conda:
-        "../envs/tango.yml"
+        "../envs/taxonomy.yml"
     shell:
         """
         tango format --tmpdir {params.tmpdir} {input.fasta} \
@@ -110,7 +110,7 @@ rule tango_update:
     log:
         opj("resources", "{db}", "tango_update.log")
     conda:
-        "../envs/tango.yml"
+        "../envs/taxonomy.yml"
     params:
         dir=lambda wildcards, output: os.path.dirname(output.idmap)
     shell:
@@ -139,7 +139,7 @@ rule tango_build:
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*10
     conda:
-        "../envs/tango.yml"
+        "../envs/taxonomy.yml"
     shell:
          """
          tango build -d {output} -p {threads} {input.fasta} \
@@ -164,7 +164,7 @@ rule tango_search:
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*10
     conda:
-        "../envs/tango.yml"
+        "../envs/taxonomy.yml"
     shell:
         """
         tango search {params.settings} -p {threads} \
@@ -191,7 +191,7 @@ rule tango_assign:
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*6
     conda:
-        "../envs/tango.yml"
+        "../envs/taxonomy.yml"
     shell:
          """
          tango assign {params.settings} -p {threads} -m rank_lca \
@@ -222,7 +222,7 @@ rule sourmash_compute:
     log:
         opj(config["paths"]["results"], "assembly", "{group}", "sourmash_compute.log")
     conda:
-        "../envs/sourmash.yml"
+        "../envs/taxonomy.yml"
     params:
         frac=config["taxonomy"]["sourmash_fraction"]
     shell:
@@ -248,7 +248,7 @@ rule sourmash_classify:
     resources:
         runtime=lambda wildcards, attempt: attempt**2*30
     conda:
-        "../envs/sourmash.yml"
+        "../envs/taxonomy.yml"
     shell:
         """
         sourmash lca classify --db {input.db} --scaled {params.frac} \
