@@ -2,5 +2,4 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - sra-tools=2.10.0
   - seqtk=1.3
