@@ -1,0 +1,23 @@
+$schema: "http://json-schema.org/draft-06/schema#"
+description: an entry in the sample sheet
+properties:
+  sample:
+    type: string
+    description: sample name/identifier
+  unit:
+    type: integer
+    description: run identifier
+  assembly:
+    type: string
+    description: Assembly group(s) separated by comma
+  fq1:
+    type: string
+    description: File path for the sequence file
+  fq2:
+    type: string
+    description: File path for the paired sequence file for paired-end samples
+
+required:
+  - sample
+  - unit
+  - fq1

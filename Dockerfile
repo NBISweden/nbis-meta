@@ -19,13 +19,8 @@ COPY environment.yml .
 RUN conda env update -n base -f environment.yml && conda clean -a
 
 # Add workflow
-RUN mkdir envs
 COPY config config
-COPY envs/*.yml envs/
-COPY samples samples
-COPY scripts scripts
-COPY source source
-COPY config.yaml Snakefile ./
+COPY workflow workflow
 
 # Run workflow
 ENTRYPOINT ["snakemake", "--use-conda", "-j", "1"]
