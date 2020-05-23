@@ -12,9 +12,7 @@ rule download_synthetic:
     params:
         tar = "examples/data/synthetic.tar.gz",
         url = "https://zenodo.org/record/3737112/files/synthetic.tar.gz?download=1",
-        outdir = lambda w, output: os.path.dirname(output.R1)
-    conda:
-        "../envs/examples.yml"
+        outdir = lambda wildcards, output: os.path.dirname(output.R1)
     shell:
          """
          curl -L -s -o {params.tar} {params.url}
