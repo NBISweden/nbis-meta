@@ -164,7 +164,7 @@ binning:
     #- 2500
     #- 5000
   # run Metabat2 binner?
-  metabat: True
+  metabat: False
   # run CONCOCT binner?
   concoct: True
   # run MaxBin2 binner?
@@ -262,4 +262,4 @@ metaphlan:
 # this sets the number of reads to generate for example input files
 # the files are generated based on the config/samples.tsv file and stored
 # under examples/data
-example_dataset_size: 1000000
+example_dataset_size: 500000

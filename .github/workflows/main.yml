@@ -21,6 +21,10 @@ jobs:
       run: conda env update -n base -f environment.yml
     - name: Dry run
       run: snakemake --use-conda -j 4 --configfile .test/config/dry-run.yaml -n
+    - name: Prepare taxonomy
+      run: bash .test/scripts/prep_taxonomy.sh
+    - name: Taxonomy
+      run: snakemake --use-conda -j 4 --configfile .test/config/taxonomy.yaml -p taxonomy --notemp && rm -r results
     - name: Cutadapt
       run: snakemake --use-conda -j 4 --configfile .test/config/cutadapt.yaml -p qc && rm -r results
     - name: Sortmerna
@@ -32,11 +36,7 @@ jobs:
     - name: Megahit
       run: snakemake --use-conda -j 4 --configfile .test/config/megahit.yaml -p assemble
     - name: Kraken
-      run: snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml -p results/kraken/sample1_1_pe.kreport results/kraken/sample3_1_se.kreport && rm -r examples/data results/
-    - name: Prepare taxonomy
-      run: bash .test/scripts/prep_taxonomy.sh
-    - name: Taxonomy
-      run: snakemake --use-conda -j 4 --configfile .test/config/taxonomy.yaml -p taxonomy
+      run: snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml -p results/kraken/sample1_1_pe.kreport results/kraken/sample3_1_se.kreport && rm -r examples/data/sample* results resources
     - name: Metabat
       run: snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p bin
 

@@ -673,7 +673,7 @@ rule multiqc:
     shadow:
         "shallow"
     params:
-        config="config/multiqc_preprocess_config.yaml",
+        config="workflow/.cfg/multiqc_preprocess_config.yaml",
         output_dir=lambda w, output: os.path.dirname(output.html)
     conda:
         "../envs/preprocess.yml"
