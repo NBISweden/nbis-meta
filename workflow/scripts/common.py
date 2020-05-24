@@ -214,7 +214,7 @@ def check_classifiers(config):
         custom = expand(opj(config["kraken"]["custom"], "{n}.k2d"),
                         n=["hash", "opts", "taxo"])
         if list(set(os.path.exists(x) for x in custom))[0]:
-            config["kraken_index_path"] = config["kraken"]["custom"]
+            config["kraken"]["index_path"] = config["kraken"]["custom"]
         # If not, use prebuilt or standard
         elif config["kraken"]["standard_db"]:
             config["kraken"]["index_path"] = opj("resources", "kraken",
