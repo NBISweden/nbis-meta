@@ -31,6 +31,8 @@ instructions on how to run the workflow.
 git clone https://github.com/NBISweden/nbis-meta.git
 ```
 
+or download a tarball of the latest release from the [release page](https://github.com/NBISweden/nbis-meta/releases).
+
 2. Install and activate the workflow environment:
 
 ```
