@@ -25,32 +25,20 @@ instructions on how to run the workflow.
 ## Installation
 
 ### From GitHub
-Checkout the latest version of this repository:
+1. Checkout the latest version:
 
 ```
 git clone https://github.com/NBISweden/nbis-meta.git
 ```
 
-This workflow runs on a minimal conda environment with `snakemake`, `biopython`
-and `pandas`. To get started use the [conda](http://anaconda.org) environment
-file `environment.yml`. 
-
-(If you don't have conda installed already refer to the
-[conda installation instructions](https://conda.io/docs/user-guide/install/index.html).)
-
-To install the workflow environment, run:
+2. Install and activate the workflow environment:
 
 ```
 conda env create -f environment.yml
-```
-
-Then activate the environment with:
-
-```
 conda activate nbis-meta
 ```
 
-### With Docker
+### From DockerHub
 
 To pull the latest Docker image with all dependencies and source code from
 DockerHub, run:
