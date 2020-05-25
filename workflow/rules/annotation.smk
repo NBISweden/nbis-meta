@@ -203,8 +203,7 @@ rule pfam_scan:
         "../envs/annotation.yml"
     params:
         dir=opj("resources", "pfam"),
-        tmp_out=opj(os.path.expandvars(config["paths"]["temp"]),
-                    "{group}.pfam.out")
+        tmp_out=opj(config["paths"]["temp"], "{group}.pfam.out")
     threads: 2
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
@@ -272,10 +271,8 @@ rule emapper_homology_search:
     params:
         resource_dir=opj("resources", "eggnog-mapper"),
         out="{group}",
-        tmpdir=opj(os.path.expandvars(config["paths"]["temp"]),
-                   "{group}-eggnog"),
-        tmp_out=opj(os.path.expandvars(config["paths"]["temp"]),
-                    "{group}-eggnog", "{group}"),
+        tmpdir=opj(config["paths"]["temp"], "{group}-eggnog"),
+        tmp_out=opj(config["paths"]["temp"], "{group}-eggnog", "{group}"),
         flags="-m diamond --no_annot --no_file_comments"
     log:
         opj(config["paths"]["results"], "annotation", "{group}",
@@ -306,8 +303,7 @@ if config["runOnUppMax"] == "yes":
                 "{group}.emapper.annotations")
         params:
             resource_dir=opj("resources", "eggnog-mapper"),
-            tmpdir=opj(os.path.expandvars(config["paths"]["temp"]),
-                       "{group}-eggnog"),
+            tmpdir=opj(config["paths"]["temp"], "{group}-eggnog"),
             out=opj(config["paths"]["results"], "annotation", "{group}", "{group}"),
             flags="--no_file_comments"
         log:
@@ -342,8 +338,7 @@ else:
                  "{group}.emapper.annotations.log")
         params:
             resource_dir=opj("resources", "eggnog-mapper"),
-            tmpdir=opj(os.path.expandvars(config["paths"]["temp"]),
-                       "{group}-eggnog"),
+            tmpdir=opj(config["paths"]["temp"], "{group}-eggnog"),
             out=opj(config["paths"]["results"], "annotation", "{group}", "{group}"),
             flags="--no_file_comments"
         conda:
