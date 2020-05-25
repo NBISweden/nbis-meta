@@ -2,6 +2,7 @@ from scripts.common import get_sortmerna_ref_string, link, multiqc_input, prepro
 
 localrules:
     link_files,
+    download_rRNA_database,
     sortmerna_unzip_fastq,
     sortmerna_zip_aligned_fastq,
     sortmerna_zip_other_fastq,
