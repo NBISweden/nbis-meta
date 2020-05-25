@@ -306,16 +306,6 @@ rule bowtie_map_se:
 # Statistics #
 ##############
 
-rule assembly_stats:
-    input:
-        expand(opj(config["paths"]["results"],"assembly","{group}",
-                   "final_contigs.fa"), group=assemblies.keys())
-    output:
-        opj(config["paths"]["results"], "report", "assembly", "assembly_stats.tsv"),
-        opj(config["paths"]["results"], "report", "assembly", "assembly_size_dist.tsv")
-    script:
-        "../scripts/assembly_utils.py"
-
 rule samtools_flagstat:
     """
     Generate mapping statistics
@@ -342,6 +332,18 @@ rule samtools_flagstat:
             echo -e "$n\t$al" >> {output}
         done
         """
+
+rule assembly_stats:
+    input:
+        expand(opj(config["paths"]["results"],"assembly","{group}",
+                   "final_contigs.fa"), group=assemblies.keys()),
+        expand(opj(config["paths"]["results"],"assembly","{group}",
+                   "mapping","flagstat.tsv"), group = assemblies.keys())
+    output:
+        opj(config["paths"]["results"], "report", "assembly", "assembly_stats.tsv"),
+        opj(config["paths"]["results"], "report", "assembly", "assembly_size_dist.tsv")
+    script:
+        "../scripts/assembly_utils.py"
 
 rule plot_assembly_stats:
     input:
