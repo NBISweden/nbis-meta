@@ -123,7 +123,7 @@ def stats(sm):
     """
     stat_result = pd.DataFrame()
     sizedist_result = pd.DataFrame()
-    for f in sm.input:
+    for f in sm.input.fa:
         p = Path(f)
         name = p.parent.name
         contig_lengths = store_lengths(f)

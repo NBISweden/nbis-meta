@@ -650,7 +650,10 @@ def markdup_mem(wildcards, cores):
     :param cores: number of cores for currently running workflow
     :return:
     """
-    threads = min(cores, 10)
+    if cores is not None:
+        threads = min(cores, 10)
+    else:
+        threads = 1
     mem_gb_per_thread = 2
     return int(mem_gb_per_thread * threads)
 

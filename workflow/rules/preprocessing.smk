@@ -2,6 +2,7 @@ from scripts.common import get_sortmerna_ref_string, link, multiqc_input, prepro
 
 localrules:
     link_files,
+    download_rRNA_database,
     sortmerna_unzip_fastq,
     sortmerna_zip_aligned_fastq,
     sortmerna_zip_other_fastq,
@@ -75,13 +76,10 @@ rule sortmerna_merge_fastq:
         opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}.sortmerna_merge.log")
     params:
-        scratch=os.path.expandvars(config["paths"]["temp"]),
-        R1_unzipped=opj(os.path.expandvars(config["paths"]["temp"]),
-                          "{sample}_{unit}_R1.fastq"),
-        R2_unzipped=opj(os.path.expandvars(config["paths"]["temp"]),
-                        "{sample}_{unit}_R2.fastq"),
-        merged=opj(os.path.expandvars(config["paths"]["temp"]),
-                   "{sample}_{unit}_merged.fastq")
+        scratch=config["paths"]["temp"],
+        R1_unzipped=opj(config["paths"]["temp"], "{sample}_{unit}_R1.fastq"),
+        R2_unzipped=opj(config["paths"]["temp"], "{sample}_{unit}_R2.fastq"),
+        merged=opj(config["paths"]["temp"], "{sample}_{unit}_merged.fastq")
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60*6
     conda:
@@ -157,12 +155,11 @@ rule sortmerna_split_rRNA_fastq:
         opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}.sortmerna_unmerge.rRNA.log")
     params:
-        tmpdir=opj(os.path.expandvars(config["paths"]["temp"]),
-                   "{sample}_{unit}_sortmerna"),
-        R1=opj(os.path.expandvars(config["paths"]["temp"]),
-                 "{sample}_{unit}_sortmerna", "{sample}_{unit}_R1.rRNA.fastq"),
-        R2=opj(os.path.expandvars(config["paths"]["temp"]),
-               "{sample}_{unit}_sortmerna", "{sample}_{unit}_R2.rRNA.fastq")
+        tmpdir=opj(config["paths"]["temp"], "{sample}_{unit}_sortmerna"),
+        R1=opj(config["paths"]["temp"], "{sample}_{unit}_sortmerna",
+               "{sample}_{unit}_R1.rRNA.fastq"),
+        R2=opj(config["paths"]["temp"], "{sample}_{unit}_sortmerna",
+               "{sample}_{unit}_R2.rRNA.fastq")
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*6
     conda:
@@ -170,10 +167,7 @@ rule sortmerna_split_rRNA_fastq:
     shell:
         """
         mkdir -p {params.tmpdir}
-        unmerge-paired-reads.sh \
-            {input.aligned} \
-            {params.R1} \
-            {params.R2} >{log} 2>&1
+        unmerge-paired-reads.sh {input.aligned} {params.R1} {params.R2} >{log} 2>&1
         gzip {params.R1}
         gzip {params.R2}
         mv {params.R1}.gz {output.R1}
@@ -193,12 +187,11 @@ rule sortmerna_split_other_fastq:
         opj(config["paths"]["results"], "intermediate", "preprocess",
             "{sample}_{unit}.sortmerna_unmerge.non_rRNA.log")
     params:
-        tmpdir=opj(os.path.expandvars(config["paths"]["temp"]),
-                   "{sample}_{unit}_sortmerna"),
-        R1=opj(os.path.expandvars(config["paths"]["temp"]),
-               "{sample}_{unit}_sortmerna", "{sample}_{unit}_R1.non_rRNA.fastq"),
-        R2=opj(os.path.expandvars(config["paths"]["temp"]),
-               "{sample}_{unit}_sortmerna", "{sample}_{unit}_R2.non_rRNA.fastq")
+        tmpdir=opj(config["paths"]["temp"], "{sample}_{unit}_sortmerna"),
+        R1=opj(config["paths"]["temp"], "{sample}_{unit}_sortmerna",
+               "{sample}_{unit}_R1.non_rRNA.fastq"),
+        R2=opj(config["paths"]["temp"], "{sample}_{unit}_sortmerna",
+               "{sample}_{unit}_R2.non_rRNA.fastq")
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*6
     conda:

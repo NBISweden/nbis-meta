@@ -151,7 +151,7 @@ taxonomy:
     - "species"
   # protein database to use for taxonomic assignments
   # choose between uniref50, uniref90, uniref100 and nr.
-  taxdb: "uniref100"
+  database: "uniref100"
 
 binning:
   # minimum contig lengths to use for binning. binning will be run for every
