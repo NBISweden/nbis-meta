@@ -6,18 +6,18 @@ def readme():
         return f.read()
 
 
-setup(name="nbis-meta", version="0.0.4", author="John Sundh",
+setup(name="nbismeta", version="0.0.0", author="John Sundh",
       author_email="john.sundh@scilifelab.se",
       description="A snakemake workflow for metagenomics",
       long_description=readme(), long_description_content_type="text/markdown",
       license="MIT", python_requires=">=3.7",
       install_requires=["snakemake", ],
       url="https://github.com/nbisweden/nbis-meta",
-      packages=["workflow"],
-      package_data={"workflow": ["Snakefile", ".cfg/*", "envs/*", "notebooks/*",
+      packages=["nbismeta"],
+      package_data={"nbismeta": ["Snakefile", ".cfg/*", "envs/*", "notebooks/*",
                                  "report/*", "rules/*", "schemas/*",
                                  "scripts/*"]},
-      entry_points={'console_scripts': ['nmeta = nmeta.__main__:main']},
+      entry_points={'console_scripts': ['nbismeta = nbismeta.__main__:main']},
       classifiers=["Programming Language :: Python :: 3",
                    "License :: OSI Approved :: MIT License",
                    "Operating System :: OS Independent", ], )
