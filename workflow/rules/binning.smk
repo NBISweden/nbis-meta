@@ -12,7 +12,10 @@ localrules:
     aggregate_checkm_stats,
     checkm_profile,
     download_gtdb,
-    aggregate_gtdbtk
+    aggregate_gtdbtk,
+    download_ref_genome,
+    generate_fastANI_lists,
+    cluster_genomes
 
 ##### master rule for binning #####
 
@@ -450,8 +453,7 @@ rule aggregate_checkm_stats:
 
 rule download_gtdb:
     output:
-        met=opj("resources", "gtdb", "metadata",
-                  "metadata.txt")
+        met=opj("resources", "gtdb", "metadata", "metadata.txt")
     log:
         opj("resources", "gtdb", "download.log")
     params:
@@ -466,8 +468,7 @@ rule download_gtdb:
 
 rule gtdbtk_classify:
     input:
-        met=opj("resources", "gtdb", "metadata",
-                  "metadata.txt"),
+        met=opj("resources", "gtdb", "metadata", "metadata.txt"),
         tsv=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "summary_stats.tsv")
     output:
         touch(opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "gtdbtk", "done"))
@@ -649,3 +650,64 @@ rule aggregate_bin_annot:
         df.to_csv(output.trna, sep="\t", index=True)
         df=concatenate(input.rrna)
         df.to_csv(output.rrna, sep="\t", index=True)
+
+##### genome clustering #####
+
+rule download_ref_genome:
+    output:
+        opj("resources", "ref_genomes", "{genome_id}.fna")
+    params:
+        ftp_base = lambda wildcards: config["fastani"]["ref_genomes"][wildcards.genome_id]
+    script:
+        "../scripts/binning_utils.py"
+
+rule generate_fastANI_lists:
+    input:
+        bins=expand(opj(config["paths"]["results"], "binning", "{binner}",
+                          "{group}", "{l}", "summary_stats.tsv"),
+                    binner = get_binners(config), group = assemblyGroups.keys(),
+                    l = config["min_contig_length"]),
+        refs=expand(opj("resources", "ref_genomes", "{genome_id}.fna"),
+                    genome_id = config["fastani"]["ref_genomes"].keys())
+    output:
+        temp(opj(config["paths"]["results"], "binning", "fastANI", "refList")),
+        temp(opj(config["paths"]["results"], "binning", "fastANI", "queryList"))
+    params:
+        outdir = lambda wildcards, output: os.path.abspath(os.path.dirname(output[0]))
+    script:
+        "../scripts/binning_utils.py"
+
+rule fastANI:
+    input:
+        opj(config["paths"]["results"], "binning", "fastANI", "refList"),
+        opj(config["paths"]["results"], "binning", "fastANI", "queryList")
+    output:
+        opj(config["paths"]["results"], "binning", "fastANI", "out.txt")
+    log:
+        opj(config["paths"]["results"], "binning", "fastANI", "log")
+    threads: 8
+    params:
+        k = config["fastani"]["kmer_size"],
+        frag_len = config["fastani"]["frag_len"],
+        min_fraction = config["fastani"]["frac"]
+    conda:
+        "../envs/fastani.yml"
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
+    shell:
+        """
+        fastANI --rl {input[0]} --ql {input[1]} -k {params.k} -t {threads} \
+            --fragLen {params.frag_len} --minFraction {params.min_fraction} \
+            --matrix -o {output[0]} > {log} 2>&1
+        """
+
+rule cluster_genomes:
+    input:
+        opj(config["paths"]["results"], "binning", "fastANI", "out.txt")
+    output:
+        opj(config["paths"]["results"], "report", "fastANI", "genome_clusters.tsv")
+    conda:
+        "../envs/fastani.yml"
+    script:
+        "../scripts/binning_utils.py"
+
