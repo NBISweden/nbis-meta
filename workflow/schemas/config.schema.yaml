@@ -342,18 +342,27 @@ checkm:
 fastani:
   type: object
   properties:
-    ref_list:
-      type: string
-      description: path to a list of reference genomes to include in ANI calculation
-      default: ""
+    kmer_size:
+      type: integer
+      description: kmer size to use for fastANI
+      default: 16
+      maximum: 16
+    frag_len:
+      type: integer
+      description: fragment length used to calculate ANI
+      default: 3000
     frac:
-      type: float
+      type: number
       description: aligned fraction required between pairs of genomes
       default: 0.5
       minimum: 0.0
       maximum: 1.0
+    ref_list:
+      type: string
+      description: path to a list of reference genomes to include in ANI calculation
+      default: ""
     thresh:
-      type: float
+      type: number
       description: distance threshold at which to cluster genomes
       default: 0.05
       minimum: 0.0
