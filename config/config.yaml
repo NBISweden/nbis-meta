@@ -217,6 +217,10 @@ fastani:
   # this is calculated as (100-ANI)/100 so setting 0.05 corresponds to clustering
   # genomes at 95% identity
   thresh: 0.05
+  # kmer size for fastANI
+  kmer_size: 16
+  # fragment length used to calculate ANI
+  frag_len: 3000
 
 # parameters for bowtie2
 bowtie2:
