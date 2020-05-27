@@ -36,7 +36,7 @@ jobs:
     - name: Megahit
       run: snakemake --use-conda -j 4 --configfile .test/config/megahit.yaml -p assemble
     - name: Kraken
-      run: snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml -p results/kraken/sample1_1_pe.kreport results/kraken/sample3_1_se.kreport && rm -r examples/data/sample* results resources
+      run: snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml -p results/kraken/sample1_1_pe.kreport results/kraken/sample4_1_se.kreport && rm -r examples/data/sample* results resources
     - name: Metabat
       run: snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p bin
 
