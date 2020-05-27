@@ -5,7 +5,7 @@ import pandas as pd
 
 def parse_pfam(sm):
     annot = pd.read_csv(sm.input[0], comment="#", header=None, sep=" +",
-                        usecols=[0, 5, 7, 14],
+                        usecols=[0, 5, 7, 14], engine="python",
                         names=["orf", "pfam", "pfam_type", "pfam_clan"])
     clans = pd.read_csv(sm.input[1], header=None, names=["clan", "clan_name"],
                         usecols=[0, 3], sep="\t")

@@ -3,6 +3,7 @@ localrules:
     tango_download_taxonomy,
     tango_format_nr,
     tango_format_uniref,
+    tango_update,
     download_sourmash_db,
     tango_assign_orfs, 
     download_sourmash_db,

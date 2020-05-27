@@ -90,8 +90,9 @@ def parse_samples(df, config, PREPROCESS):
         # Initiate keys for all assembly group values
         if "assembly" in df.columns:
             assem_list = df.iloc[i]["assembly"].split(",")
+            assem_list = [a for a in assem_list if a != ""]
             for a in assem_list:
-                if a not in assemblies.keys() and a != "":
+                if a not in assemblies.keys():
                     assemblies[a] = {}
         else:
             assem_list = []
@@ -650,7 +651,10 @@ def markdup_mem(wildcards, cores):
     :param cores: number of cores for currently running workflow
     :return:
     """
-    threads = min(cores, 10)
+    if cores is not None:
+        threads = min(cores, 10)
+    else:
+        threads = 1
     mem_gb_per_thread = 2
     return int(mem_gb_per_thread * threads)
 
