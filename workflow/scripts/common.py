@@ -90,8 +90,9 @@ def parse_samples(df, config, PREPROCESS):
         # Initiate keys for all assembly group values
         if "assembly" in df.columns:
             assem_list = df.iloc[i]["assembly"].split(",")
+            assem_list = [a for a in assem_list if a != ""]
             for a in assem_list:
-                if a not in assemblies.keys() and a != "":
+                if a not in assemblies.keys():
                     assemblies[a] = {}
         else:
             assem_list = []
