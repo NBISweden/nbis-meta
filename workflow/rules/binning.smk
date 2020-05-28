@@ -10,9 +10,13 @@ localrules:
     download_checkm, 
     checkm_qa,
     aggregate_checkm_stats,
+    aggregate_checkm_profiles,
     checkm_profile,
     download_gtdb,
-    aggregate_gtdbtk
+    count_rRNA,
+    count_tRNA,
+    aggregate_gtdbtk,
+    aggregate_bin_annot
 
 ##### master rule for binning #####
 
