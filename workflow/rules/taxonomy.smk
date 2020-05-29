@@ -1,13 +1,14 @@
 localrules:
+    taxonomy,
     tango_download,
     tango_download_taxonomy,
+    tango_download_nr_idmap,
     tango_format_nr,
     tango_format_uniref,
     tango_update,
     download_sourmash_db,
     tango_assign_orfs, 
-    download_sourmash_db,
-    sourmash_compute, 
+    sourmash_compute,
     merge_tango_sourmash
 
 ##### taxonomy master rule #####

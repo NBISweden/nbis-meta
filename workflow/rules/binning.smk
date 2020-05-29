@@ -2,6 +2,7 @@ from scripts.common import binning_input, get_fw_reads
 from scripts.common import get_binners, get_tree_settings
 
 localrules:
+    bin,
     concoct_cutup,
     merge_cutup,
     extract_fasta,
