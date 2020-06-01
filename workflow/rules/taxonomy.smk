@@ -1,15 +1,15 @@
 localrules:
     taxonomy,
-    tango_download,
-    tango_download_taxonomy,
-    tango_download_nr_idmap,
-    tango_format_nr,
-    tango_format_uniref,
-    tango_update,
+    contigtax_download,
+    contigtax_download_taxonomy,
+    contigtax_download_nr_idmap,
+    contigtax_format_nr,
+    contigtax_format_uniref,
+    contigtax_update,
     download_sourmash_db,
-    tango_assign_orfs, 
+    contigtax_assign_orfs,
     sourmash_compute,
-    merge_tango_sourmash
+    merge_contigtax_sourmash
 
 ##### taxonomy master rule #####
 rule taxonomy:
@@ -18,9 +18,9 @@ rule taxonomy:
                    "orfs.{db}.taxonomy.tsv"),
                group=assemblies.keys(), db=config["taxonomy"]["database"])
 
-##### tango #####
+##### contigtax #####
 
-rule tango_download_taxonomy:
+rule contigtax_download_taxonomy:
     output:
         sqlite=opj("resources", "taxonomy", "taxonomy.sqlite"),
         taxdump=opj("resources", "taxonomy", "taxdump.tar.gz"),
@@ -29,21 +29,21 @@ rule tango_download_taxonomy:
         pkl=opj("resources", "taxonomy",
                   "taxonomy.sqlite.traverse.pkl")
     log:
-        opj("resources", "taxonomy", "tango.log")
+        opj("resources", "taxonomy", "contigtax.log")
     params:
         taxdir=lambda wildcards, output: os.path.dirname(output.sqlite)
     conda:
         "../envs/taxonomy.yml"
     shell:
         """
-        tango download taxonomy -t {params.taxdir} >{log} 2>&1
+        contigtax download taxonomy -t {params.taxdir} >{log} 2>&1
         """
 
-rule tango_download:
+rule contigtax_download:
     output:
         fasta=temp(opj("resources", "{db}", "{db}.fasta.gz"))
     log:
-        opj("resources", "{db}", "tango_download.log")
+        opj("resources", "{db}", "contigtax_download.log")
     params:
         dldir=lambda wildcards, output: os.path.dirname(output.fasta),
         tmpdir="$TMPDIR"
@@ -51,66 +51,66 @@ rule tango_download:
         "../envs/taxonomy.yml"
     shell:
         """
-        tango download {wildcards.db} --tmpdir {params.tmpdir} \
+        contigtax download {wildcards.db} --tmpdir {params.tmpdir} \
             -d {params.dldir} --skip_idmap >{log} 2>{log}
         """
 
-rule tango_download_nr_idmap:
+rule contigtax_download_nr_idmap:
     output:
         idmap=opj("resources", "nr", "prot.accession2taxid.gz")
     log:
-        opj("resources", "nr", "tango_download_idmap.log")
+        opj("resources", "nr", "contigtax_download_idmap.log")
     params:
         dldir=lambda wildcards, output: os.path.dirname(output.idmap)
     conda:
         "../envs/taxonomy.yml"
     shell:
         """
-        tango download idmap -d {params.dldir} > {log} 2>&1
+        contigtax download idmap -d {params.dldir} > {log} 2>&1
         """
 
-rule tango_format_uniref:
+rule contigtax_format_uniref:
     input:
         fasta=opj("resources", "{db}", "{db}.fasta.gz")
     output:
         fasta=opj("resources", "{db}", "{db}.reformat.fasta.gz"),
         idmap=opj("resources", "{db}", "prot.accession2taxid.gz")
     log:
-        opj("resources", "{db}", "tango_format.log")
+        opj("resources", "{db}", "contigtax_format.log")
     params:
         tmpdir=config["paths"]["temp"]
     conda:
         "../envs/taxonomy.yml"
     shell:
         """
-        tango format -m {output.idmap} --tmpdir {params.tmpdir} \
+        contigtax format -m {output.idmap} --tmpdir {params.tmpdir} \
             {input.fasta} {output.fasta} > {log} 2>&1
         """
 
-rule tango_format_nr:
+rule contigtax_format_nr:
     input:
         fasta=opj("resources", "nr", "nr.fasta.gz")
     output:
         fasta=opj("resources", "nr", "nr.reformat.fasta.gz")
     log:
-        opj("resources", "nr", "tango_format.log")
+        opj("resources", "nr", "contigtax_format.log")
     params:
         tmpdir=config["paths"]["temp"]
     conda:
         "../envs/taxonomy.yml"
     shell:
         """
-        tango format --tmpdir {params.tmpdir} {input.fasta} \
+        contigtax format --tmpdir {params.tmpdir} {input.fasta} \
             {output.fasta} > {log} 2>&1
         """
 
-rule tango_update:
+rule contigtax_update:
     input:
         idmap=opj("resources", "{db}", "prot.accession2taxid.gz")
     output:
         idmap=opj("resources", "{db}", "prot.accession2taxid.update.gz")
     log:
-        opj("resources", "{db}", "tango_update.log")
+        opj("resources", "{db}", "contigtax_update.log")
     conda:
         "../envs/taxonomy.yml"
     params:
@@ -119,7 +119,7 @@ rule tango_update:
         """
         # If an idmap file is available, use it to create an updated idmap file
         if [ -e {params.dir}/idmap.tsv.gz ] ; then
-            tango update {input.idmap} {params.dir}/idmap.tsg.gz \
+            contigtax update {input.idmap} {params.dir}/idmap.tsg.gz \
                 {output.idmap} > {log} 2>&1
         # Otherwise, just create a symlink
         else
@@ -128,7 +128,7 @@ rule tango_update:
         fi            
         """
 
-rule tango_build:
+rule contigtax_build:
     input:
         fasta=opj("resources", "{db}", "{db}.reformat.fasta.gz"),
         nodes=opj("resources", "taxonomy", "nodes.dmp"),
@@ -144,11 +144,11 @@ rule tango_build:
         "../envs/taxonomy.yml"
     shell:
          """
-         tango build -d {output} -p {threads} {input.fasta} \
+         contigtax build -d {output} -p {threads} {input.fasta} \
             {input.idmap} {input.nodes} >{log} 2>&1 
          """
 
-rule tango_search:
+rule contigtax_search:
     input:
         db=opj("resources", config["taxonomy"]["database"], "diamond.dmnd"),
         fasta=opj(config["paths"]["results"], "assembly", "{group}",
@@ -157,7 +157,7 @@ rule tango_search:
         opj(config["paths"]["results"], "annotation", "{group}",
             "final_contigs.{db}.tsv.gz".format(db=config["taxonomy"]["database"]))
     log:
-        opj(config["paths"]["results"], "annotation", "{group}", "tango_search.log")
+        opj(config["paths"]["results"], "annotation", "{group}", "contigtax_search.log")
     params:
         tmpdir=config["paths"]["temp"],
         min_len=config["taxonomy"]["min_len"],
@@ -169,22 +169,22 @@ rule tango_search:
         "../envs/taxonomy.yml"
     shell:
         """
-        tango search {params.settings} -p {threads} \
+        contigtax search {params.settings} -p {threads} \
             --tmpdir {params.tmpdir} -l {params.min_len} \
             {input.fasta} {input.db} {output} >{log} 2>&1
         """
 
-rule tango_assign:
+rule contigtax_assign:
     input:
         tsv=opj(config["paths"]["results"], "annotation", "{group}",
             "final_contigs.{db}.tsv.gz".format(db=config["taxonomy"]["database"])),
         sql=ancient(opj("resources", "taxonomy", "taxonomy.sqlite"))
     output:
         opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
-            "tango.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"]))
+            "contigtax.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"]))
     log:
         opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
-            "tango_assign.log")
+            "contigtax_assign.log")
     params:
         taxonomy_ranks=" ".join(config["taxonomy"]["ranks"]),
         taxdir=opj("resources", "taxonomy"),
@@ -196,7 +196,7 @@ rule tango_assign:
         "../envs/taxonomy.yml"
     shell:
          """
-         tango assign {params.settings} -p {threads} -m rank_lca \
+         contigtax assign {params.settings} -p {threads} -m rank_lca \
             --reportranks {params.taxonomy_ranks} -t {params.taxdir} \
             {input.tsv} {output} > {log} 2>&1
          """
@@ -259,12 +259,12 @@ rule sourmash_classify:
 
 ##### common taxonomy rules #####
 
-rule merge_tango_sourmash:
+rule merge_contigtax_sourmash:
     input:
         smash=opj(config["paths"]["results"], "annotation", "{group}",
                     "taxonomy", "sourmash.taxonomy.csv"),
-        tango=opj(config["paths"]["results"], "annotation", "{group}",
-                    "taxonomy", "tango.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"]))
+        contigtax=opj(config["paths"]["results"], "annotation", "{group}",
+                    "taxonomy", "contigtax.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"]))
     output:
         opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
         "final_contigs.taxonomy.tsv")
@@ -273,7 +273,7 @@ rule merge_tango_sourmash:
     script:
         "../scripts/taxonomy_utils.py"
 
-rule tango_assign_orfs:
+rule contigtax_assign_orfs:
     input:
         tax=opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
             "final_contigs.taxonomy.tsv"),
