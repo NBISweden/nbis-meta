@@ -203,7 +203,6 @@ fastani:
   # path to a list of reference genomes to include in ANI calculations
   # this list must be tab-separated with the name/id of the genome in the first
   # column and the RefSeq or Genbank ftp base url in the second column, e.g:
-
   # T_arc ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/009/387/875/GCA_009387875.1_ASM938787v1
   # P_med ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/240/225/GCF_000240225.1_ASM24022v2
   # L_bac ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/209/385/GCF_000209385.2_Lach_bact_2_1_46_FAA_V2
@@ -212,11 +211,11 @@ fastani:
   ref_list: ""
   # fraction overlap of alignments between two genomes to evaluate them for
   # clustering
-  frac: 0.5
+  fraction: 0.5
   # distance threshold to use for clustering genomes
   # this is calculated as (100-ANI)/100 so setting 0.05 corresponds to clustering
   # genomes at 95% identity
-  thresh: 0.05
+  threshold: 0.05
   # kmer size for fastANI
   kmer_size: 16
   # fragment length used to calculate ANI
