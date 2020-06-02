@@ -4,6 +4,6 @@ channels:
   - defaults
 dependencies:
   - python=3.7.6
-  - tango=0.5.7
+  - contigtax=0.5.9
   - diamond=0.9.24
   - sourmash=3.3.0

@@ -2,6 +2,7 @@ from scripts.common import binning_input, get_fw_reads
 from scripts.common import get_binners, get_tree_settings
 
 localrules:
+    bin,
     concoct_cutup,
     merge_cutup,
     extract_fasta,
@@ -10,12 +11,17 @@ localrules:
     download_checkm, 
     checkm_qa,
     aggregate_checkm_stats,
+    aggregate_checkm_profiles,
     checkm_profile,
     download_gtdb,
     aggregate_gtdbtk,
     download_ref_genome,
     generate_fastANI_lists,
     cluster_genomes
+    count_rRNA,
+    count_tRNA,
+    aggregate_gtdbtk,
+    aggregate_bin_annot
 
 ##### master rule for binning #####
 

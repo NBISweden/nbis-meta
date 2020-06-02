@@ -10,7 +10,8 @@ localrules:
     sortmerna_link_se,
     download_phix,
     bowtie_build_phix,
-    fastuniq_se
+    fastuniq_se,
+    multiqc
 
 ##### master rule for preprocessing #####
 

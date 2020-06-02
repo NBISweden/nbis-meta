@@ -243,48 +243,55 @@ def fastani2dist(f, frac=0.5):
     return dist
 
 
-def clust(dist, method="complete", metric="euclidean", thresh=0.05):
+def cluster(linkage):
     """
-    Clusters genomes using a pandas DataFrame of distances
+    Cluster all genomes based on established linkages using networkx
 
-    :param dist: pandas DataFrame
-    :param method: Clustering method to use
-    :param metric: Clustering metric to use
-    :param thresh: Distance threshold to use for clustering genomes
-    :return:
+    :param linkage: Dictionary of dictionaries
+    :return: A dictionary with cluster index and list of genomes
     """
-    from sklearn.cluster import AgglomerativeClustering
-    model = AgglomerativeClustering(n_clusters=None, affinity=metric,
-                                    linkage=method,
-                                    distance_threshold=thresh,
-                                    compute_full_tree=True)
-    model.fit(dist)
-    return model
+    import networkx as nx
+    g = nx.from_dict_of_dicts(linkage)
+    clustered = []
+    clusters = {}
+    clust_num = 1
+    for n in g.nodes():
+        c = [n]
+        if n in clustered: continue
+        edges = list(nx.dfs_edges(g,n))
+        for e in edges:
+            n1, n2 = e
+            clustered += [n1, n2]
+            c += [n1, n2]
+        c = list(set(c))
+        clusters[clust_num] = c[:]
+        clust_num += 1
+    return clusters
 
 
-def make_clust_table(dist, model):
+def generate_linkage(dist_mat, max_dist):
     """
-    Creates a table of genome -> genome cluster mappings
+    Create a nested dictionary linking genomes if their distance is within
+    a certain threshold.
 
-    :param dist: pandas DataFrame with distances
-    :param model: fitted model returned from AgglomerativeClustering
-    :return: a pandas DataFrame
+    :param dist_mat: pandas DataFrame with distances
+    :param max_dist: maximum allowed distance to link genomes
+    :return: a nested dictionary
     """
-    # Create dictionary of genomes -> cluster labels
-    clust_table = pd.DataFrame(dict(zip(dist.index, model.labels_)),
-                               index=["Cluster"]).T
-    clust_table.index.name = "Genome"
-    # Calculate size of each genome cluster and sort by size from high to low
-    clust_size = clust_table.reset_index().groupby(
-        "Cluster").count().sort_values("Genome", ascending=False)
-    # Renumber clusters by their size (so that Cluster1 contains the most
-    # genomes)
-    cl_name = {}
-    for i, cl in enumerate(clust_size.index, start=1):
-        cl_name[cl] = "Cluster{i}".format(i=i)
-    clust_table = clust_table.reset_index().set_index("Cluster").rename(
-        index=cl_name).sort_index()
-    return clust_table.reset_index().loc[:, ["Genome", "Cluster"]]
+    linkage = {}
+    for i in range(len(dist_mat.index)):
+        g1 = dist_mat.index[i]
+        if not g1 in linkage.keys():
+            linkage[g1] = {}
+        for j in range(i+1, len(dist_mat.columns)):
+            g2 = dist_mat.columns[j]
+            if not g2 in linkage.keys():
+                linkage[g2] = {}
+            distance = dist_mat.iloc[i, j]
+            if distance <= max_dist:
+                linkage[g1][g2] = ""
+                linkage[g2][g1] = ""
+    return linkage
 
 
 def cluster_genomes(sm):
@@ -295,9 +302,32 @@ def cluster_genomes(sm):
     :return:
     """
     dist = fastani2dist(sm.input[0], frac=sm.params.frac)
-    model = clust(dist, thresh=sm.params.thresh)
-    clust_table = make_clust_table(dist, model)
-    clust_table.to_csv(sm.output[0], index=False, sep="\t")
+    linkage = generate_linkage(dist, sm.params.thresh)
+    clusters = cluster(linkage)
+    write_clusters(clusters, sm.output[0])
+
+
+def write_clusters(clusters, outfile):
+    """
+    Sorts clusters by size and writes to file
+    :param clusters: Dictionary of clusters with genomes as a list
+    :param outfile: Output file path
+    :return:
+    """
+    import operator
+    # Calculate cluster sizes
+    cluster_sizes = {}
+    for clust_num, l in clusters.items():
+        cluster_sizes[clust_num] = len(l)
+    # Sort clusters by sizes
+    sorted_clusters = sorted(cluster_sizes.items(), key=operator.itemgetter(1),
+                             reverse=True)
+    # Write table
+    with open(outfile, 'w') as fh:
+        for i, item in enumerate(sorted_clusters, start=1):
+            old_num = item[0]
+            for g in clusters[old_num]:
+                fh.write("Cluster{}\t{}\n".format(i, g))
 
 
 def main(sm):

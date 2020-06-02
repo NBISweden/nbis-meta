@@ -240,11 +240,11 @@ properties:
         default: 300
       search_params:
         type: string
-        description: parameters for tango search
+        description: parameters for contigtax search
         default: "--evalue 0.01 --top 10"
       assign_params:
         type: string
-        description: parameters for tango assign
+        description: parameters for contigtax assign
         default: "--evalue 0.001 --top 5"
       sourmash_fraction:
         type: integer

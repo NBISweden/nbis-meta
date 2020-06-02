@@ -22,7 +22,7 @@ preprocessing:
   # map reads agains the phix genome and keep only reads that do not map concordantly
   phix_filter: True
   # run SortMeRNA to identify (and filter) rRNA sequences
-  sortmerna: False
+  sortmerna: True
 
 # parameters for trimmomatic
 trimmomatic:
@@ -262,4 +262,4 @@ metaphlan:
 # this sets the number of reads to generate for example input files
 # the files are generated based on the config/samples.tsv file and stored
 # under examples/data
-example_dataset_size: 100000
+example_dataset_size: 10000

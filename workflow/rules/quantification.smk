@@ -1,7 +1,9 @@
 from scripts.common import markdup_mem
 
 localrules:
+    quantify,
     write_featurefile,
+    samtools_stats,
     normalize_featurecount,
     aggregate_featurecount,
     sum_to_taxa,

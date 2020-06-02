@@ -124,18 +124,18 @@ annotation:
   pfam: True
   # run Resistance gene identifier?
   rgi: False
-  # run taxonomic annotation of assembled contigs (using tango + sourmash)?
+  # run taxonomic annotation of assembled contigs (using contigtax + sourmash)?
   taxonomy: False
 
 # params for taxonomic annotation of contigs/orfs
 taxonomy:
   # minimum length of contigs to use for taxonomic annotation
   min_len: 300
-  # parameters for tango search
+  # parameters for contigtax search
   # use more permissive settings for search compared to assign in order to
   # modify assignments without having to rerun the search step
   search_params: "--evalue 0.01 --top 10"
-  # parameters for tango assign
+  # parameters for contigtax assign
   assign_params: "--evalue 0.001 --top 5"
   # hash fraction to use for sourmash when computing signatures for contigs
   # this is evaluated as 1/<sourmash_fraction>

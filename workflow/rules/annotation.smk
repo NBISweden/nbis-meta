@@ -1,6 +1,7 @@
 from scripts.common import annotation_input
 
 localrules: 
+    annotate,
     parse_ko_annotations, 
     parse_pfam,
     download_rfams,
