@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from Bio.SeqIO import parse
 import pandas as pd
 from glob import glob
 import os
@@ -11,6 +10,7 @@ import numpy as np
 # bin info
 
 def contig_map(sm):
+    from Bio.SeqIO import parse
     files = glob(opj(sm.params.dir, "*.fa"))
     if len(files) == 0:
         with open(sm.output[0], 'w') as fhout:
@@ -35,6 +35,7 @@ def n50(lengths):
 
 
 def bin_stats(f):
+    from Bio.SeqIO import parse
     size = 0
     gc = 0
     contig_lengths = []
@@ -53,8 +54,10 @@ def bin_stats(f):
     min_l = np.min(contig_lengths)
     max_l = np.max(contig_lengths)
     n50_l = n50(contig_lengths)
-    return {'bp': size, 'GC': gc_f, 'Mbp': round(size_mb, 2), 'mean_contig': mean_l, 'median_contig': median_l,
-            'min_contig': min_l, 'max_contig': max_l, 'n50': n50_l, 'contigs': len(contig_lengths)}
+    return {'bp': size, 'GC': gc_f, 'Mbp': round(size_mb, 2),
+            'mean_contig': mean_l, 'median_contig': median_l,
+            'min_contig': min_l, 'max_contig': max_l, 'n50': n50_l,
+            'contigs': len(contig_lengths)}
 
 
 def calculate_bin_stats(files):
@@ -81,6 +84,7 @@ def binning_stats(sm):
         df.sort_values("bp", ascending=False, inplace=True)
         df.to_csv(sm.output[0], sep="\t", index=True, header=True)
 
+
 # bin annotation
 
 def count_rrna(sm):
@@ -96,23 +100,26 @@ def count_rrna(sm):
 
     missing = set(["16S_rRNA", "23S_rRNA", "5S_rRNA"]).difference(table.columns)
     if len(missing) > 0:
-        table = pd.merge(table,
-                         pd.DataFrame(columns=missing, index=table.index, data=0),
-                         left_index=True, right_index=True)
+        table = pd.merge(table, pd.DataFrame(columns=missing, index=table.index,
+                                             data=0), left_index=True,
+                         right_index=True)
     table = table.loc[:, ["5S_rRNA", "16S_rRNA", "23S_rRNA"]]
     table.index.name = "Bin_Id"
     table.to_csv(sm.output, sep="\t", index=True)
 
+
 def count_trna(sm):
     df = pd.read_csv(sm.input, sep="\t")
-    dfc = df.groupby(["tRNA_type","Bin_Id"]).count().reset_index().loc[:,["tRNA_type","tRNA#","Bin_Id"]]
-    table = dfc.pivot_table(columns="tRNA_type", index="Bin_Id")["tRNA#"].fillna(0)
+    dfc = df.groupby(["tRNA_type", "Bin_Id"]).count().reset_index().loc[:,
+          ["tRNA_type", "tRNA#", "Bin_Id"]]
+    table = dfc.pivot_table(columns="tRNA_type", index="Bin_Id")[
+        "tRNA#"].fillna(0)
     table.index.name = table.columns.name = ""
     table.to_csv(sm.output[0], sep="\t", index=True)
 
     total = {}
     for m in table.index:
-        c = len(table.loc[m, table.loc[m]>0])
+        c = len(table.loc[m, table.loc[m] > 0])
         total[m] = c
     table = pd.DataFrame(total, index=["tRNAs"]).T
     table.index.name = "Bin_Id"
@@ -165,18 +172,21 @@ def generate_bin_list(input, outdir):
         if os.path.getsize(f) == 0:
             continue
         items = f.split("/")
+        # extract wildcards from file path
         l, group, binner = items[-2], items[-3], items[-4]
         bindir = os.path.dirname(f)
-        if binner == "concoct":
-            bindir = opj(bindir, "fasta")
-        # get absolute path for indir
+        # get absolute path for bin directory
         abs_in = os.path.abspath(bindir)
+        # read the summary file
         df = pd.read_csv(f, sep="\t", index_col=0)
+        # generate a unique suffix for each bin
         uniq_suffix = "{group}.{l}".format(group=group, l=l)
-        if not df.index.str.contains("metabat")[0]:
-            df.rename(index = lambda x: "{binner}.{x}".format(binner=binner,
-                                                              x=x), inplace=True)
-        idmap = dict(zip(df.index, ["{x}.{s}".format(x=x, s=uniq_suffix) for x in df.index]))
+        # make a map of the bin id and the unique suffix
+        idmap = dict(zip(df.index,
+                         ["{x}.{s}".format(x=x, s=uniq_suffix) for x in
+                          df.index]))
+        # create symlink in the output path for each bin id that points
+        # to the original fasta file
         for bin_id, uniq_id in idmap.items():
             src = opj(abs_in, "{}.fa".format(bin_id))
             dst = opj(outdir, "{}.fa".format(uniq_id))
@@ -258,7 +268,7 @@ def cluster(linkage):
     for n in g.nodes():
         c = [n]
         if n in clustered: continue
-        edges = list(nx.dfs_edges(g,n))
+        edges = list(nx.dfs_edges(g, n))
         for e in edges:
             n1, n2 = e
             clustered += [n1, n2]
@@ -283,7 +293,7 @@ def generate_linkage(dist_mat, max_dist):
         g1 = dist_mat.index[i]
         if not g1 in linkage.keys():
             linkage[g1] = {}
-        for j in range(i+1, len(dist_mat.columns)):
+        for j in range(i + 1, len(dist_mat.columns)):
             g2 = dist_mat.columns[j]
             if not g2 in linkage.keys():
                 linkage[g2] = {}
@@ -331,10 +341,8 @@ def write_clusters(clusters, outfile):
 
 
 def main(sm):
-    toolbox = {"contig_map": contig_map,
-               "count_tRNA": count_trna,
-               "count_rRNA": count_rrna,
-               "binning_stats": binning_stats,
+    toolbox = {"contig_map": contig_map, "count_tRNA": count_trna,
+               "count_rRNA": count_rrna, "binning_stats": binning_stats,
                "download_ref_genome": download_ref_genome,
                "generate_fastANI_lists": generate_fastANI_lists,
                "cluster_genomes": cluster_genomes}
