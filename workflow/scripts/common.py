@@ -471,12 +471,15 @@ def binning_input(config, assemblies):
             opj(config["paths"]["results"], "report", "bin_annotation",
                 "rRNA.types.tsv"))
     if config["binning"]["fastani"]:
-        bin_input.append(opj(config["paths"]["results"], "report", "fastANI",
+        bin_input.append(opj(config["paths"]["results"], "results", "fastANI",
                              "genome_clusters.tsv"))
         # read list of genome references if path exists
         if os.path.exists(config["fastani"]["ref_list"]):
             _ = pd.read_csv(config["fastani"]["ref_list"], index_col=0,
-                            sep="\t", header=0, names=["genome_id", "url"])
+                            sep="\t", header=None, names=["genome_id", "url"])
+            # filter genome list
+            _ = _.loc[(_["url"].str.contains("ftp")) | (
+                _["url"].str.contains("http"))].head()
             config["fastani"]["ref_genomes"] = _.to_dict()["url"]
         else:
             config["fastani"]["ref_genomes"] = {}
