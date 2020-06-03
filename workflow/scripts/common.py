@@ -470,6 +470,7 @@ def binning_input(config, assemblies):
         bin_input.append(
             opj(config["paths"]["results"], "report", "bin_annotation",
                 "rRNA.types.tsv"))
+    config["fastani"]["ref_genomes"] = {}
     if config["binning"]["fastani"]:
         bin_input.append(opj(config["paths"]["results"], "results", "fastANI",
                              "genome_clusters.tsv"))
