@@ -273,6 +273,28 @@ rule binning_stats:
     script:
         "../scripts/binning_utils.py"
 
+rule plot_bin_summary:
+    input:
+        stats = expand(opj(config["paths"]["results"], "binning",
+                           "{binner}", "{group}", "{l}", "summary_stats.tsv"),
+                       binner = get_binners(config),
+                       group = assemblies.keys(),
+                       l = config["binning"]["contig_lengths"]),
+        contig_maps = expand(opj(config["paths"]["results"], "binning",
+                                 "{binner}", "{group}", "{l}", "contig_map.tsv"),
+                       binner = get_binners(config),
+                       group = assemblies.keys(),
+                       l = config["binning"]["contig_lengths"])
+    output:
+        report(opj(config["paths"]["results"], "report", "binning", "bin_stats.png"),
+               category="Binning")
+    conda:
+        "../envs/plotting.yml"
+    notebook:
+        "../notebooks/binning_summary.py.ipynb"
+
+##### checkm #####
+
 rule download_checkm:
     output:
         db=opj("resources", "checkm", ".dmanifest")
