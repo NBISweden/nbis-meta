@@ -10,6 +10,11 @@ import numpy as np
 # bin info
 
 def contig_map(sm):
+    """
+    Generates a map of bin->contig id
+    :param sm: snakemake object
+    :return:
+    """
     from Bio.SeqIO import parse
     files = glob(opj(sm.params.dir, "*.fa"))
     if len(files) == 0:
@@ -26,6 +31,11 @@ def contig_map(sm):
 # bin stats
 
 def n50(lengths):
+    """
+    Calculate N50 stats
+    :param lengths:
+    :return:
+    """
     cumulative = 0
     size = sum(lengths)
     for l in sorted(lengths):
@@ -35,6 +45,11 @@ def n50(lengths):
 
 
 def bin_stats(f):
+    """
+    Generate bin statistics
+    :param f:
+    :return:
+    """
     from Bio.SeqIO import parse
     size = 0
     gc = 0
@@ -61,6 +76,11 @@ def bin_stats(f):
 
 
 def calculate_bin_stats(files):
+    """
+    Calls bin statistics for each file
+    :param files:
+    :return:
+    """
     stats = {}
     for f in files:
         name = basename(f)
@@ -70,6 +90,11 @@ def calculate_bin_stats(files):
 
 
 def binning_stats(sm):
+    """
+    Main function for calculating bin statistics
+    :param sm:
+    :return:
+    """
     files = glob(opj(sm.params.dir, "*.fa"))
     if len(files) == 0:
         with open(sm.output[0], 'w') as fh:
@@ -88,6 +113,11 @@ def binning_stats(sm):
 # bin annotation
 
 def count_rrna(sm):
+    """
+    Counts rRNA genes in bins
+    :param sm:
+    :return:
+    """
     df = pd.read_csv(sm.input, sep="\t", usecols=[0, 2, 8], header=None,
                      names=["contig", "type", "fields"])
     types = [x.split(";")[0].split("=")[-1] for x in df.fields]
@@ -109,6 +139,11 @@ def count_rrna(sm):
 
 
 def count_trna(sm):
+    """
+    Counts tRNA genes in bins
+    :param sm:
+    :return:
+    """
     df = pd.read_csv(sm.input, sep="\t")
     dfc = df.groupby(["tRNA_type", "Bin_Id"]).count().reset_index().loc[:,
           ["tRNA_type", "tRNA#", "Bin_Id"]]
@@ -167,6 +202,13 @@ def download_ref_genome(sm):
 
 
 def generate_bin_list(input, outdir):
+    """
+    Generates a list of bins to use for fastANI
+    Also symlinks each bin file into the fastANI folder
+    :param input:
+    :param outdir:
+    :return:
+    """
     genomes = []
     for f in input:
         if os.path.getsize(f) == 0:
@@ -198,6 +240,14 @@ def generate_bin_list(input, outdir):
 
 
 def generate_ref_list(input, outdir):
+    """
+    Generates a list of reference genomes
+    Also symlinks each reference file into the fastANI folder
+
+    :param input:
+    :param outdir:
+    :return:
+    """
     genomes = []
     for f in input:
         basename = os.path.basename(f)
@@ -211,6 +261,12 @@ def generate_ref_list(input, outdir):
 
 
 def write_list(genomes, output):
+    """
+    Writes the fastANI lists to file
+    :param genomes: list of genomes to use for fastANI
+    :param output:
+    :return:
+    """
     with open(output, 'w') as fh:
         for g in genomes:
             fh.write("{}\n".format(g))
@@ -218,6 +274,11 @@ def write_list(genomes, output):
 
 
 def generate_fastANI_lists(sm):
+    """
+    Main function for generating fastANI lists
+    :param sm:
+    :return:
+    """
     bins = generate_bin_list(sm.input.bins, sm.params.outdir)
     refs = generate_ref_list(sm.input.refs, sm.params.outdir)
     genomes = bins + refs
