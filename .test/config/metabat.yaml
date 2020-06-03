@@ -175,6 +175,8 @@ binning:
   checkm: False
   # run gtdbtk to classify bins phylogenetically?
   gtdbtk: False
+  # run fastani and cluster genomes?
+  fastani: True
 
 # parameters for MaxBin2
 maxbin:

@@ -293,6 +293,10 @@ properties:
         type: boolean
         description: run concoct binner
         default: False
+      fastani:
+        type: boolean
+        description: run fastANI to calculate average nucleotide identity for genomes
+        default: False
       threads:
         type: integer
         description: maximum number of threads for binners
@@ -334,6 +338,35 @@ checkm:
       type: boolean
       description: use a reduced pplacer reference tree?
       default: False
+
+fastani:
+  type: object
+  properties:
+    kmer_size:
+      type: integer
+      description: kmer size to use for fastANI
+      default: 16
+      maximum: 16
+    frag_len:
+      type: integer
+      description: fragment length used to calculate ANI
+      default: 3000
+    fraction:
+      type: number
+      description: aligned fraction required between pairs of genomes
+      default: 0.5
+      minimum: 0.0
+      maximum: 1.0
+    ref_list:
+      type: string
+      description: path to a list of reference genomes to include in ANI calculation
+      default: ""
+    threshold:
+      type: number
+      description: distance threshold at which to cluster genomes
+      default: 0.05
+      minimum: 0.0
+      maximum: 1.0
 
 classification:
   type: object

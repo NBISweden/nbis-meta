@@ -201,8 +201,8 @@ def check_classifiers(config):
         # If not, use prebuilt default
         else:
             p = config["centrifuge"]["prebuilt"]
-            config["centrifuge"]["index_path"] = opj("resources",
-                                                     "centrifuge", p)
+            config["centrifuge"]["index_path"] = opj("resources", "centrifuge",
+                                                     p)
         # Set centrifuge index config variables
         index_path = config["centrifuge"]["index_path"]
         config["centrifuge"]["dir"] = os.path.dirname(index_path)
@@ -310,7 +310,7 @@ def get_fastqc_files(sample, unit, pairs, config, pre):
 
 def get_trim_logs(sample, unit, pairs, config, d):
     if not config["preprocessing"]["trimmomatic"] and not \
-    config["preprocessing"]["cutadapt"]:
+        config["preprocessing"]["cutadapt"]:
         return []
     if config["preprocessing"]["trimmomatic"]:
         trimmer = "trimmomatic"
@@ -470,6 +470,20 @@ def binning_input(config, assemblies):
         bin_input.append(
             opj(config["paths"]["results"], "report", "bin_annotation",
                 "rRNA.types.tsv"))
+    config["fastani"]["ref_genomes"] = {}
+    if config["binning"]["fastani"]:
+        bin_input.append(opj(config["paths"]["results"], "results", "fastANI",
+                             "genome_clusters.tsv"))
+        # read list of genome references if path exists
+        if os.path.exists(config["fastani"]["ref_list"]):
+            _ = pd.read_csv(config["fastani"]["ref_list"], index_col=0,
+                            sep="\t", header=None, names=["genome_id", "url"])
+            # filter genome list
+            _ = _.loc[(_["url"].str.contains("ftp")) | (
+                _["url"].str.contains("http"))].head()
+            config["fastani"]["ref_genomes"] = _.to_dict()["url"]
+        else:
+            config["fastani"]["ref_genomes"] = {}
     return bin_input
 
 
