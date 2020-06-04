@@ -239,21 +239,9 @@ rule bowtie_map_pe:
         "../envs/quantify.yml"
     shell:
         """
-        bowtie2 \
-            {params.setting} \
-            -p {threads} \
-            -x {params.prefix} \
-            -1 {input.R1} \
-            -2 {input.R2} \
-            2> {output.log} | \
-        samtools \
-            view \
-            -bh \
-            - | 
-        samtools \
-            sort \
-            - \
-            -o {params.temp_bam}
+        bowtie2 {params.setting} -p {threads} -x {params.prefix} -1 {input.R1} 
+            -2 {input.R2} 2> {output.log} | samtools view -bh - | \ 
+            samtools sort - -o {params.temp_bam}
         samtools index {params.temp_bam}
         mv {params.temp_bam} {output.bam}
         mv {params.temp_bam}.bai {output.bai}
@@ -285,20 +273,8 @@ rule bowtie_map_se:
         "../envs/quantify.yml"
     shell:
         """
-        bowtie2 \
-            {params.setting} \
-            -p {threads} \
-            -x {params.prefix} \
-            -U {input.se} \
-            2>{output.log} | \
-         samtools \
-            view \
-            -bh \
-            - | \
-         samtools \
-            sort \
-            - \
-            -o {params.temp_bam}
+        bowtie2 {params.setting} -p {threads} -x {params.prefix} -U {input.se} \
+            2>{output.log} | samtools view -bh - | samtools sort - -o {params.temp_bam} 
         samtools index {params.temp_bam}
         mv {params.temp_bam} {output.bam}
         mv {params.temp_bam}.bai {output.bai}
@@ -354,9 +330,12 @@ rule plot_assembly_stats:
         maps = expand(opj(config["paths"]["results"],"assembly","{group}",
                  "mapping","flagstat.tsv"), group = assemblies.keys())
     output:
-        opj(config["paths"]["results"], "report", "assembly", "assembly_stats.pdf"),
-        opj(config["paths"]["results"], "report", "assembly", "assembly_size_dist.pdf"),
-        opj(config["paths"]["results"], "report", "assembly", "alignment_frequency.pdf")
+        opj(config["paths"]["results"], "report", "assembly",
+            "assembly_stats.pdf"),
+        opj(config["paths"]["results"], "report", "assembly",
+                   "assembly_size_dist.pdf"),
+        opj(config["paths"]["results"], "report", "assembly",
+                   "alignment_frequency.pdf")
     conda:
         "../envs/plotting.yml"
     notebook:
