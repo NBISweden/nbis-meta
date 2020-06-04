@@ -110,6 +110,41 @@ def binning_stats(sm):
         df.to_csv(sm.output[0], sep="\t", index=True, header=True)
 
 
+# checkm utils
+
+def remove_checkm_zerocols(sm):
+    """
+    Reads checkm coverage and removes samples with no reads mapped to contigs
+
+    :param sm:
+    :return:
+    """
+    df = pd.read_csv(sm.input[0], header=0, sep="\t")
+    # base columns are independent of samples
+    base_columns = ["Sequence Id", "Bin Id", "Sequence length (bp)"]
+    # get all columns with mapped read counts
+    cols = [x for x in df.columns if "Mapped reads" in x]
+    # sum counts
+    df_sum = df.loc[:, cols].sum()
+    # get columns with zero reads mapped
+    zero_cols = df_sum.loc[df_sum == 0].index
+    cols_to_drop = []
+    # find suffix of zero cols
+    for c in list(zero_cols) + ["Mapped reads"]:
+        suffix = ".{}".format(c.split(".")[-1])
+        if suffix == ".Mapped reads":
+            suffix = ""
+        cols_to_drop += (
+            "Mapped reads{s},Bam Id{s},Coverage{s}".format(s=suffix)).split(",")
+    df_checked = df.drop(cols_to_drop, axis=1)
+    # check that there are remaining columns
+    diff_cols = set(df_checked.columns).difference(base_columns)
+    if len(diff_cols) > 0:
+        df_checked.to_csv(sm.output[0], sep="\t", index=False, header=True)
+    else:
+        with open(sm.output[0], 'w') as fhout:
+            pass
+
 # bin annotation
 
 def count_rrna(sm):
@@ -403,6 +438,7 @@ def write_clusters(clusters, outfile):
 
 def main(sm):
     toolbox = {"contig_map": contig_map, "count_tRNA": count_trna,
+               "remove_checkm_zerocols": remove_checkm_zerocols,
                "count_rRNA": count_rrna, "binning_stats": binning_stats,
                "download_ref_genome": download_ref_genome,
                "generate_fastANI_lists": generate_fastANI_lists,
