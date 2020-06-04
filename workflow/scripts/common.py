@@ -442,7 +442,7 @@ def rename_records(f, fh, i):
 
 # binning functions
 
-def binning_input(config, assemblies):
+def binning_input(config, assemblies, report=False):
     """
     Generates input list for the binning part of the workflow
 
@@ -459,8 +459,10 @@ def binning_input(config, assemblies):
     if config["binning"]["checkm"]:
         bin_input.append(opj(config["paths"]["results"], "report", "checkm",
                              "checkm.stats.tsv"))
-        bin_input.append(opj(config["paths"]["results"], "report", "checkm",
-                             "checkm.profiles.tsv"))
+        # Don't include profile in report
+        if not report:
+            bin_input.append(opj(config["paths"]["results"], "report", "checkm",
+                                 "checkm.profiles.tsv"))
     if config["binning"]["gtdbtk"]:
         bin_input.append(opj(config["paths"]["results"], "report", "gtdbtk",
                              "gtdbtk.summary.tsv"))
@@ -472,7 +474,7 @@ def binning_input(config, assemblies):
                 "rRNA.types.tsv"))
     config["fastani"]["ref_genomes"] = {}
     if config["binning"]["fastani"]:
-        bin_input.append(opj(config["paths"]["results"], "results", "fastANI",
+        bin_input.append(opj(config["paths"]["results"], "binning", "fastANI",
                              "genome_clusters.tsv"))
         # read list of genome references if path exists
         if os.path.exists(config["fastani"]["ref_list"]):
