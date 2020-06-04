@@ -32,6 +32,7 @@ wildcard_constraints:
     unit="\d+",
     pair="se|R[12]",
     seq_type="[sp]e",
+    binner="[a-z]+",
     group="\w+",
     l="\d+"
 
