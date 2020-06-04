@@ -10,6 +10,7 @@ localrules:
     binning_stats,
     download_checkm, 
     checkm_qa,
+    remove_checkm_zerocols,
     aggregate_checkm_stats,
     aggregate_checkm_profiles,
     checkm_profile,
@@ -437,21 +438,42 @@ rule checkm_coverage:
         fi
         """
 
+rule remove_checkm_zerocols:
+    """
+    Pre-checks the checkm coverage file and removes zero count bam columns as
+    these can generate ZeroDivisionError in downstream rules.
+    """
+    input:
+        cov=opj(config["paths"]["results"], "binning", "{binner}",
+                "{group}", "{l}", "checkm", "coverage.tsv")
+    output:
+        cov=temp(opj(config["paths"]["results"], "binning", "{binner}",
+                     "{group}", "{l}", "checkm", "_coverage.tsv"))
+    script:
+        "../scripts/binning_utils.py"
+
 rule checkm_profile:
     input:
-        cov=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm", "coverage.tsv"),
-        stats=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "summary_stats.tsv")
+        cov=opj(config["paths"]["results"], "binning", "{binner}", "{group}",
+                "{l}", "checkm", "_coverage.tsv"),
+        stats=opj(config["paths"]["results"], "binning", "{binner}", "{group}",
+                  "{l}", "summary_stats.tsv")
     output:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm", "profile.tsv")
+        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}",
+            "checkm", "profile.tsv")
     log:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm", "checkm_profile.log")
+        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}",
+            "checkm", "checkm_profile.log")
     conda:
         "../envs/checkm.yml"
     shell:
         """
         bins=$(wc -l {input.stats} | cut -f1 -d ' ')
+        cov_lines=$(wc -l {input.cov} | cut -f1 -d ' ')
         if [ $bins == 0 ] ; then
             echo "NO BINS FOUND" > {output}
+        elif [ $cov_lines == 0 ] ; then
+            echo "NO READS MAPPED" > {output}
         else
             checkm profile -f {output} --tab_table {input.cov} > {log} 2>&1
         fi
