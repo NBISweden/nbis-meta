@@ -1,5 +1,5 @@
 from scripts.common import binning_input, get_fw_reads
-from scripts.common import get_binners, get_tree_settings
+from scripts.common import get_binners, get_tree_settings, concatenate
 
 localrules:
     bin,
@@ -21,13 +21,21 @@ localrules:
     count_rRNA,
     count_tRNA,
     aggregate_gtdbtk,
-    aggregate_bin_annot
+    aggregate_bin_annot,
+    binning_report
 
 ##### master rule for binning #####
 
 rule bin:
     input:
         binning_input(config, assemblies)
+
+##### target rule for running checkm analysis #####
+
+rule checkm:
+    input:
+        opj(config["paths"]["results"], "report", "checkm",
+                             "genome_stats.extended.tsv")
 
 ##### metabat2 #####
 
@@ -272,26 +280,6 @@ rule binning_stats:
         dir=lambda wildcards, output: os.path.dirname(output[0])
     script:
         "../scripts/binning_utils.py"
-
-rule plot_bin_summary:
-    input:
-        stats = expand(opj(config["paths"]["results"], "binning",
-                           "{binner}", "{group}", "{l}", "summary_stats.tsv"),
-                       binner = get_binners(config),
-                       group = assemblies.keys(),
-                       l = config["binning"]["contig_lengths"]),
-        contig_maps = expand(opj(config["paths"]["results"], "binning",
-                                 "{binner}", "{group}", "{l}", "contig_map.tsv"),
-                       binner = get_binners(config),
-                       group = assemblies.keys(),
-                       l = config["binning"]["contig_lengths"])
-    output:
-        report(opj(config["paths"]["results"], "report", "binning", "bin_stats.png"),
-               category="Binning")
-    conda:
-        "../envs/plotting.yml"
-    notebook:
-        "../notebooks/binning_summary.py.ipynb"
 
 ##### checkm #####
 
@@ -751,7 +739,7 @@ rule cluster_genomes:
     input:
         opj(config["paths"]["results"], "binning", "fastANI", "out.txt")
     output:
-        opj(config["paths"]["results"], "results", "fastANI", "genome_clusters.tsv")
+        opj(config["paths"]["results"], "binning", "fastANI", "genome_clusters.tsv")
     conda:
         "../envs/fastani.yml"
     params:
@@ -760,3 +748,12 @@ rule cluster_genomes:
     script:
         "../scripts/binning_utils.py"
 
+rule binning_report:
+    input:
+        binning_input(config, assemblies, report=True)
+    output:
+        opj(config["paths"]["results"], "report", "binning", "bin_report.pdf")
+    conda:
+        "../envs/plotting.yml"
+    notebook:
+        "../notebooks/binning_report.py.ipynb"
