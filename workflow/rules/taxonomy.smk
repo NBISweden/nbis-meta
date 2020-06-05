@@ -14,7 +14,7 @@ localrules:
 ##### taxonomy master rule #####
 rule taxonomy:
     input:
-        expand(opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
+        expand(opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
                    "orfs.{db}.taxonomy.tsv"),
                group=assemblies.keys(), db=config["taxonomy"]["database"])
 
@@ -151,13 +151,13 @@ rule contigtax_build:
 rule contigtax_search:
     input:
         db=opj("resources", config["taxonomy"]["database"], "diamond.dmnd"),
-        fasta=opj(config["paths"]["results"], "assembly", "{group}",
+        fasta=opj(config["paths"]["results"], "assembly", "{assembly}",
                   "final_contigs.fa")
     output:
-        opj(config["paths"]["results"], "annotation", "{group}",
+        opj(config["paths"]["results"], "annotation", "{assembly}",
             "final_contigs.{db}.tsv.gz".format(db=config["taxonomy"]["database"]))
     log:
-        opj(config["paths"]["results"], "annotation", "{group}", "contigtax_search.log")
+        opj(config["paths"]["results"], "annotation", "{assembly}", "contigtax_search.log")
     params:
         tmpdir=config["paths"]["temp"],
         min_len=config["taxonomy"]["min_len"],
@@ -176,14 +176,14 @@ rule contigtax_search:
 
 rule contigtax_assign:
     input:
-        tsv=opj(config["paths"]["results"], "annotation", "{group}",
+        tsv=opj(config["paths"]["results"], "annotation", "{assembly}",
             "final_contigs.{db}.tsv.gz".format(db=config["taxonomy"]["database"])),
         sql=ancient(opj("resources", "taxonomy", "taxonomy.sqlite"))
     output:
-        opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
+        opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
             "contigtax.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"]))
     log:
-        opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
+        opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
             "contigtax_assign.log")
     params:
         taxonomy_ranks=" ".join(config["taxonomy"]["ranks"]),
@@ -218,11 +218,11 @@ rule download_sourmash_db:
 
 rule sourmash_compute:
     input:
-        opj(config["paths"]["results"], "assembly", "{group}", "final_contigs.fa")
+        opj(config["paths"]["results"], "assembly", "{assembly}", "final_contigs.fa")
     output:
-        opj(config["paths"]["results"], "assembly", "{group}", "final_contigs.fa.sig")
+        opj(config["paths"]["results"], "assembly", "{assembly}", "final_contigs.fa.sig")
     log:
-        opj(config["paths"]["results"], "assembly", "{group}", "sourmash_compute.log")
+        opj(config["paths"]["results"], "assembly", "{assembly}", "sourmash_compute.log")
     conda:
         "../envs/taxonomy.yml"
     params:
@@ -235,14 +235,14 @@ rule sourmash_compute:
 
 rule sourmash_classify:
     input:
-        sig=opj(config["paths"]["results"], "assembly", "{group}",
+        sig=opj(config["paths"]["results"], "assembly", "{assembly}",
                  "final_contigs.fa.sig"),
         db=opj("resources", "sourmash", "genbank-k31.lca.json")
     output:
-        csv=opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
+        csv=opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
                   "sourmash.taxonomy.csv")
     log:
-        opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
+        opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
             "sourmash.log")
     params:
         frac=config["taxonomy"]["sourmash_fraction"]
@@ -261,26 +261,26 @@ rule sourmash_classify:
 
 rule merge_contigtax_sourmash:
     input:
-        smash=opj(config["paths"]["results"], "annotation", "{group}",
+        smash=opj(config["paths"]["results"], "annotation", "{assembly}",
                     "taxonomy", "sourmash.taxonomy.csv"),
-        contigtax=opj(config["paths"]["results"], "annotation", "{group}",
+        contigtax=opj(config["paths"]["results"], "annotation", "{assembly}",
                     "taxonomy", "contigtax.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"]))
     output:
-        opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
+        opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
         "final_contigs.taxonomy.tsv")
     log:
-        opj(config["paths"]["results"], "annotation", "{group}", "taxonomy", "merge.log")
+        opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy", "merge.log")
     script:
         "../scripts/taxonomy_utils.py"
 
 rule contigtax_assign_orfs:
     input:
-        tax=opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
+        tax=opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
             "final_contigs.taxonomy.tsv"),
-        gff=opj(config["paths"]["results"], "annotation", "{group}",
+        gff=opj(config["paths"]["results"], "annotation", "{assembly}",
                 "final_contigs.gff")
     output:
-        tax=opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
+        tax=opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
             "orfs.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"]))
     script:
         "../scripts/taxonomy_utils.py"
