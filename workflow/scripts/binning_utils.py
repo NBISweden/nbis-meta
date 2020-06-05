@@ -246,18 +246,23 @@ def generate_bin_list(input, outdir):
     """
     genomes = []
     for f in input:
-        if os.path.getsize(f) == 0:
-            continue
+        with open(f, 'r') as fh:
+            if fh.readline().rstrip() == "NO BINS FOUND":
+                continue
         items = f.split("/")
         # extract wildcards from file path
-        l, group, binner = items[-2], items[-3], items[-4]
-        bindir = os.path.dirname(f)
+        binner, assembly, l = items[-5], items[-4], items[-3]
+        bindir = os.path.dirname(os.path.dirname(f))
         # get absolute path for bin directory
         abs_in = os.path.abspath(bindir)
-        # read the summary file
+        # read the checkm summary file
         df = pd.read_csv(f, sep="\t", index_col=0)
+        # filter to at least 50% complete and at most 10% contamination
+        df = df.loc[(df.Completeness >= 50) & (df.Contamination <= 10)]
+        if df.shape[0] == 0:
+            continue
         # generate a unique suffix for each bin
-        uniq_suffix = "{group}.{l}".format(group=group, l=l)
+        uniq_suffix = "{assembly}.{l}".format(assembly=assembly, l=l)
         # make a map of the bin id and the unique suffix
         idmap = dict(zip(df.index,
                          ["{x}.{s}".format(x=x, s=uniq_suffix) for x in
@@ -322,31 +327,59 @@ def generate_fastANI_lists(sm):
     write_list(genomes, sm.output[1])
 
 
-def fastani2dist(f, frac=0.5):
-    """
-    Reads the output.txt file from fastANI and generates a distance matrix
+def check_pairs(pairs, min_frags):
+    allowed_pairs = {}
+    for i in pairs.index:
+        q = pairs.loc[i, "query"]
+        r = pairs.loc[i, "ref"]
+        for key in [q, r]:
+            if not key in allowed_pairs.keys():
+                allowed_pairs[key] = []
+        if pairs.loc[i, "aligned"] >= min_frags:
+            allowed_pairs[q].append(r)
+            allowed_pairs[r].append(q)
+    return allowed_pairs
 
-    :param f: Input file (out.txt typically)
-    :param frac: Fraction of genome overlap to evaluate a pair of genomes
-    :return: pandas DataFrame with distances
+
+def fastani2dist(mat, txt, min_frags=500):
     """
-    df = pd.read_csv(f, sep="\t", header=None,
-                     names=["query", "ref", "ANI", "mapped_fragments",
-                            "total_fragments"])
-    # Add column with aligned fraction
-    df = df.assign(frac=pd.Series(df.mapped_fragments / df.total_fragments,
-                                  index=df.index))
-    # Filter dataframe by aligned fraction
-    df = df.loc[df.frac >= frac]
-    # Rename genomes
+    Converts the fastANI out.txt.matrix file to a pandas DataFrame
+    :param mat: Distance matrix file
+    :param txt: Pairwise output table with ANI and aligned + total fragments
+    :param min_frags: Minimum aligned fragments to compare two genomes
+    :return:
+    """
+    # read the pairwise table
+    pairs = pd.read_csv(txt, header=None,
+                        sep="\t",
+                        names=["query", "ref", "ANI", "aligned", "total"])
     for key in ["query", "ref"]:
-        df[key] = [x.split("/")[-1].replace(".fna", "").replace(".fa", "") for x
-                   in df[key]]
-    # Pivot
-    table = df.pivot_table(index="query", columns="ref", values="ANI")
-    # Calculate distance as 1-ANI/100
-    dist = 1 - table.fillna(0).div(100)
-    return dist
+        pairs[key] = [x.split("/")[-1].replace(".fna", "").replace(".fa", "")
+                      for x in pairs[key]]
+    allowed_pairs = check_pairs(pairs, min_frags)
+    genomes = list(pd.read_table(mat, index_col=0, skiprows=1, sep="\t",
+                                 header=None, usecols=[0]).index)
+    genomes = [os.path.splitext(os.path.basename(g))[0] for g in genomes]
+    r = {}
+    with open(mat, 'r') as fh:
+        for i, line in enumerate(fh):
+            if i == 0:
+                continue
+            line = line.rstrip()
+            items = line.rsplit("\t")
+            genome = os.path.splitext(os.path.basename(items[0]))[0]
+            r[genome] = {}
+            for j, item in enumerate(items[1:]):
+                genome2 = genomes[j]
+                # check that the pairing is allowed
+                if item == "NA" or genome not in allowed_pairs[genome2] or genome2 not in allowed_pairs[genome]:
+                    item = np.nan
+                else:
+                    item = float(item)
+                r[genome][genome2] = item
+    df = pd.DataFrame(r)
+    df.fillna(0, inplace=True)
+    return 1-df.div(100)
 
 
 def cluster(linkage):
@@ -407,7 +440,7 @@ def cluster_genomes(sm):
     :param sm: snakemake object
     :return:
     """
-    dist = fastani2dist(sm.input[0], frac=sm.params.frac)
+    dist = fastani2dist(sm.input.mat, sm.input.txt)
     linkage = generate_linkage(dist, sm.params.thresh)
     clusters = cluster(linkage)
     write_clusters(clusters, sm.output[0])
