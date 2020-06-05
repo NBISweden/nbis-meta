@@ -8,6 +8,7 @@ localrules:
     extract_fasta,
     contig_map,
     binning_stats,
+    aggregate_binning_stats,
     download_checkm, 
     checkm_qa,
     remove_checkm_zerocols,
@@ -29,14 +30,14 @@ localrules:
 
 rule bin:
     input:
-        binning_input(config, assemblies)
+        binning_input(config, assemblies),
+        opj(config["paths"]["results"], "report", "binning", "bin_report.pdf")
 
 ##### target rule for running checkm analysis #####
 
 rule checkm:
     input:
-        opj(config["paths"]["results"], "report", "checkm",
-                             "genome_stats.extended.tsv")
+        opj(config["paths"]["results"], "report", "checkm", "checkm.stats.tsv")
 
 ##### metabat2 #####
 
@@ -282,6 +283,21 @@ rule binning_stats:
     script:
         "../scripts/binning_utils.py"
 
+rule aggregate_binning_stats:
+    input:
+        expand(opj(config["paths"]["results"], "binning", "{binner}", "{group}",
+                   "{l}", "summary_stats.tsv"),
+               group=assemblies.keys(),
+               l=config["binning"]["contig_lengths"],
+               binner=get_binners(config))
+    message:
+        "Aggregating statistics on binned genomes"
+    output:
+        opj(config["paths"]["results"], "report", "binning", "binning_summary.tsv")
+    run:
+        df=concatenate(input, index=-2)
+        df.to_csv(output[0], sep="\t", index=True)
+
 ##### checkm #####
 
 rule download_checkm:
@@ -489,7 +505,7 @@ rule aggregate_checkm_profiles:
     output:
         tsv=opj(config["paths"]["results"], "report", "checkm", "checkm.profiles.tsv")
     run:
-        df=concatenate(input)
+        df=concatenate(input, index=-3)
         df.to_csv(output.tsv, sep="\t", index=True)
 
 rule aggregate_checkm_stats:
@@ -502,7 +518,7 @@ rule aggregate_checkm_stats:
     output:
         tsv=opj(config["paths"]["results"], "report", "checkm", "checkm.stats.tsv")
     run:
-        df=concatenate(input)
+        df=concatenate(input, index=-3)
         df.to_csv(output.tsv, sep="\t", index=True)
 
 ##### classify bins with gtdb-tk #####
@@ -720,7 +736,7 @@ rule download_ref_genome:
 rule generate_fastANI_lists:
     input:
         bins=expand(opj(config["paths"]["results"], "binning", "{binner}",
-                          "{group}", "{l}", "summary_stats.tsv"),
+                          "{group}", "{l}", "checkm", "genome_stats.extended.tsv"),
                     binner = get_binners(config), group = assemblies.keys(),
                     l = config["binning"]["contig_lengths"]),
         refs=expand(opj("resources", "ref_genomes", "{genome_id}.fna"),
@@ -730,6 +746,8 @@ rule generate_fastANI_lists:
         temp(opj(config["paths"]["results"], "binning", "fastANI", "queryList"))
     params:
         outdir = lambda wildcards, output: os.path.abspath(os.path.dirname(output[0]))
+    message:
+        "Generating input lists for fastANI"
     script:
         "../scripts/binning_utils.py"
 
@@ -738,14 +756,16 @@ rule fastANI:
         opj(config["paths"]["results"], "binning", "fastANI", "refList"),
         opj(config["paths"]["results"], "binning", "fastANI", "queryList")
     output:
-        opj(config["paths"]["results"], "binning", "fastANI", "out.txt")
+        opj(config["paths"]["results"], "binning", "fastANI", "out.txt"),
+        opj(config["paths"]["results"], "binning", "fastANI", "out.txt.matrix")
     log:
         opj(config["paths"]["results"], "binning", "fastANI", "log")
     threads: 8
     params:
         k = config["fastani"]["kmer_size"],
         frag_len = config["fastani"]["frag_len"],
-        fraction = config["fastani"]["fraction"]
+        fraction = config["fastani"]["fraction"],
+        indir = lambda wildcards, input: os.path.dirname(input[0])
     conda:
         "../envs/fastani.yml"
     resources:
@@ -755,26 +775,31 @@ rule fastANI:
         fastANI --rl {input[0]} --ql {input[1]} -k {params.k} -t {threads} \
             --fragLen {params.frag_len} --minFraction {params.fraction} \
             --matrix -o {output[0]} > {log} 2>&1
+        rm {params.indir}/*.fa {params.indir}/*.fna
         """
 
 rule cluster_genomes:
     input:
-        opj(config["paths"]["results"], "binning", "fastANI", "out.txt")
+        mat=opj(config["paths"]["results"], "binning", "fastANI", "out.txt.matrix"),
+        txt=opj(config["paths"]["results"], "binning", "fastANI", "out.txt")
     output:
-        opj(config["paths"]["results"], "binning", "fastANI", "genome_clusters.tsv")
+        opj(config["paths"]["results"], "report", "binning", "genome_clusters.tsv")
     conda:
         "../envs/fastani.yml"
     params:
-        thresh = config["fastani"]["threshold"],
-        frac = config["fastani"]["fraction"]
+        thresh = config["fastani"]["threshold"]
     script:
         "../scripts/binning_utils.py"
+
+##### rule to generate summary plots
 
 rule binning_report:
     input:
         binning_input(config, assemblies, report=True)
     output:
         opj(config["paths"]["results"], "report", "binning", "bin_report.pdf")
+    message:
+        "Plot summary stats of binned genomes"
     conda:
         "../envs/plotting.yml"
     notebook:
