@@ -416,8 +416,8 @@ rule checkm_qa:
         dir=lambda wildcards, output: os.path.dirname(output.tsv)
     shell:
         """
-        bins=$(wc -l {input.tsv} | cut -f1 -d ' ')
-        if [ $bins == 0 ] ; then
+        lines=$(wc -l {input.tsv} | cut -f1 -d ' ')
+        if [ $lines == 1 ] ; then
             echo "NO BINS FOUND" > {output.tsv}
         else
             checkm qa -o 2 --tab_table -f {output.tsv} \
@@ -445,8 +445,8 @@ rule checkm_coverage:
         "../envs/checkm.yml"
     shell:
         """
-        bins=$(wc -l {input.tsv} | cut -f1 -d ' ')
-        if [ $bins == 0 ] ; then
+        lines=$(wc -l {input.tsv} | cut -f1 -d ' ')
+        if [ $lines == 1 ] ; then
             echo "NO BINS FOUND" > {output}
         else
             checkm coverage -x fa -t {threads} {params.dir} \
@@ -484,9 +484,9 @@ rule checkm_profile:
         "../envs/checkm.yml"
     shell:
         """
-        bins=$(wc -l {input.stats} | cut -f1 -d ' ')
+        lines=$(wc -l {input.stats} | cut -f1 -d ' ')
         cov_lines=$(wc -l {input.cov} | cut -f1 -d ' ')
-        if [ $bins == 0 ] ; then
+        if [ $lines == 1 ] ; then
             echo "NO BINS FOUND" > {output}
         elif [ $cov_lines == 0 ] ; then
             echo "NO READS MAPPED" > {output}
