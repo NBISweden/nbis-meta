@@ -346,8 +346,8 @@ if config["checkm"]["taxonomy_wf"]:
             taxon=config["checkm"]["taxon"]
         shell:
             """
-            bins=$(wc -l {input.tsv} | cut -f1 -d ' ')
-            if [ $bins == 0 ] ; then
+            lines=$(wc -l {input.tsv} | cut -f1 -d ' ')
+            if [ $lines == 1 ] ; then
                 echo "NO BINS FOUND" > {output.tsv}
                 touch {output.ms}
             else
@@ -355,8 +355,8 @@ if config["checkm"]["taxonomy_wf"]:
                     --tab_table -f {output.tsv} \
                     {params.rank} {params.taxon} {params.indir} {params.outdir} \
                     > {log} 2>&1
+                ln -s {params.taxon}.ms {output.ms}
             fi
-            ln -s {params.taxon}.ms {output.ms}
             """
 else:
     rule checkm_lineage_wf:
@@ -383,8 +383,8 @@ else:
             tree=get_tree_settings(config)
         shell:
             """
-            bins=$(wc -l {input.tsv} | cut -f1 -d ' ')
-            if [ $bins == 0 ] ; then
+            lines=$(wc -l {input.tsv} | cut -f1 -d ' ')
+            if [ $lines == 0 ] ; then
                 echo "NO BINS FOUND" > {output.tsv}
                 touch {output.ms}
             else
