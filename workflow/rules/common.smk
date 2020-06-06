@@ -11,7 +11,8 @@ singularity: "docker://continuumio/miniconda3:4.8.2"
 
 ##### load and validate config #####
 
-configfile: "config/config.yaml"
+if os.path.exists("config/config.yaml"):
+    configfile: "config/config.yaml"
 validate(config, schema="../schemas/config.schema.yaml")
 
 ##### generate preprocess/postprocess strings #####
