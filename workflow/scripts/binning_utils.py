@@ -120,6 +120,10 @@ def remove_checkm_zerocols(sm):
     :return:
     """
     df = pd.read_csv(sm.input[0], header=0, sep="\t")
+    if df.shape[0] == 0:
+        with open(sm.output[0], 'w') as fh:
+            fh.write("NO BINS FOUND\n")
+        return
     # base columns are independent of samples
     base_columns = ["Sequence Id", "Bin Id", "Sequence length (bp)"]
     # get all columns with mapped read counts
