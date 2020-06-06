@@ -312,7 +312,7 @@ if config["runOnUppMax"] == "yes":
                  "{assembly}.emapper.annotations.log")
         conda:
             "../envs/annotation.yml"
-        message: "Annotating hits table for {wildcards.group}"
+        message: "Annotating hits table for {wildcards.assembly}"
         threads: 10
         resources:
             runtime=lambda wildcards, attempt: attempt**2*60
