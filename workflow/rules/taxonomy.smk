@@ -16,7 +16,7 @@ rule taxonomy:
     input:
         expand(opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
                    "orfs.{db}.taxonomy.tsv"),
-               group=assemblies.keys(), db=config["taxonomy"]["database"])
+               assembly=assemblies.keys(), db=config["taxonomy"]["database"])
 
 ##### contigtax #####
 

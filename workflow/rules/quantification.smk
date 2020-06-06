@@ -16,7 +16,7 @@ rule quantify:
     input:
         expand(opj(config["paths"]["results"], "annotation", "{assembly}",
                    "fc.{fc_type}.tsv"),
-               group=assemblies.keys(), fc_type=["tpm", "raw"])
+               assembly=assemblies.keys(), fc_type=["tpm", "raw"])
 
 
 rule write_featurefile:
