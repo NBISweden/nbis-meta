@@ -12,9 +12,9 @@ paths:
 preprocessing:
   # run fastqc on (preprocessed) input?
   # if no preprocessing is done, fastqc will be run on the raw reads
-  fastqc: True
+  fastqc: False
   # trim reads with trimmomatic? (quality and adapter trimming)
-  trimmomatic: True
+  trimmomatic: False
   # trim reads with cutadapt? (runs instead of trimmomatic, no quality trimming)
   cutadapt: False
   # run fastuniq (removes duplicates from paired-end samples)
@@ -87,7 +87,7 @@ sortmerna:
   extra_settings: "--num_alignments 1"
 
 # remove duplicates from bam files?
-remove_duplicates: True
+remove_duplicates: False
 
 assembly:
   # run Megahit assembler?
@@ -161,10 +161,10 @@ binning:
   contig_lengths:
     - 1500
     # uncomment and/or add below to run binning at more lengths
-    #- 2500
+    - 2500
     #- 5000
   # run Metabat2 binner?
-  metabat: False
+  metabat: True
   # run CONCOCT binner?
   concoct: True
   # run MaxBin2 binner?
@@ -172,7 +172,7 @@ binning:
   # maximum threads for binners
   threads: 20
   # run Checkm to assess quality of bins?
-  checkm: False
+  checkm: True
   # run gtdbtk to classify bins phylogenetically?
   gtdbtk: False
   # run fastANI
@@ -213,7 +213,7 @@ checkm:
   # setting this to True can be beneficial when you want a rough estimate of
   # completeness without having to run the resource heavy step of placing
   # bins into a reference tree
-  taxonomy_wf: False
+  taxonomy_wf: True
   # rank to use for checkm taxonomy wf
   rank: life
   # taxon to use for checkm taxonomy wf
@@ -287,4 +287,4 @@ metaphlan:
 # this sets the number of reads to generate for example input files
 # the files are generated based on the config/samples.tsv file and stored
 # under examples/data
-example_dataset_size: 250000
+example_dataset_size: 200000
