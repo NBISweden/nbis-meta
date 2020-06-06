@@ -176,7 +176,7 @@ binning:
   # run gtdbtk to classify bins phylogenetically?
   gtdbtk: False
   # run fastani and cluster genomes?
-  fastani: True
+  fastani: False
 
 # parameters for MaxBin2
 maxbin:
@@ -264,4 +264,4 @@ metaphlan:
 # this sets the number of reads to generate for example input files
 # the files are generated based on the config/samples.tsv file and stored
 # under examples/data
-example_dataset_size: 250000
+example_dataset_size: 200000
