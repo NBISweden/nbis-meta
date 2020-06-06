@@ -30,20 +30,22 @@ jobs:
     - name: Cutadapt
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/cutadapt.yaml -p --notemp qc
+        snakemake --use-conda -j 4 --configfile .test/config/cutadapt.yaml -p --report report.html qc
     - name: Upload cutadapt report
       uses: actions/upload-artifact@v1
       with:
         name: ${{ runner.os }}-cutadapt.html
-        path: results/report/samples_report.html
+        path: report.html
     - name: Preprocess
       run: |
-        rm -rf results
+        rm -rf results report.html
         snakemake --use-conda -j 4 --configfile .test/config/preprocess.yaml -p qc
+        snakemake --use-conda -j 4 --configfile .test/config/preprocess.yaml -p --report report.html qc
     - name: Upload samples report
       uses: actions/upload-artifact@v1
       with:
         name: ${{ runner.os }}-samples_report.html
-        path: results/report/samples_report.html
+        path: report.html
     - name: Kraken
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml -p results/kraken/sample1_1_pe.kreport results/kraken/sample4_1_se.kreport
@@ -57,10 +59,10 @@ jobs:
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/taxonomy.yaml -p taxonomy
         rm -r results examples/data/sample*
-    - name: Megahit_Metabat
-      run: snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p bin
-    - name: Snakemake report
-      run: snakemake --report report.html
+    - name: Metabat
+      run: |
+        snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p bin assemble
+        snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p --report report.html bin assemble
     - name: Upload snakemake report
       uses: actions/upload-artifact@v1
       with:
@@ -74,6 +76,16 @@ jobs:
     - uses: s-weigand/setup-conda@v1
     - name: Install the conda environment
       run: conda env update -n base -f environment.yml
+    - name: Set up checkm database
+      uses: actions/cache@v2
+      env:
+        cache-name: checkm-db
+      with:
+        path: resources/checkm
+        key: ${{ runner.os }}-${{ env.cache-name }}
+        restore-keys: |
+          ${{ runner.os }}-${{ env.cache-name }}
+          ${{ runner.os }}-
     - name: Kraken
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml --notemp -p classify
