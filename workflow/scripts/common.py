@@ -173,6 +173,7 @@ def check_assembly(config, assemblies):
     :param assemblies: Assembly dictionary
     :return: Tuple of updated config and assembly dict
     """
+    config["assembler"] = "Megahit" if config["megahit"] else "Metaspades"
     if len(assemblies) > 0:
         if config["assembly"]["metaspades"]:
             # Remove single-end only assemblies
@@ -400,7 +401,7 @@ def filter_metaspades_assemblies(d):
     return d
 
 
-def get_all_group_files(assembly_dict):
+def get_all_assembly_files(assembly_dict):
     files = []
     for sample in assembly_dict.keys():
         for unit in assembly_dict[sample].keys():
