@@ -30,7 +30,7 @@ jobs:
     - name: Cutadapt
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/cutadapt.yaml -p --notemp qc
-        snakemake --use-conda -j 4 --configfile .test/config/cutadapt.yaml -p --report report.html qc
+        snakemake -j 1 --configfile .test/config/cutadapt.yaml --report report.html qc
     - name: Upload cutadapt report
       uses: actions/upload-artifact@v1
       with:
