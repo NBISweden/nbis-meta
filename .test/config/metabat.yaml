@@ -16,7 +16,7 @@ preprocessing:
   # trim reads with trimmomatic? (quality and adapter trimming)
   trimmomatic: False
   # trim reads with cutadapt? (runs instead of trimmomatic, no quality trimming)
-  cutadapt: False
+  cutadapt: True
   # run fastuniq (removes duplicates from paired-end samples)
   fastuniq: False
   # map reads agains the phix genome and keep only reads that do not map concordantly
