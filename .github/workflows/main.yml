@@ -46,14 +46,9 @@ jobs:
       with:
         name: ${{ runner.os }}-samples_report.html
         path: report.html
-    - name: Kraken Mac OS
-      if: ${{ runner.os == macOS }}
+    - name: Kraken
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml -p results/kraken/sample1_1_pe.kreport results/kraken/sample4_1_se.kreport
-    - name: Kraken Ubuntu
-      if: ${{ runner.os == Linux }}
-      run: |
-        snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml --notemp -p classify
     - name: Metaspades
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/metaspades.yaml -p assemble
@@ -64,8 +59,24 @@ jobs:
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/taxonomy.yaml -p taxonomy
         rm -r results examples/data/sample*
+    - name: Metabat
+      run: |
+        snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p bin assemble
+        snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p --report report.html bin assemble
+    - name: Upload snakemake report
+      uses: actions/upload-artifact@v1
+      with:
+        name: ${{ runner.os }}-test_report.html
+        path: report.html
+
+  test_linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: s-weigand/setup-conda@v1
+    - name: Install the conda environment
+      run: conda env update -n base -f environment.yml
     - name: Set up checkm database
-      if: ${{ runner.os == Linux }}
       uses: actions/cache@v2
       env:
         cache-name: checkm-db
@@ -75,18 +86,16 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-${{ env.cache-name }}
           ${{ runner.os }}-
+    - name: Kraken
+      run: |
+        snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml --notemp -p classify
+        rm -r examples/data/sample* results
     - name: Binning
-      if: ${{ runner.os == Linux }}
-      run: |
-        snakemake --use-conda -j 4 --configfile .test/config/binning.yaml -p assemble bin
-        snakemake --use-conda -j 4 --configfile .test/config/binning.yaml -p --report report.html assemble bin
-    - name: Metabat
-      if: ${{ runner.os == macOS }}
-      run: |
-        snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p bin assemble
-        snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p --report report.html bin assemble
+      run: snakemake --use-conda -j 4 --configfile .test/config/binning.yaml -p assemble bin
+    - name: Snakemake report
+      run: snakemake --report report.html
     - name: Upload snakemake report
       uses: actions/upload-artifact@v1
       with:
-        name: ${{ runner.os }}-test_report.html
+        name: ${{ runner.os }}-test_linux_report.html
         path: report.html
