@@ -46,9 +46,14 @@ jobs:
       with:
         name: ${{ runner.os }}-samples_report.html
         path: report.html
-    - name: Kraken
+    - name: Kraken Mac OS
+      if: ${{ runner.os == macOS }}
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml -p results/kraken/sample1_1_pe.kreport results/kraken/sample4_1_se.kreport
+    - name: Kraken Ubuntu
+      if: ${{ runner.os == Linux }}
+      run: |
+        snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml --notemp -p classify
     - name: Metaspades
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/metaspades.yaml -p assemble
@@ -86,10 +91,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-${{ env.cache-name }}
           ${{ runner.os }}-
-    - name: Kraken
-      run: |
-        snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml --notemp -p classify
-        rm -r examples/data/sample* results
     - name: Binning
       run: snakemake --use-conda -j 4 --configfile .test/config/binning.yaml -p assemble bin
     - name: Snakemake report
