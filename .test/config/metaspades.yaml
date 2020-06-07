@@ -12,17 +12,17 @@ paths:
 preprocessing:
   # run fastqc on (preprocessed) input?
   # if no preprocessing is done, fastqc will be run on the raw reads
-  fastqc: True
+  fastqc: False
   # trim reads with trimmomatic? (quality and adapter trimming)
   trimmomatic: True
   # trim reads with cutadapt? (runs instead of trimmomatic, no quality trimming)
   cutadapt: False
   # run fastuniq (removes duplicates from paired-end samples)
-  fastuniq: False
+  fastuniq: True
   # map reads agains the phix genome and keep only reads that do not map concordantly
-  phix_filter: False
+  phix_filter: True
   # run SortMeRNA to identify (and filter) rRNA sequences
-  sortmerna: False
+  sortmerna: True
 
 # parameters for trimmomatic
 trimmomatic:
@@ -262,4 +262,4 @@ metaphlan:
 # this sets the number of reads to generate for example input files
 # the files are generated based on the config/samples.tsv file and stored
 # under examples/data
-example_dataset_size: 100000
+example_dataset_size: 10000

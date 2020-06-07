@@ -24,7 +24,7 @@ def add_lower(df, ranks):
     return df
 
 
-def tango_mash(sm):
+def contigtax_mash(sm):
     # Keep stats on assignments
     # resolved = cases where sourmash helped resolve assignments
     # transferred = cases where blast-based assignments were overwritten
@@ -33,7 +33,7 @@ def tango_mash(sm):
     stats = {'resolved': 0, 'transferred': 0, 'added': 0, 'total': 0}
     df1 = pd.read_csv(sm.input.smash, sep=",", header=0, index_col=0)
     stats['total'] = df1.shape[0]
-    df2 = pd.read_csv(sm.input.tango, sep="\t", header=0, index_col=0)
+    df2 = pd.read_csv(sm.input.contigtax, sep="\t", header=0, index_col=0)
     ranks = list(df2.columns)
     ranks.reverse()
     # Only use subset of contigs with matches
@@ -81,7 +81,7 @@ def tango_mash(sm):
         fhout.write("Added:       {}\n".format(stats['added']))
 
 
-def tango_assign_orfs(sm):
+def contigtax_assign_orfs(sm):
     """
     Transfers taxonomic assignments from contigs down to ORFs called on contigs
     :param sm: snakemake object
@@ -110,8 +110,8 @@ def tango_assign_orfs(sm):
 
 
 def main(sm):
-    toolbox = {"merge_tango_sourmash": tango_mash,
-               "tango_assign_orfs": tango_assign_orfs}
+    toolbox = {"merge_contigtax_sourmash": contigtax_mash,
+               "contigtax_assign_orfs": contigtax_assign_orfs}
     toolbox[sm.rule](sm)
 
 

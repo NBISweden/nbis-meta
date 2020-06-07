@@ -2,6 +2,7 @@ from scripts.common import classify_input, krona_input, metaphlan_krona_string
 from scripts.common import get_kraken_index_url, get_centrifuge_index_url
 
 localrules:
+    classify,
     download_kraken_build,
     download_centrifuge_build,
     centrifuge_kreport,
@@ -248,7 +249,7 @@ rule build_metaphlan:
         index=config["metaphlan"]["index"]
     threads: 4
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*1
+        runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
         "../envs/metaphlan.yml"
     shell:

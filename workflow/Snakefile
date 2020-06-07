@@ -1,5 +1,7 @@
 # Snakemake workflow for various types of metagenomic analyses.
 
+report: "report/workflow.rst"
+
 include: "rules/common.smk"
 include: "rules/other.smk"
 

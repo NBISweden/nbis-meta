@@ -10,7 +10,8 @@ localrules:
     sortmerna_link_se,
     download_phix,
     bowtie_build_phix,
-    fastuniq_se
+    fastuniq_se,
+    multiqc
 
 ##### master rule for preprocessing #####
 
@@ -658,7 +659,8 @@ rule multiqc:
     input:
         multiqc_input(samples, config)
     output:
-        html=opj(config["paths"]["results"], "report", "samples_report.html"),
+        html=report(opj(config["paths"]["results"], "report", "samples_report.html"),
+                    caption="../report/preprocessing.rst", category="Preprocessing"),
         txt=opj(config["paths"]["results"], "report", "samples_report_data",
             "multiqc_general_stats.txt")
     log:

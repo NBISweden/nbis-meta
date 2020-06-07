@@ -1,7 +1,9 @@
 from scripts.common import markdup_mem
 
 localrules:
+    quantify,
     write_featurefile,
+    samtools_stats,
     normalize_featurecount,
     aggregate_featurecount,
     sum_to_taxa,
@@ -12,17 +14,17 @@ localrules:
 
 rule quantify:
     input:
-        expand(opj(config["paths"]["results"], "annotation", "{group}",
+        expand(opj(config["paths"]["results"], "annotation", "{assembly}",
                    "fc.{fc_type}.tsv"),
-               group=assemblies.keys(), fc_type=["tpm", "raw"])
+               assembly=assemblies.keys(), fc_type=["tpm", "raw"])
 
 
 rule write_featurefile:
     input:
-        opj(config["paths"]["results"], "annotation", "{group}",
+        opj(config["paths"]["results"], "annotation", "{assembly}",
             "final_contigs.gff")
     output:
-        opj(config["paths"]["results"], "annotation", "{group}",
+        opj(config["paths"]["results"], "annotation", "{assembly}",
             "final_contigs.features.gff")
     script:
         "../scripts/quantification_utils.py"
@@ -31,17 +33,17 @@ rule write_featurefile:
 
 rule remove_mark_duplicates:
     input:
-        opj(config["paths"]["results"], "assembly", "{group}", "mapping", "{sample}_{unit}_{seq_type}.bam")
+        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping", "{sample}_{unit}_{seq_type}.bam")
     output:
-        opj(config["paths"]["results"], "assembly", "{group}", "mapping", "{sample}_{unit}_{seq_type}.markdup.bam"),
-        opj(config["paths"]["results"], "assembly", "{group}", "mapping", "{sample}_{unit}_{seq_type}.markdup.bam.bai"),
-        opj(config["paths"]["results"], "assembly", "{group}", "mapping", "{sample}_{unit}_{seq_type}.markdup.metrics")
+        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping", "{sample}_{unit}_{seq_type}.markdup.bam"),
+        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping", "{sample}_{unit}_{seq_type}.markdup.bam.bai"),
+        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping", "{sample}_{unit}_{seq_type}.markdup.metrics")
     log:
-        opj(config["paths"]["results"], "assembly", "{group}", "mapping", "{sample}_{unit}_{seq_type}.markdup.log")
+        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping", "{sample}_{unit}_{seq_type}.markdup.log")
     params:
-        temp_bam=opj(config["paths"]["temp"], "{group}", "{sample}_{unit}_{seq_type}.markdup.bam"),
-        temp_sort_bam=opj(config["paths"]["temp"], "{group}", "{sample}_{unit}_{seq_type}.markdup.re_sort.bam"),
-        temp_dir=opj(config["paths"]["temp"], "{group}")
+        temp_bam=opj(config["paths"]["temp"], "{assembly}", "{sample}_{unit}_{seq_type}.markdup.bam"),
+        temp_sort_bam=opj(config["paths"]["temp"], "{assembly}", "{sample}_{unit}_{seq_type}.markdup.re_sort.bam"),
+        temp_dir=opj(config["paths"]["temp"], "{assembly}")
     threads: 10
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4,
@@ -68,17 +70,17 @@ rule remove_mark_duplicates:
 
 rule featurecount_pe:
     input:
-        gff=opj(config["paths"]["results"], "annotation", "{group}",
+        gff=opj(config["paths"]["results"], "annotation", "{assembly}",
                 "final_contigs.features.gff"),
-        bam=opj(config["paths"]["results"], "assembly", "{group}",
+        bam=opj(config["paths"]["results"], "assembly", "{assembly}",
                 "mapping", "{sample}_{unit}_pe"+POSTPROCESS+".bam")
     output:
-        opj(config["paths"]["results"], "assembly", "{group}", "mapping",
+        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
             "{sample}_{unit}_pe.fc.tsv"),
-        opj(config["paths"]["results"], "assembly", "{group}", "mapping",
+        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
             "{sample}_{unit}_pe.fc.tsv.summary")
     log:
-        opj(config["paths"]["results"], "assembly", "{group}",
+        opj(config["paths"]["results"], "assembly", "{assembly}",
             "mapping", "{sample}_{unit}_pe.fc.log")
     threads: 4
     params: tmpdir=config["paths"]["temp"]
@@ -94,17 +96,17 @@ rule featurecount_pe:
 
 rule featurecount_se:
     input:
-        gff=opj(config["paths"]["results"], "annotation", "{group}",
+        gff=opj(config["paths"]["results"], "annotation", "{assembly}",
                 "final_contigs.features.gff"),
-        bam=opj(config["paths"]["results"], "assembly", "{group}",
+        bam=opj(config["paths"]["results"], "assembly", "{assembly}",
                 "mapping", "{sample}_{unit}_se"+POSTPROCESS+".bam")
     output:
-        opj(config["paths"]["results"], "assembly", "{group}",
+        opj(config["paths"]["results"], "assembly", "{assembly}",
             "mapping", "{sample}_{unit}_se.fc.tsv"),
-        opj(config["paths"]["results"], "assembly", "{group}",
+        opj(config["paths"]["results"], "assembly", "{assembly}",
             "mapping", "{sample}_{unit}_se.fc.tsv.summary")
     log:
-        opj(config["paths"]["results"], "assembly", "{group}",
+        opj(config["paths"]["results"], "assembly", "{assembly}",
             "mapping", "{sample}_{unit}_se.fc.log")
     threads: 4
     params: tmpdir=config["paths"]["temp"]
@@ -120,10 +122,10 @@ rule featurecount_se:
 
 rule samtools_stats:
     input:
-        opj(config["paths"]["results"], "assembly", "{group}",
+        opj(config["paths"]["results"], "assembly", "{assembly}",
                 "mapping", "{sample}_{unit}_{seq_type}"+POSTPROCESS+".bam")
     output:
-        opj(config["paths"]["results"], "assembly", "{group}",
+        opj(config["paths"]["results"], "assembly", "{assembly}",
                 "mapping", "{sample}_{unit}_{seq_type}"+POSTPROCESS+".bam.stats")
     conda:
         "../envs/quantify.yml"
@@ -134,17 +136,17 @@ rule samtools_stats:
 
 rule normalize_featurecount:
     input:
-        opj(config["paths"]["results"], "assembly", "{group}", "mapping",
+        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
             "{sample}_{unit}_{seq_type}.fc.tsv"),
-        opj(config["paths"]["results"], "assembly", "{group}", "mapping",
+        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
             "{sample}_{unit}_{seq_type}"+POSTPROCESS+".bam.stats")
     output:
-        opj(config["paths"]["results"], "assembly", "{group}", "mapping",
+        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
             "{sample}_{unit}_{seq_type}.fc.tpm.tsv"),
-        opj(config["paths"]["results"], "assembly", "{group}", "mapping",
+        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
             "{sample}_{unit}_{seq_type}.fc.raw.tsv")
     log:
-        opj(config["paths"]["results"], "assembly", "{group}", "mapping",
+        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
             "{sample}_{unit}_{seq_type}.fc.norm.log")
     script:
         "../scripts/quantification_utils.py"
@@ -153,25 +155,25 @@ rule aggregate_featurecount:
     """Aggregates raw and normalized featureCounts files"""
     input:
         raw_files=get_all_files(samples, opj(config["paths"]["results"],
-                                             "assembly", "{group}", "mapping"),
+                                             "assembly", "{assembly}", "mapping"),
                                 ".fc.raw.tsv"),
         tpm_files=get_all_files(samples, opj(config["paths"]["results"],
-                                             "assembly", "{group}", "mapping"),
+                                             "assembly", "{assembly}", "mapping"),
                                 ".fc.tpm.tsv"),
-        gff_file=opj(config["paths"]["results"], "annotation", "{group}",
+        gff_file=opj(config["paths"]["results"], "annotation", "{assembly}",
                      "final_contigs.features.gff")
     output:
-        raw=opj(config["paths"]["results"], "annotation", "{group}", "fc.raw.tsv"),
-        tpm=opj(config["paths"]["results"], "annotation", "{group}", "fc.tpm.tsv")
+        raw=opj(config["paths"]["results"], "annotation", "{assembly}", "fc.raw.tsv"),
+        tpm=opj(config["paths"]["results"], "annotation", "{assembly}", "fc.tpm.tsv")
     script:
         "../scripts/quantification_utils.py"
 
 rule quantify_features:
     input:
-        abund=opj(config["paths"]["results"], "annotation", "{group}", "fc.{fc_type}.tsv"),
-        annot=opj(config["paths"]["results"], "annotation", "{group}", "{db}.parsed.tsv")
+        abund=opj(config["paths"]["results"], "annotation", "{assembly}", "fc.{fc_type}.tsv"),
+        annot=opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.tsv")
     output:
-        opj(config["paths"]["results"], "annotation", "{group}", "{db}.parsed.{fc_type}.tsv")
+        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.{fc_type}.tsv")
     shell:
         """
         python source/utils/eggnog-parser.py \
@@ -180,20 +182,20 @@ rule quantify_features:
 
 rule sum_to_taxa:
     input:
-        tax=opj(config["paths"]["results"], "annotation", "{group}", "taxonomy",
+        tax=opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
             "orfs.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"])),
-        abund=opj(config["paths"]["results"], "annotation", "{group}", "fc.{fc_type}.tsv")
+        abund=opj(config["paths"]["results"], "annotation", "{assembly}", "fc.{fc_type}.tsv")
     output:
-        opj(config["paths"]["results"], "annotation", "{group}", "taxonomy", "tax.{fc_type}.tsv")
+        opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy", "tax.{fc_type}.tsv")
     script:
         "../scripts/quantification_utils.py"
 
 rule sum_to_rgi:
     input:
-        annot=opj(config["paths"]["results"], "annotation", "{group}", "rgi.out.txt"),
-        abund=opj(config["paths"]["results"], "annotation", "{group}", "fc.{fc_type}.tsv")
+        annot=opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.out.txt"),
+        abund=opj(config["paths"]["results"], "annotation", "{assembly}", "fc.{fc_type}.tsv")
     output:
-        opj(config["paths"]["results"], "annotation", "{group}", "rgi.{fc_type}.tsv")
+        opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.{fc_type}.tsv")
     script:
         "../scripts/quantification_utils.py"
 

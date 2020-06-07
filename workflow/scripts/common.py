@@ -173,6 +173,7 @@ def check_assembly(config, assemblies):
     :param assemblies: Assembly dictionary
     :return: Tuple of updated config and assembly dict
     """
+    config["assembler"] = "Megahit" if config["megahit"] else "Metaspades"
     if len(assemblies) > 0:
         if config["assembly"]["metaspades"]:
             # Remove single-end only assemblies
@@ -201,8 +202,8 @@ def check_classifiers(config):
         # If not, use prebuilt default
         else:
             p = config["centrifuge"]["prebuilt"]
-            config["centrifuge"]["index_path"] = opj("resources",
-                                                     "centrifuge", p)
+            config["centrifuge"]["index_path"] = opj("resources", "centrifuge",
+                                                     p)
         # Set centrifuge index config variables
         index_path = config["centrifuge"]["index_path"]
         config["centrifuge"]["dir"] = os.path.dirname(index_path)
@@ -309,8 +310,7 @@ def get_fastqc_files(sample, unit, pairs, config, pre):
 
 
 def get_trim_logs(sample, unit, pairs, config, d):
-    if not config["preprocessing"]["trimmomatic"] and not \
-    config["preprocessing"]["cutadapt"]:
+    if not config["preprocessing"]["trimmomatic"] and not config["preprocessing"]["cutadapt"]:
         return []
     if config["preprocessing"]["trimmomatic"]:
         trimmer = "trimmomatic"
@@ -400,7 +400,7 @@ def filter_metaspades_assemblies(d):
     return d
 
 
-def get_all_group_files(assembly_dict):
+def get_all_assembly_files(assembly_dict):
     files = []
     for sample in assembly_dict.keys():
         for unit in assembly_dict[sample].keys():
@@ -442,7 +442,7 @@ def rename_records(f, fh, i):
 
 # binning functions
 
-def binning_input(config, assemblies):
+def binning_input(config, assemblies, report=False):
     """
     Generates input list for the binning part of the workflow
 
@@ -450,17 +450,15 @@ def binning_input(config, assemblies):
     :param assemblies: Dictionary of assemblies
     :return:
     """
-    binners = get_binners(config)
-    bin_input = expand(
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}",
-            "summary_stats.tsv"), binner=binners, group=assemblies.keys(),
-        l=config["binning"]["contig_lengths"])
-
+    bin_input = [opj(config["paths"]["results"], "report", "binning",
+                     "binning_summary.tsv")]
     if config["binning"]["checkm"]:
         bin_input.append(opj(config["paths"]["results"], "report", "checkm",
                              "checkm.stats.tsv"))
-        bin_input.append(opj(config["paths"]["results"], "report", "checkm",
-                             "checkm.profiles.tsv"))
+        # Don't include profile in report
+        if not report:
+            bin_input.append(opj(config["paths"]["results"], "report", "checkm",
+                                 "checkm.profiles.tsv"))
     if config["binning"]["gtdbtk"]:
         bin_input.append(opj(config["paths"]["results"], "report", "gtdbtk",
                              "gtdbtk.summary.tsv"))
@@ -470,6 +468,20 @@ def binning_input(config, assemblies):
         bin_input.append(
             opj(config["paths"]["results"], "report", "bin_annotation",
                 "rRNA.types.tsv"))
+    config["fastani"]["ref_genomes"] = {}
+    if config["binning"]["fastani"]:
+        bin_input.append(opj(config["paths"]["results"], "report", "binning",
+                             "genome_clusters.tsv"))
+        # read list of genome references if path exists
+        if os.path.exists(config["fastani"]["ref_list"]):
+            _ = pd.read_csv(config["fastani"]["ref_list"], index_col=0,
+                            sep="\t", header=None, names=["genome_id", "url"])
+            # filter genome list
+            _ = _.loc[(_["url"].str.contains("ftp")) | (
+                _["url"].str.contains("http"))].head()
+            config["fastani"]["ref_genomes"] = _.to_dict()["url"]
+        else:
+            config["fastani"]["ref_genomes"] = {}
     return bin_input
 
 
@@ -526,14 +538,15 @@ def get_binners(config):
     return binners
 
 
-def get_fields(f):
+def get_fields(f, index):
     """
     Extract assembly, binner and length fields from file path
     :param f: Input file
+    :param index: Path split index starting from right
     :return:
     """
     items = f.split("/")
-    return items[-3], items[-4], items[-5]
+    return items[index - 2], items[index - 1], items[index]
 
 
 def assign_fields(x, l, group, binner):
@@ -552,7 +565,7 @@ def assign_fields(x, l, group, binner):
     return x
 
 
-def concatenate(input):
+def concatenate(input, index):
     """
     Concatenate bin info dataframes
     :param input:
@@ -560,7 +573,7 @@ def concatenate(input):
     """
     df = pd.DataFrame()
     for i, f in enumerate(input):
-        l, group, binner = get_fields(f)
+        binner, group, l = get_fields(f, index)
         _df = pd.read_csv(f, sep="\t", index_col=0)
         rows = _df.shape[0]
         if rows == 0:

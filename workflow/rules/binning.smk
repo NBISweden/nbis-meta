@@ -1,36 +1,55 @@
 from scripts.common import binning_input, get_fw_reads
-from scripts.common import get_binners, get_tree_settings
+from scripts.common import get_binners, get_tree_settings, concatenate
 
 localrules:
+    bin,
     concoct_cutup,
     merge_cutup,
     extract_fasta,
     contig_map,
     binning_stats,
+    aggregate_binning_stats,
     download_checkm, 
     checkm_qa,
+    remove_checkm_zerocols,
     aggregate_checkm_stats,
+    aggregate_checkm_profiles,
     checkm_profile,
     download_gtdb,
-    aggregate_gtdbtk
+    aggregate_gtdbtk,
+    download_ref_genome,
+    generate_fastANI_lists,
+    cluster_genomes,
+    count_rRNA,
+    count_tRNA,
+    aggregate_gtdbtk,
+    aggregate_bin_annot,
+    binning_report
 
 ##### master rule for binning #####
 
 rule bin:
     input:
-        binning_input(config, assemblies)
+        binning_input(config, assemblies),
+        opj(config["paths"]["results"], "report", "binning", "bin_report.pdf")
+
+##### target rule for running checkm analysis #####
+
+rule checkm:
+    input:
+        opj(config["paths"]["results"], "report", "checkm", "checkm.stats.tsv")
 
 ##### metabat2 #####
 
 rule metabat_coverage:
     input:
         bam=get_all_files(samples, opj(config["paths"]["results"], "assembly",
-                                       "{group}", "mapping"), ".bam")
+                                       "{assembly}", "mapping"), ".bam")
     output:
-        depth=opj(config["paths"]["results"], "binning", "metabat", "{group}",
+        depth=opj(config["paths"]["results"], "binning", "metabat", "{assembly}",
                   "cov", "depth.txt")
     log:
-        opj(config["paths"]["results"], "binning", "metabat", "{group}",
+        opj(config["paths"]["results"], "binning", "metabat", "{assembly}",
                   "cov", "log")
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*2
@@ -44,17 +63,17 @@ rule metabat_coverage:
 
 rule metabat:
     input:
-        fa=opj(config["paths"]["results"], "assembly", "{group}",
+        fa=opj(config["paths"]["results"], "assembly", "{assembly}",
                "final_contigs.fa"),
-        depth=opj(config["paths"]["results"], "binning", "metabat", "{group}",
+        depth=opj(config["paths"]["results"], "binning", "metabat", "{assembly}",
                   "cov", "depth.txt")
     output:
-        touch(temp(opj(config["paths"]["results"], "binning", "metabat", "{group}",
-                       "{l}", "done")))
+        touch(opj(config["paths"]["results"], "binning", "metabat", "{assembly}",
+                       "{l}", "done"))
     log:
-        opj(config["paths"]["results"], "binning", "metabat", "{group}", "{l}", "metabat.log")
+        opj(config["paths"]["results"], "binning", "metabat", "{assembly}", "{l}", "metabat.log")
     params:
-        n=opj(config["paths"]["results"], "binning", "metabat", "{group}", "{l}", "metabat")
+        n=opj(config["paths"]["results"], "binning", "metabat", "{assembly}", "{l}", "metabat")
     conda:
         "../envs/metabat.yml"
     threads: config["binning"]["threads"]
@@ -70,15 +89,15 @@ rule metabat:
 
 rule maxbin:
     input:
-        opj(config["paths"]["results"], "assembly", "{group}", "final_contigs.fa")
+        opj(config["paths"]["results"], "assembly", "{assembly}", "final_contigs.fa")
     output:
-        touch(temp(opj(config["paths"]["results"], "binning", "maxbin", "{group}",
-                 "{l}", "done")))
+        touch(opj(config["paths"]["results"], "binning", "maxbin", "{assembly}",
+                 "{l}", "done"))
     log:
-        opj(config["paths"]["results"], "binning", "maxbin", "{group}", "{l}", "maxbin.log")
+        opj(config["paths"]["results"], "binning", "maxbin", "{assembly}", "{l}", "maxbin.log")
     params:
-        dir=opj(config["paths"]["results"], "binning", "maxbin", "{group}", "{l}"),
-        tmp_dir=opj(config["paths"]["temp"], "{group}", "{l}"),
+        dir=opj(config["paths"]["results"], "binning", "maxbin", "{assembly}", "{l}"),
+        tmp_dir=opj(config["paths"]["temp"], "maxbin", "{assembly}", "{l}"),
         reads=get_fw_reads(config, samples, PREPROCESS),
         markerset=config["maxbin"]["markerset"]
     threads: config["binning"]["threads"]
@@ -88,15 +107,27 @@ rule maxbin:
         "../envs/maxbin.yml"
     shell:
         """
+        set +e
         mkdir -p {params.dir}
         mkdir -p {params.tmp_dir}
         run_MaxBin.pl -markerset {params.markerset} -contig {input} \
             {params.reads} -min_contig_length {wildcards.l} -thread {threads} \
-            -out {params.tmp_dir}/{wildcards.group} >{log} 2>{log}
-        # Rename fasta files
-        for f in {params.tmp_dir}/*.fasta ; do mv $f ${{f%.fasta}}.fa ; done
-        # Move output from temporary dir
-        mv {params.tmp_dir}/* {params.dir}
+            -out {params.tmp_dir}/maxbin >{log} 2>{log}
+        exitcode=$?
+        if [ $exitcode -eq 255 ]; then
+            exit 0
+        else
+            # Rename fasta files
+            ls {params.tmp_dir} | grep ".fasta" | while read f;
+            do 
+                mv {params.tmp_dir}/$f {params.dir}/${{f%.fasta}}.fa
+            done
+            # Move output from temporary dir
+            ls {params.tmp_dir} | while read f;
+            do 
+                mv {params.tmp_dir}/$f {params.dir}/
+            done
+        fi
         # Clean up
         rm -r {params.tmp_dir}
         """
@@ -106,13 +137,13 @@ rule maxbin:
 rule concoct_coverage_table:
     input:
         bam=get_all_files(samples, opj(config["paths"]["results"], "assembly",
-                                       "{group}", "mapping"), ".bam"),
+                                       "{assembly}", "mapping"), ".bam"),
         bai=get_all_files(samples, opj(config["paths"]["results"], "assembly",
-                                       "{group}", "mapping"), ".bam.bai"),
-        bed=opj(config["paths"]["results"], "assembly", "{group}",
+                                       "{assembly}", "mapping"), ".bam.bai"),
+        bed=opj(config["paths"]["results"], "assembly", "{assembly}",
                 "final_contigs_cutup.bed")
     output:
-        cov=opj(config["paths"]["results"], "binning", "concoct", "{group}",
+        cov=opj(config["paths"]["results"], "binning", "concoct", "{assembly}",
                 "cov", "concoct_inputtable.tsv")
     conda:
         "../envs/concoct.yml"
@@ -120,7 +151,7 @@ rule concoct_coverage_table:
         runtime=lambda wildcards, attempt: attempt**2*60*2
     params:
         samplenames=opj(config["paths"]["results"], "binning", "concoct",
-                        "{group}", "cov", "samplenames"),
+                        "{assembly}", "cov", "samplenames"),
         p=POSTPROCESS
     shell:
         """
@@ -138,14 +169,14 @@ rule concoct_coverage_table:
 
 rule concoct_cutup:
     input:
-        fa=opj(config["paths"]["results"], "assembly", "{group}", "final_contigs.fa")
+        fa=opj(config["paths"]["results"], "assembly", "{assembly}", "final_contigs.fa")
     output:
-        fa=opj(config["paths"]["results"], "assembly", "{group}",
+        fa=opj(config["paths"]["results"], "assembly", "{assembly}",
                "final_contigs_cutup.fa"),
-        bed=opj(config["paths"]["results"], "assembly", "{group}",
+        bed=opj(config["paths"]["results"], "assembly", "{assembly}",
                 "final_contigs_cutup.bed")
     log:
-        opj(config["paths"]["results"], "assembly", "{group}",
+        opj(config["paths"]["results"], "assembly", "{assembly}",
                "final_contigs_cutup.log")
     conda:
         "../envs/concoct.yml"
@@ -157,15 +188,15 @@ rule concoct_cutup:
 
 rule concoct:
     input:
-        cov=opj(config["paths"]["results"], "binning", "concoct", "{group}",
+        cov=opj(config["paths"]["results"], "binning", "concoct", "{assembly}",
                 "cov", "concoct_inputtable.tsv"),
-        fa=opj(config["paths"]["results"], "assembly", "{group}",
+        fa=opj(config["paths"]["results"], "assembly", "{assembly}",
                "final_contigs_cutup.fa")
     output:
-        opj(config["paths"]["results"], "binning", "concoct", "{group}", "{l}",
+        opj(config["paths"]["results"], "binning", "concoct", "{assembly}", "{l}",
             "clustering_gt{l}.csv")
     log:
-        opj(config["paths"]["results"], "binning", "concoct", "{group}", "{l}", "log.txt")
+        opj(config["paths"]["results"], "binning", "concoct", "{assembly}", "{l}", "log.txt")
     params:
         basename=lambda wildcards, output: os.path.dirname(output[0]),
         length="{l}"
@@ -182,13 +213,13 @@ rule concoct:
 
 rule merge_cutup:
     input:
-        opj(config["paths"]["results"], "binning", "concoct", "{group}",
+        opj(config["paths"]["results"], "binning", "concoct", "{assembly}",
             "{l}", "clustering_gt{l}.csv")
     output:
-        opj(config["paths"]["results"], "binning", "concoct", "{group}",
+        opj(config["paths"]["results"], "binning", "concoct", "{assembly}",
             "{l}", "clustering_gt{l}_merged.csv"),
     log:
-        opj(config["paths"]["results"], "binning", "concoct", "{group}",
+        opj(config["paths"]["results"], "binning", "concoct", "{assembly}",
             "{l}", "clustering_gt{l}_merged.log")
     conda:
         "../envs/concoct.yml"
@@ -199,33 +230,39 @@ rule merge_cutup:
 
 rule extract_fasta:
     input:
-        opj(config["paths"]["results"], "assembly", "{group}", "final_contigs.fa"),
-        opj(config["paths"]["results"], "binning", "concoct", "{group}",
+        opj(config["paths"]["results"], "assembly", "{assembly}", "final_contigs.fa"),
+        opj(config["paths"]["results"], "binning", "concoct", "{assembly}",
             "{l}", "clustering_gt{l}_merged.csv")
     output:
-        touch(temp(opj(config["paths"]["results"], "binning", "concoct",
-                       "{group}", "{l}", "done")))
+        touch(opj(config["paths"]["results"], "binning", "concoct",
+                       "{assembly}", "{l}", "done"))
     log:
-        opj(config["paths"]["results"], "binning", "concoct", "{group}",
+        opj(config["paths"]["results"], "binning", "concoct", "{assembly}",
                   "{l}", "extract_fasta.log")
     params:
-        dir=lambda wildcards, output: os.path.dirname(output[0])
+        dir=lambda wildcards, output: os.path.dirname(output[0]),
+        tmp_dir=opj(config["paths"]["temp"], "concoct", "{assembly}", "{l}"),
     conda:
         "../envs/concoct.yml"
     shell:
         """
-        extract_fasta_bins.py {input[0]} {input[1]} --output_path {params.dir} \
-            2> {log}
+        mkdir -p {params.tmp_dir}
+        extract_fasta_bins.py {input[0]} {input[1]} \
+            --output_path {params.tmp_dir} 2> {log}
+        ls {params.tmp_dir} | egrep "[0-9].fa" | while read f;
+        do
+            mv {params.tmp_dir}/$f {params.dir}/concoct.$f
+        done
         """
 
 ##### map contigs to bins #####
 
 rule contig_map:
     input:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}",
+        opj(config["paths"]["results"], "binning", "{binner}", "{assembly}",
                   "{l}", "done")
     output:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}",
+        opj(config["paths"]["results"], "binning", "{binner}", "{assembly}",
                   "{l}", "contig_map.tsv")
     params:
         dir=lambda wildcards, input: os.path.dirname(input[0])
@@ -236,15 +273,33 @@ rule contig_map:
 
 rule binning_stats:
     input:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}",
+        opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}",
             "contig_map.tsv")
     output:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}",
+        opj(config["paths"]["results"], "binning", "{binner}", "{assembly}",
             "{l}", "summary_stats.tsv")
     params:
         dir=lambda wildcards, output: os.path.dirname(output[0])
     script:
         "../scripts/binning_utils.py"
+
+rule aggregate_binning_stats:
+    input:
+        expand(opj(config["paths"]["results"], "binning", "{binner}", "{assembly}",
+                   "{l}", "summary_stats.tsv"),
+               assembly=assemblies.keys(),
+               l=config["binning"]["contig_lengths"],
+               binner=get_binners(config))
+    message:
+        "Aggregating statistics on binned genomes"
+    output:
+        report(opj(config["paths"]["results"], "report", "binning", "binning_summary.tsv"),
+               category="Binning", caption="../report/binning.rst")
+    run:
+        df=concatenate(input, index=-2)
+        df.to_csv(output[0], sep="\t", index=True)
+
+##### checkm #####
 
 rule download_checkm:
     output:
@@ -270,14 +325,14 @@ if config["checkm"]["taxonomy_wf"]:
     rule checkm_taxonomy_wf:
         input:
             db=opj("resources", "checkm", ".dmanifest"),
-            tsv=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "summary_stats.tsv")
+            tsv=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "summary_stats.tsv")
         output:
-            tsv=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm",
+            tsv=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "checkm",
                       "genome_stats.tsv"),
-            ms=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm",
+            ms=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "checkm",
                       "lineage.ms")
         log:
-            opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm",
+            opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "checkm",
                 "checkm.log")
         conda:
             "../envs/checkm.yml"
@@ -292,8 +347,8 @@ if config["checkm"]["taxonomy_wf"]:
             taxon=config["checkm"]["taxon"]
         shell:
             """
-            bins=$(wc -l {input.tsv} | cut -f1 -d ' ')
-            if [ $bins == 0 ] ; then
+            lines=$(wc -l {input.tsv} | cut -f1 -d ' ')
+            if [ $lines == 1 ] ; then
                 echo "NO BINS FOUND" > {output.tsv}
                 touch {output.ms}
             else
@@ -301,21 +356,21 @@ if config["checkm"]["taxonomy_wf"]:
                     --tab_table -f {output.tsv} \
                     {params.rank} {params.taxon} {params.indir} {params.outdir} \
                     > {log} 2>&1
+                ln -s {params.taxon}.ms {output.ms}
             fi
-            ln -s {params.taxon}.ms {output.ms}
             """
 else:
     rule checkm_lineage_wf:
         input:
             db=opj("resources", "checkm", ".dmanifest"),
-            tsv=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "summary_stats.tsv")
+            tsv=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "summary_stats.tsv")
         output:
-            tsv=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm",
+            tsv=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "checkm",
                       "genome_stats.tsv"),
-            ms=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm",
+            ms=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "checkm",
                       "lineage.ms")
         log:
-            opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm",
+            opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "checkm",
                 "checkm.log")
         conda:
             "../envs/checkm.yml"
@@ -329,8 +384,8 @@ else:
             tree=get_tree_settings(config)
         shell:
             """
-            bins=$(wc -l {input.tsv} | cut -f1 -d ' ')
-            if [ $bins == 0 ] ; then
+            lines=$(wc -l {input.tsv} | cut -f1 -d ' ')
+            if [ $lines == 0 ] ; then
                 echo "NO BINS FOUND" > {output.tsv}
                 touch {output.ms}
             else
@@ -347,14 +402,14 @@ rule checkm_qa:
     Runs checkm qa to generate output format 2 with extended summaries of bins
     """
     input:
-        tsv=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "summary_stats.tsv"),
-        ms=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm",
+        tsv=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "summary_stats.tsv"),
+        ms=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "checkm",
                   "lineage.ms")
     output:
-        tsv=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm",
+        tsv=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "checkm",
                   "genome_stats.extended.tsv")
     log:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm",
+        opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "checkm",
                   "qa.log")
     conda:
         "../envs/checkm.yml"
@@ -362,8 +417,8 @@ rule checkm_qa:
         dir=lambda wildcards, output: os.path.dirname(output.tsv)
     shell:
         """
-        bins=$(wc -l {input.tsv} | cut -f1 -d ' ')
-        if [ $bins == 0 ] ; then
+        lines=$(wc -l {input.tsv} | cut -f1 -d ' ')
+        if [ $lines == 1 ] ; then
             echo "NO BINS FOUND" > {output.tsv}
         else
             checkm qa -o 2 --tab_table -f {output.tsv} \
@@ -373,15 +428,15 @@ rule checkm_qa:
 
 rule checkm_coverage:
     input:
-        tsv=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "summary_stats.tsv"),
+        tsv=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "summary_stats.tsv"),
         bam=get_all_files(samples, opj(config["paths"]["results"], "assembly",
-                                         "{group}", "mapping"), ".markdup.bam"),
+                                         "{assembly}", "mapping"), ".markdup.bam"),
         bai=get_all_files(samples, opj(config["paths"]["results"], "assembly",
-                                         "{group}", "mapping"), ".markdup.bam.bai")
+                                         "{assembly}", "mapping"), ".markdup.bam.bai")
     output:
-        cov=temp(opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm", "coverage.tsv"))
+        cov=temp(opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "checkm", "coverage.tsv"))
     log:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm", "checkm_coverage.log")
+        opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "checkm", "checkm_coverage.log")
     params:
         dir=lambda wildcards, input: os.path.dirname(input.tsv)
     threads: 10
@@ -391,8 +446,8 @@ rule checkm_coverage:
         "../envs/checkm.yml"
     shell:
         """
-        bins=$(wc -l {input.tsv} | cut -f1 -d ' ')
-        if [ $bins == 0 ] ; then
+        lines=$(wc -l {input.tsv} | cut -f1 -d ' ')
+        if [ $lines == 1 ] ; then
             echo "NO BINS FOUND" > {output}
         else
             checkm coverage -x fa -t {threads} {params.dir} \
@@ -400,21 +455,42 @@ rule checkm_coverage:
         fi
         """
 
+rule remove_checkm_zerocols:
+    """
+    Pre-checks the checkm coverage file and removes zero count bam columns as
+    these can generate ZeroDivisionError in downstream rules.
+    """
+    input:
+        cov=opj(config["paths"]["results"], "binning", "{binner}",
+                "{assembly}", "{l}", "checkm", "coverage.tsv")
+    output:
+        cov=temp(opj(config["paths"]["results"], "binning", "{binner}",
+                     "{assembly}", "{l}", "checkm", "_coverage.tsv"))
+    script:
+        "../scripts/binning_utils.py"
+
 rule checkm_profile:
     input:
-        cov=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm", "coverage.tsv"),
-        stats=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "summary_stats.tsv")
+        cov=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}",
+                "{l}", "checkm", "_coverage.tsv"),
+        stats=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}",
+                  "{l}", "summary_stats.tsv")
     output:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm", "profile.tsv")
+        opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}",
+            "checkm", "profile.tsv")
     log:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm", "checkm_profile.log")
+        opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}",
+            "checkm", "checkm_profile.log")
     conda:
         "../envs/checkm.yml"
     shell:
         """
-        bins=$(wc -l {input.stats} | cut -f1 -d ' ')
-        if [ $bins == 0 ] ; then
+        lines=$(wc -l {input.stats} | cut -f1 -d ' ')
+        cov_lines=$(wc -l {input.cov} | cut -f1 -d ' ')
+        if [ $lines == 1 ] ; then
             echo "NO BINS FOUND" > {output}
+        elif [ $cov_lines == 0 ] ; then
+            echo "NO READS MAPPED" > {output}
         else
             checkm profile -f {output} --tab_table {input.cov} > {log} 2>&1
         fi
@@ -422,36 +498,35 @@ rule checkm_profile:
 
 rule aggregate_checkm_profiles:
     input:
-        expand(opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "checkm",
+        expand(opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "checkm",
                   "profile.tsv"),
-               group=assemblies.keys(),
+               assembly=assemblies.keys(),
                l=config["binning"]["contig_lengths"],
                binner=get_binners(config))
     output:
         tsv=opj(config["paths"]["results"], "report", "checkm", "checkm.profiles.tsv")
     run:
-        df=concatenate(input)
+        df=concatenate(input, index=-3)
         df.to_csv(output.tsv, sep="\t", index=True)
 
 rule aggregate_checkm_stats:
     input:
-        expand(opj(config["paths"]["results"], "binning", "{binner}", "{group}",
+        expand(opj(config["paths"]["results"], "binning", "{binner}", "{assembly}",
                    "{l}", "checkm", "genome_stats.extended.tsv"),
-               group=assemblies.keys(),
+               assembly=assemblies.keys(),
                l=config["binning"]["contig_lengths"],
                binner=get_binners(config))
     output:
         tsv=opj(config["paths"]["results"], "report", "checkm", "checkm.stats.tsv")
     run:
-        df=concatenate(input)
+        df=concatenate(input, index=-3)
         df.to_csv(output.tsv, sep="\t", index=True)
 
 ##### classify bins with gtdb-tk #####
 
 rule download_gtdb:
     output:
-        met=opj("resources", "gtdb", "metadata",
-                  "metadata.txt")
+        met=opj("resources", "gtdb", "metadata", "metadata.txt")
     log:
         opj("resources", "gtdb", "download.log")
     params:
@@ -466,13 +541,12 @@ rule download_gtdb:
 
 rule gtdbtk_classify:
     input:
-        met=opj("resources", "gtdb", "metadata",
-                  "metadata.txt"),
-        tsv=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "summary_stats.tsv")
+        met=opj("resources", "gtdb", "metadata", "metadata.txt"),
+        tsv=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "summary_stats.tsv")
     output:
-        touch(opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "gtdbtk", "done"))
+        touch(opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "gtdbtk", "done"))
     log:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "gtdbtk", "gtdbtk.log")
+        opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "gtdbtk", "gtdbtk.log")
     params:
         suff='fa',
         indir=lambda wildcards, input: os.path.dirname(input.tsv),
@@ -503,10 +577,10 @@ rule aggregate_gtdbtk:
     single table.
     """
     input:
-        expand(opj(config["paths"]["results"], "binning", "{binner}", "{group}",
+        expand(opj(config["paths"]["results"], "binning", "{binner}", "{assembly}",
                    "{l}", "gtdbtk", "done"),
                binner=get_binners(config),
-               group=assemblies.keys(),
+               assembly=assemblies.keys(),
                l=config["binning"]["contig_lengths"])
     output:
         summary=opj(config["paths"]["results"], "report", "gtdbtk", "gtdbtk.summary.tsv")
@@ -528,12 +602,12 @@ rule barrnap:
     Identify rRNA genes in genome bins
     """
     input:
-        tsv=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "summary_stats.tsv"),
-        gtdbtk=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "gtdbtk", "done")
+        tsv=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "summary_stats.tsv"),
+        gtdbtk=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "gtdbtk", "done")
     output:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "barrnap", "rRNA.gff")
+        opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "barrnap", "rRNA.gff")
     log:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "barrnap", "log")
+        opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "barrnap", "log")
     conda:
         "../envs/barrnap.yml"
     params:
@@ -566,10 +640,10 @@ rule barrnap:
 
 rule count_rRNA:
     input:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}",
+        opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}",
             "barrnap", "rRNA.gff")
     output:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}",
+        opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}",
             "barrnap", "rRNA.types.tsv")
     script:
         "../scripts/binning_utils.py"
@@ -580,12 +654,12 @@ rule trnascan_bins:
     Identify tRNA genes in genome bins
     """
     input:
-        tsv=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "summary_stats.tsv"),
-        gtdbtk=opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "gtdbtk", "done")
+        tsv=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "summary_stats.tsv"),
+        gtdbtk=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "gtdbtk", "done")
     output:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "tRNAscan", "tRNA.tsv")
+        opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "tRNAscan", "tRNA.tsv")
     log:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", "tRNAscan", "tRNA.log")
+        opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "tRNAscan", "tRNA.log")
     params:
         indir=lambda wildcards, input: os.path.dirname(input.tsv),
         gtdbtk_dir=lambda wildcards, input: os.path.dirname(input.gtdbtk)
@@ -619,12 +693,12 @@ rule trnascan_bins:
 
 rule count_tRNA:
     input:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", 
+        opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}",
             "tRNAscan", "tRNA.tsv")
     output:
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", 
+        opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}",
             "tRNAscan", "tRNA.types.tsv"),
-        opj(config["paths"]["results"], "binning", "{binner}", "{group}", "{l}", 
+        opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}",
             "tRNAscan", "tRNA.total.tsv")
     script:
         "../scripts/binning_utils.py"
@@ -632,14 +706,14 @@ rule count_tRNA:
 rule aggregate_bin_annot:
     input:
         trna=expand(opj(config["paths"]["results"], "binning", "{binner}", 
-                        "{group}", "{l}", "tRNAscan", "tRNA.total.tsv"),
+                        "{assembly}", "{l}", "tRNAscan", "tRNA.total.tsv"),
                     binner=get_binners(config),
-                    group=assemblies.keys(),
+                    assembly=assemblies.keys(),
                     l=config["binning"]["contig_lengths"]),
         rrna=expand(opj(config["paths"]["results"], "binning", "{binner}",
-                        "{group}", "{l}", "barrnap", "rRNA.types.tsv"),
+                        "{assembly}", "{l}", "barrnap", "rRNA.types.tsv"),
                     binner=get_binners(config),
-                    group=assemblies.keys(),
+                    assembly=assemblies.keys(),
                     l=config["binning"]["contig_lengths"])
     output:
         trna=opj(config["paths"]["results"], "report", "bin_annotation", "tRNA.total.tsv"),
@@ -649,3 +723,86 @@ rule aggregate_bin_annot:
         df.to_csv(output.trna, sep="\t", index=True)
         df=concatenate(input.rrna)
         df.to_csv(output.rrna, sep="\t", index=True)
+
+##### genome clustering #####
+
+rule download_ref_genome:
+    output:
+        opj("resources", "ref_genomes", "{genome_id}.fna")
+    params:
+        ftp_base = lambda wildcards: config["fastani"]["ref_genomes"][wildcards.genome_id]
+    script:
+        "../scripts/binning_utils.py"
+
+rule generate_fastANI_lists:
+    input:
+        bins=expand(opj(config["paths"]["results"], "binning", "{binner}",
+                          "{assembly}", "{l}", "checkm", "genome_stats.extended.tsv"),
+                    binner = get_binners(config), assembly = assemblies.keys(),
+                    l = config["binning"]["contig_lengths"]),
+        refs=expand(opj("resources", "ref_genomes", "{genome_id}.fna"),
+                    genome_id = config["fastani"]["ref_genomes"].keys())
+    output:
+        temp(opj(config["paths"]["results"], "binning", "fastANI", "refList")),
+        temp(opj(config["paths"]["results"], "binning", "fastANI", "queryList"))
+    params:
+        outdir = lambda wildcards, output: os.path.abspath(os.path.dirname(output[0]))
+    message:
+        "Generating input lists for fastANI"
+    script:
+        "../scripts/binning_utils.py"
+
+rule fastANI:
+    input:
+        opj(config["paths"]["results"], "binning", "fastANI", "refList"),
+        opj(config["paths"]["results"], "binning", "fastANI", "queryList")
+    output:
+        opj(config["paths"]["results"], "binning", "fastANI", "out.txt"),
+        opj(config["paths"]["results"], "binning", "fastANI", "out.txt.matrix")
+    log:
+        opj(config["paths"]["results"], "binning", "fastANI", "log")
+    threads: 8
+    params:
+        k = config["fastani"]["kmer_size"],
+        frag_len = config["fastani"]["frag_len"],
+        fraction = config["fastani"]["fraction"],
+        indir = lambda wildcards, input: os.path.dirname(input[0])
+    conda:
+        "../envs/fastani.yml"
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
+    shell:
+        """
+        fastANI --rl {input[0]} --ql {input[1]} -k {params.k} -t {threads} \
+            --fragLen {params.frag_len} --minFraction {params.fraction} \
+            --matrix -o {output[0]} > {log} 2>&1
+        rm {params.indir}/*.fa {params.indir}/*.fna
+        """
+
+rule cluster_genomes:
+    input:
+        mat=opj(config["paths"]["results"], "binning", "fastANI", "out.txt.matrix"),
+        txt=opj(config["paths"]["results"], "binning", "fastANI", "out.txt")
+    output:
+        opj(config["paths"]["results"], "report", "binning", "genome_clusters.tsv")
+    conda:
+        "../envs/fastani.yml"
+    params:
+        thresh = config["fastani"]["threshold"]
+    script:
+        "../scripts/binning_utils.py"
+
+##### rule to generate summary plots
+
+rule binning_report:
+    input:
+        binning_input(config, assemblies, report=True)
+    output:
+        report(opj(config["paths"]["results"], "report", "binning", "bin_report.pdf"),
+               category="Binning", caption="../report/binning.rst")
+    message:
+        "Plot summary stats of binned genomes"
+    conda:
+        "../envs/plotting.yml"
+    notebook:
+        "../notebooks/binning_report.py.ipynb"

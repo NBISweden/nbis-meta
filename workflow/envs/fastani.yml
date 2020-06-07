@@ -1,0 +1,10 @@
+name: fastani
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8.2
+  - fastani=1.3
+  - networkx=2.4
+  - pandas=1.0.3

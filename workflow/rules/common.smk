@@ -11,7 +11,8 @@ singularity: "docker://continuumio/miniconda3:4.8.2"
 
 ##### load and validate config #####
 
-configfile: "config/config.yaml"
+if os.path.exists("config/config.yaml"):
+    configfile: "config/config.yaml"
 validate(config, schema="../schemas/config.schema.yaml")
 
 ##### generate preprocess/postprocess strings #####
@@ -32,6 +33,7 @@ wildcard_constraints:
     unit="\d+",
     pair="se|R[12]",
     seq_type="[sp]e",
+    binner="[a-z]+",
     group="\w+",
     l="\d+"
 

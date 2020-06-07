@@ -91,9 +91,9 @@ remove_duplicates: True
 
 assembly:
   # run Megahit assembler?
-  megahit: True
+  megahit: False
   # Use Metaspades instead of Megahit for assembly?
-  metaspades: False
+  metaspades: True
 
 megahit:
   # maximum threads for megahit
@@ -262,4 +262,4 @@ metaphlan:
 # this sets the number of reads to generate for example input files
 # the files are generated based on the config/samples.tsv file and stored
 # under examples/data
-example_dataset_size: 100000
+example_dataset_size: 10000
