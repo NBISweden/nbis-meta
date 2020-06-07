@@ -310,8 +310,7 @@ def get_fastqc_files(sample, unit, pairs, config, pre):
 
 
 def get_trim_logs(sample, unit, pairs, config, d):
-    if not config["preprocessing"]["trimmomatic"] and not \
-        config["preprocessing"]["cutadapt"]:
+    if not config["preprocessing"]["trimmomatic"] and not config["preprocessing"]["cutadapt"]:
         return []
     if config["preprocessing"]["trimmomatic"]:
         trimmer = "trimmomatic"
