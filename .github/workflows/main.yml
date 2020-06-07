@@ -91,9 +91,11 @@ jobs:
         snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml --notemp -p classify
         rm -r examples/data/sample* results
     - name: Binning
-      run: snakemake --use-conda -j 4 --configfile .test/config/binning.yaml -p assemble bin
+      run: |
+        snakemake --use-conda -j 4 --configfile .test/config/binning.yaml -p assemble bin
     - name: Snakemake report
-      run: snakemake --report report.html
+      run: |
+        snakemake --use-conda -j 4 --configfile .test/config/binning.yaml -p --report report.html assemble bin
     - name: Upload snakemake report
       uses: actions/upload-artifact@v1
       with:
