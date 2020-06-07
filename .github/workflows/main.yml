@@ -64,24 +64,8 @@ jobs:
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/taxonomy.yaml -p taxonomy
         rm -r results examples/data/sample*
-    - name: Metabat
-      run: |
-        snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p bin assemble
-        snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p --report report.html bin assemble
-    - name: Upload snakemake report
-      uses: actions/upload-artifact@v1
-      with:
-        name: ${{ runner.os }}-test_report.html
-        path: report.html
-
-  test_linux:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: s-weigand/setup-conda@v1
-    - name: Install the conda environment
-      run: conda env update -n base -f environment.yml
     - name: Set up checkm database
+      if: ${{ runner.os == Linux }}
       uses: actions/cache@v2
       env:
         cache-name: checkm-db
@@ -92,11 +76,17 @@ jobs:
           ${{ runner.os }}-${{ env.cache-name }}
           ${{ runner.os }}-
     - name: Binning
-      run: snakemake --use-conda -j 4 --configfile .test/config/binning.yaml -p assemble bin
-    - name: Snakemake report
-      run: snakemake --report report.html
+      if: ${{ runner.os == Linux }}
+      run: |
+        snakemake --use-conda -j 4 --configfile .test/config/binning.yaml -p assemble bin
+        snakemake --use-conda -j 4 --configfile .test/config/binning.yaml -p --report report.html assemble bin
+    - name: Metabat
+      if: ${{ runner.os == macOS }}
+      run: |
+        snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p bin assemble
+        snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p --report report.html bin assemble
     - name: Upload snakemake report
       uses: actions/upload-artifact@v1
       with:
-        name: ${{ runner.os }}-test_linux_report.html
+        name: ${{ runner.os }}-test_report.html
         path: report.html
