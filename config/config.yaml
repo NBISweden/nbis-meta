@@ -45,7 +45,7 @@ trimmomatic:
     # ["TruSeq2-SE", "TruSeq3-SE"]
     adapter: "TruSeq3-SE"
     # parameters for trimming adapters on single-end samples
-    se_adapter_params: "2:30:15"
+    adapter_params: "2:30:15"
     # parameters for trimming prior to adapter removal on single-end samples
     pre_adapter_params: ""
     # parameters for trimming after adapter removal on single-end samples
@@ -59,7 +59,7 @@ cutadapt:
   # reverse adapter sequence to trim with cutadapt
   rev_adapter_sequence: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
   # maximum allowed error rate as value between 0 and 1 (no. of errors divided by length of matching region)
-  error_rate: 0.1 #Maximum allowed error rate as value between 0 and 1
+  error_rate: 0.1
 
 # parameters for sortmerna
 sortmerna:
