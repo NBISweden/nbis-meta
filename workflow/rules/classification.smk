@@ -338,7 +338,8 @@ rule metaphlan2krona:
         files = get_all_files(samples, opj(config["paths"]["results"], "metaphlan"), ".krona"),
         db = opj("resources", "krona", "taxonomy.tab")
     output:
-        opj(config["paths"]["results"], "report", "metaphlan", "metaphlan.html")
+        report(opj(config["paths"]["results"], "report", "metaphlan",
+                   "metaphlan.html"), category="Classification")
     log:
         opj(config["paths"]["results"], "report", "metaphlan", "krona.log")
     conda:
@@ -356,7 +357,8 @@ rule plot_metaphlan:
     input:
         opj(config["paths"]["results"], "report", "metaphlan", "metaphlan.tsv")
     output:
-        opj(config["paths"]["results"], "report", "metaphlan", "metaphlan.pdf")
+        report(opj(config["paths"]["results"], "report", "metaphlan",
+                   "metaphlan.pdf"), category="Classification")
     params:
         rank=config["metaphlan"]["plot_rank"]
     conda:
@@ -411,7 +413,8 @@ rule all2krona:
                                     "{classifier}"), ".html"),
         t=opj("resources", "krona", "taxonomy.tab")
     output:
-        opj(config["paths"]["results"], "report", "{classifier}", "{classifier}.krona.html")
+        report(opj(config["paths"]["results"], "report", "{classifier}",
+                   "{classifier}.krona.html"), category="Classification")
     log:
         opj(config["paths"]["results"], "report", "{classifier}", "{classifier}.krona.log")
     params:
