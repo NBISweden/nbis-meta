@@ -372,6 +372,14 @@ fastani:
       description: minimum number of aligned fragments to compare genomes
       default: 100
       minimum: 50
+    min_completeness:
+      type: integer
+      description: minimum estimated completeness for bins to include in clustering
+      default: 50
+    max_contamination:
+      type: integer
+      description: maximum estimated contamination for bins to include in clustering
+      default: 10
 
 classification:
   type: object

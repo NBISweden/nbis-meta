@@ -746,7 +746,9 @@ rule generate_fastANI_lists:
         temp(opj(config["paths"]["results"], "binning", "fastANI", "refList")),
         temp(opj(config["paths"]["results"], "binning", "fastANI", "queryList"))
     params:
-        outdir = lambda wildcards, output: os.path.abspath(os.path.dirname(output[0]))
+        outdir = lambda wildcards, output: os.path.abspath(os.path.dirname(output[0])),
+        completeness = config["fastani"]["min_completeness"],
+        contamination = config["fastani"]["max_contamination"]
     message:
         "Generating input lists for fastANI"
     script:

@@ -240,12 +240,14 @@ def download_ref_genome(sm):
     unzip("{}.gz".format(sm.output[0]), sm.output[0])
 
 
-def generate_bin_list(input, outdir):
+def generate_bin_list(input, outdir, min_completeness, max_contamination):
     """
     Generates a list of bins to use for fastANI
     Also symlinks each bin file into the fastANI folder
-    :param input:
-    :param outdir:
+    :param input: List of checkm genome statistics files
+    :param outdir: Output directory to store symlinks
+    :param min_completeness: Minimum completeness level (%)
+    :param max_contamination: Maximum contamination level (%)
     :return:
     """
     genomes = []
@@ -261,8 +263,8 @@ def generate_bin_list(input, outdir):
         abs_in = os.path.abspath(bindir)
         # read the checkm summary file
         df = pd.read_csv(f, sep="\t", index_col=0)
-        # filter to at least 50% complete and at most 10% contamination
-        df = df.loc[(df.Completeness >= 50) & (df.Contamination <= 10)]
+        # filter to at least <min_completeness> and at most <max_contamination>
+        df = df.loc[(df.Completeness >= min_completeness) & (df.Contamination <= max_contamination)]
         if df.shape[0] == 0:
             continue
         # generate a unique suffix for each bin
@@ -323,7 +325,9 @@ def generate_fastANI_lists(sm):
     :param sm:
     :return:
     """
-    bins = generate_bin_list(sm.input.bins, sm.params.outdir)
+    bins = generate_bin_list(sm.input.bins, sm.params.outdir,
+                             sm.params.completeness,
+                             sm.params.contamination)
     refs = generate_ref_list(sm.input.refs, sm.params.outdir)
     genomes = bins + refs
     write_list(genomes, sm.output[0])

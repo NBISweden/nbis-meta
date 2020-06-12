@@ -222,6 +222,10 @@ fastani:
   frag_len: 3000
   # minimum number of aligned fragments to consider a pair of genomes for clustering
   minfrags: 100
+  # minimum estimated completeness for bins to include in clustering
+  min_completeness: 50
+  # maximum estimated contamination for bins to include in clustering
+  max_contamination: 10
 
 # parameters for bowtie2
 bowtie2:
