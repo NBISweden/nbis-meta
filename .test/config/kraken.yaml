@@ -91,7 +91,7 @@ remove_duplicates: True
 
 assembly:
   # run Megahit assembler?
-  megahit: True
+  megahit: False
   # Use Metaspades instead of Megahit for assembly?
   metaspades: False
 
