@@ -152,7 +152,9 @@ def check_annotation(config):
     """
     # Check whether to set annotation downstream of assembly
     tools = [config["annotation"][key] for key in config["annotation"].keys()]
-    if True in tools:
+    assems = [config["assembly"]["metaspades"], config["assembly"]["megahit"]]
+    config["run_assembly"] = False
+    if True in tools and True in assems:
         config["run_annotation"] = True
         # if True also assume the user wants assembly
         config["run_assembly"] = True
@@ -160,8 +162,6 @@ def check_annotation(config):
         if not config["assembly"]["megahit"] and not config["assembly"][
             "metaspades"]:
             config["assembly"]["megahit"] = True
-    else:
-        config["run_annotation"] = False
     return config
 
 
@@ -594,6 +594,8 @@ def concatenate(input, index):
 
 def annotation_input(config, assemblies):
     input = []
+    if not config["assembly"]["megahit"] and not config["assembly"]["metaspades"]:
+        return input
     for group in assemblies.keys():
         # Add orfcalling results
         input.append(opj(config["paths"]["results"], "annotation", group,
