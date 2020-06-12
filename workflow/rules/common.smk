@@ -13,7 +13,7 @@ singularity: "docker://continuumio/miniconda3:4.8.2"
 
 if os.path.exists("config/config.yaml"):
     configfile: "config/config.yaml"
-validate(config, schema="../schemas/config.schema.yaml")
+validate(config, schema="../schemas/config.schema.yaml", set_default=True)
 
 ##### generate preprocess/postprocess strings #####
 from scripts.common import prepost_string
