@@ -310,7 +310,8 @@ def get_fastqc_files(sample, unit, pairs, config, pre):
 
 
 def get_trim_logs(sample, unit, pairs, config, d):
-    if not config["preprocessing"]["trimmomatic"] and not config["preprocessing"]["cutadapt"]:
+    if not config["preprocessing"]["trimmomatic"] and not \
+    config["preprocessing"]["cutadapt"]:
         return []
     if config["preprocessing"]["trimmomatic"]:
         trimmer = "trimmomatic"
@@ -442,16 +443,18 @@ def rename_records(f, fh, i):
 
 # binning functions
 
-def binning_input(config, assemblies, report=False):
+def binning_input(config, report=False):
     """
     Generates input list for the binning part of the workflow
 
     :param config: Snakemake config
-    :param assemblies: Dictionary of assemblies
+    :param report: Whether to gather input for the bin report rule
     :return:
     """
-    bin_input = [opj(config["paths"]["results"], "report", "binning",
-                     "binning_summary.tsv")]
+    bin_input = []
+    if len(get_binners(config)) > 0:
+        bin_input.append(opj(config["paths"]["results"], "report", "binning",
+                             "binning_summary.tsv"))
     if config["binning"]["checkm"]:
         bin_input.append(opj(config["paths"]["results"], "report", "checkm",
                              "checkm.stats.tsv"))

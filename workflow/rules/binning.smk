@@ -30,7 +30,7 @@ localrules:
 
 rule bin:
     input:
-        binning_input(config, assemblies),
+        binning_input(config),
         opj(config["paths"]["results"], "report", "binning", "bin_report.pdf")
 
 ##### target rule for running checkm analysis #####
@@ -796,7 +796,7 @@ rule cluster_genomes:
 
 rule binning_report:
     input:
-        binning_input(config, assemblies, report=True)
+        binning_input(config, report=True)
     output:
         report(opj(config["paths"]["results"], "report", "binning", "bin_report.pdf"),
                category="Binning", caption="../report/binning.rst")
