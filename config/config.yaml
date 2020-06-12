@@ -220,6 +220,8 @@ fastani:
   kmer_size: 16
   # fragment length used to calculate ANI
   frag_len: 3000
+  # minimum number of aligned fragments to consider a pair of genomes for clustering
+  minfrags: 100
 
 # parameters for bowtie2
 bowtie2:

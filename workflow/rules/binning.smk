@@ -788,7 +788,8 @@ rule cluster_genomes:
     conda:
         "../envs/fastani.yml"
     params:
-        thresh = config["fastani"]["threshold"]
+        thresh = config["fastani"]["threshold"],
+        minfrags = config["fastani"]["minfrags"]
     script:
         "../scripts/binning_utils.py"
 

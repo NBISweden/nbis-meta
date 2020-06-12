@@ -345,7 +345,7 @@ def check_pairs(pairs, min_frags):
     return allowed_pairs
 
 
-def fastani2dist(mat, txt, min_frags=500):
+def fastani2dist(mat, txt, min_frags):
     """
     Converts the fastANI out.txt.matrix file to a pandas DataFrame
     :param mat: Distance matrix file
@@ -444,7 +444,7 @@ def cluster_genomes(sm):
     :param sm: snakemake object
     :return:
     """
-    dist = fastani2dist(sm.input.mat, sm.input.txt)
+    dist = fastani2dist(sm.input.mat, sm.input.txt, sm.params.minfrags)
     linkage = generate_linkage(dist, sm.params.thresh)
     clusters = cluster(linkage)
     write_clusters(clusters, sm.output[0])

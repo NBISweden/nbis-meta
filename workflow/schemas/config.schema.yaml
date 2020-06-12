@@ -367,6 +367,11 @@ fastani:
       default: 0.05
       minimum: 0.0
       maximum: 1.0
+    minfrags:
+      type: integer
+      description: minimum number of aligned fragments to compare genomes
+      default: 100
+      minimum: 50
 
 classification:
   type: object
