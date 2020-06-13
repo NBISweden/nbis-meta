@@ -16,141 +16,144 @@ properties:
       results:
         type: string
         description: main base folder for results
-        default: "results"
       temp:
         type: string
         description: temporary path
-        default: "temp"
+    default:
+      results: "results"
+      temp: "temp"
 
   preprocessing:
     type: object
+    default:
+      fastqc: True
+      trimmomatic: True
+      cutadapt: False
+      fastuniq: False
+      phix_filter: False
+      sortmerna: False
     properties:
       fastqc:
         type: boolean
         description: run fastqc?
-        default: True
       trimmomatic:
         type: boolean
         description: run trimmomatic?
-        default: True
       cutadapt:
         type: boolean
         description: run cutadapt (instead of trimmomatic)?
-        default: False
       fastuniq:
         type: boolean
         description: run fastuniq?
-        default: False
       phix_filter:
         type: boolean
         description: run phix filtering?
-        default: False
       sortmerna:
         type: boolean
         description: run sortmerna?
-        default: False
 
   trimmomatic:
     type: object
+    default:
+      trim_adapters: True
+      pe:
+        adapter: "TruSeq3-PE-2"
+        adapter_params: "2:30:15"
+        pre_adapter_params: ""
+        post_adapter_params: "LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:31"
+      se:
+        adapter: "TruSeq3-SE"
+        adapter_params: "2:30:15"
+        pre_adapter_params: ""
+        post_adapter_params: "LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:31"
     properties:
       trim_adapters:
         type: boolean
         description: trim adapters (in addition to quality trimming)?
-        default: True
       pe:
         type: object
         properties:
           adapter:
             type: string
             description: adapter type to trim from paired end libraries
-            default: "TruSeq3-PE-2"
             enum: ["NexteraPE-PE", "TruSeq2-PE", "TruSeq3-PE", "TruSeq3-PE-2"]
           adapter_params:
             type: string
             description: parameters for trimming adapters on paired-end samples
-            default: "2:30:15"
           pre_adapter_params:
             type: string
             description: parameters for trimming prior to adapter removal on paired-end samples
-            default: ""
           post_adapter_params:
             type: string
             description: parameters for trimming after adapter removal on paired-end samples
-            default: "LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:31"
       se:
         type: object
         properties:
           adapter:
             type: string
             description: adapter type to trim from single-end libraries
-            default: "TruSeq3-SE"
             enum: ["TruSeq2-SE", "TruSeq3-SE"]
           adapter_params:
             type: string
             description: parameters for trimming adapters on single-end samples
-            default: "2:30:15"
           pre_adapter_params:
             type: string
             description: parameters for trimming prior to adapter removal on single-end samples
-            default: ""
           post_adapter_params:
             type: string
             description: parameters for trimming after adapter removal on single-end samples
-            default: "LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:31"
 
   cutadapt:
     type: object
+    default:
+      adapter_sequence: "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA"
+      rev_adapter_sequence: "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
+      error_rate: 0.1
     properties:
       adapter_sequence:
         type: string
         description: adapter sequence to trim with cutadapt
-        default: "AGATCGGAAGAGCACACGTCTGAACTCCAGTCA"
       rev_adapter_sequence:
         type: string
         description: reverse adapter sequence to trim with cutadapt
-        default: "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT"
       error_rate:
         type: number
         description:
-        default: 0.1
         minimum: 0
         maximum: 1
 
   sortmerna:
     type: object
+    default:
+      keep: "non_rRNA"
+      dbs:
+        - "rfam-5s-database-id98.fasta"
+        - "rfam-5.8s-database-id98.fasta"
+        - "silva-arc-16s-id95.fasta"
+        - "silva-arc-23s-id98.fasta"
+        - "silva-bac-16s-id90.fasta"
+        - "silva-bac-23s-id98.fasta"
+        - "silva-euk-18s-id95.fasta"
+        - "silva-euk-28s-id98.fasta"
+      paired_strategy: "paired_in"
+      extra_settings: "--num_alignments 1"
     properties:
       keep:
         type: string
         description: which reads should be used for downstream analyses
-        default: "non_rRNA"
         enum: ["rRNA", "non_rRNA"]
-      remov_filtered:
-        type: boolean
-        description: remove filtered reads (i.e. the reads NOT specified in 'keep:')
-        default: False
       dbs:
         type: array
         description: databases to use for rRNA identification
         items:
           type: string
-        default:
-          - "rfam-5s-database-id98.fasta"
-          - "rfam-5.8s-database-id98.fasta"
-          - "silva-arc-16s-id95.fasta"
-          - "silva-arc-23s-id98.fasta"
-          - "silva-bac-16s-id90.fasta"
-          - "silva-bac-23s-id98.fasta"
-          - "silva-euk-18s-id95.fasta"
-          - "silva-euk-28s-id98.fasta"
       paired_strategy:
         type: string
         description: how should sortmerna handle paired end reads
-        default: "paired_in"
         enum: ["paired_in", "paired_out"]
       extra_settings:
         type: string
         description: extra settings for sortmerna
-        default: "--num_alignments 1"
 
   remove_duplicates:
     type: boolean
@@ -159,6 +162,9 @@ properties:
 
   assembly:
     type: object
+    default:
+      megahit: True
+      metaspades: False
     properties:
       megahit:
         type: boolean
@@ -171,305 +177,318 @@ properties:
 
   megahit:
     type: object
+    default:
+      threads: 20
+      keep_intermediate: False
+      extra_settings: "--min-contig-len 300 --prune-level 3"
     properties:
       threads:
         type: integer
         description: maximum threads to use for megahit assembler
-        default: 20
         minimum: 1
     keep_intermediate:
       type: boolean
       description: keep intermediate contigs from megahit?
-      default: False
     extra_settings:
       type: string
       description: extra settings to pass to megahit
-      default: "--min-contig-len 300 --prune-level 3"
 
   metaspades:
     type: object
+    default:
+      threads: 20
+      keep_intermediate: False
+      keep_corrected: True
+      extra_settings: "-k 21,31,41,51,61,71,81,91,101,111,121"
     properties:
       threads:
         type: integer
         description: maximum threads to use for metaspades assembler
-        default: 20
         minimum: 1
       keep_intermediate:
         type: boolean
         description: keep intermediate contigs from metaspades?
-        default: False
       keep_corrected:
         type: boolean
         description: keep corrected reads produced during metaspades assembly?
-        default: True
       extra_settings:
         type: string
         description: extra settings passed to metaspades
-        default: "-k 21,31,41,51,61,71,81,91,101,111,121"
 
   annotation:
     type: object
+    default:
+      tRNAscan: False
+      infernal: True
+      eggnog: False
+      pfam: True
+      taxonomy: False
     properties:
       tRNAscan:
         type: boolean
         description: run tRNAscan-SE to identify tRNAs on contigs?
-        default: False
       internal:
         type: boolean
         description: run infernal to identify rRNAs on contigs?
-        default: True
       eggnog:
         type: boolean
         description: run eggnog-mapper to infer KEGG orthologs, pathways and modules
-        default: False
       pfam:
         type: boolean
         description: run PFAM-scan to infer PFAM protein families
-        default: True
       taxonomy:
         type: boolean
         description: run taxonomic annotation of contigs
-        default: False
 
   taxonomy:
     type: object
+    default:
+      min_len: 300
+      search_params: "--evalue 0.01 --top 10"
+      assign_params: "--evalue 0.001 --top 5"
+      sourmash_fraction: 100
+      ranks:
+        - "superkingdom"
+        - "phylum"
+        - "class"
+        - "order"
+        - "family"
+        - "genus"
+        - "species"
+      database: "uniref100"
     properties:
       min_len:
         type: integer
         description: minimum length of contigs to assign taxonomy to
-        default: 300
       search_params:
         type: string
         description: parameters for contigtax search
-        default: "--evalue 0.01 --top 10"
       assign_params:
         type: string
         description: parameters for contigtax assign
-        default: "--evalue 0.001 --top 5"
       sourmash_fraction:
         type: integer
         description: Hash fraction to use for sourmash when computing signatures for contigs
-        default: 100
       ranks:
         type: array
         description: ranks to report taxonomy for
-        default:
-          - "superkingdom"
-          - "phylum"
-          - "class"
-          - "order"
-          - "family"
-          - "genus"
-          - "species"
         items:
           type: string
           enum: ["superkingdom","kingdom","phylum","class","order","family","genus","species"]
       database:
         type: string
         description: protein database to use for taxonomic assignments
-        default: "uniref100"
         enum: ["uniref100", "uniref90", "uniref50", "nr"]
 
   binning:
     type: object
+    default:
+      contig_lengths:
+        - 1500
+      metabat: False
+      maxbin: False
+      concoct: False
+      fastani: False
+      threads: 20
+      checkm: False
+      gtdbtk: False
     properties:
       contig_lengths:
         type: array
         description: minimum contig lengths to use for binning
-        default:
-          - 1500
         items:
           type: integer
         minimum: 1500
       metabat:
         type: boolean
         description: run metabat2 binner
-        default: False
       maxbin:
         type: boolean
         description: run maxbin2 binner
-        default: False
       concoct:
         type: boolean
         description: run concoct binner
-        default: False
       fastani:
         type: boolean
         description: run fastANI to calculate average nucleotide identity for genomes
-        default: False
       threads:
         type: integer
         description: maximum number of threads for binners
-        default: 20
         minimum: 1
       checkm:
         type: boolean
         description: assess quality of bins with checkm?
-        default: False
       gtdbtk:
         type: boolean
         description: run gtdbtk to classify bins?
-        default: False
 
-maxbin:
-  type: object
-  properties:
-    markerset:
-      type: integer
-      description: muse either markerset 40 (prokaryotes) or 107 (bacteria only)
-      default: 40
+  maxbin:
+    type: object
+    default:
+      markerset: 40
+    properties:
+      markerset:
+        type: integer
+        description: use either markerset 40 (prokaryotes) or 107 (bacteria only)
 
-checkm:
-  type: object
-  properties:
-    taxonomy_wf:
-      type: boolean
-      description: run checkm taxonomy wf instead of lineage wf
-      default: False
-    rank:
-      type: string
-      description: rank to use for checkm taxonomy wf
-      default: "life"
-    taxon:
-      type: string
-      description: taxon to use for checkm taxonomy wf
-      default: "Prokaryote"
-    reduced_tree:
-      type: boolean
-      description: use a reduced pplacer reference tree?
-      default: False
+  checkm:
+    type: object
+    default:
+      taxonomy_wf: False
+      rank: "life"
+      taxon: "Prokaryote"
+      reduced_tree: False
+    properties:
+      taxonomy_wf:
+        type: boolean
+        description: run checkm taxonomy wf instead of lineage wf
+      rank:
+        type: string
+        description: rank to use for checkm taxonomy wf
+      taxon:
+        type: string
+        description: taxon to use for checkm taxonomy wf
+      reduced_tree:
+        type: boolean
+        description: use a reduced pplacer reference tree?
 
-fastani:
-  type: object
-  properties:
-    kmer_size:
-      type: integer
-      description: kmer size to use for fastANI
-      default: 16
-      maximum: 16
-    frag_len:
-      type: integer
-      description: fragment length used to calculate ANI
-      default: 3000
-    fraction:
-      type: number
-      description: aligned fraction required between pairs of genomes
-      default: 0.5
-      minimum: 0.0
-      maximum: 1.0
-    ref_list:
-      type: string
-      description: path to a list of reference genomes to include in ANI calculation
-      default: ""
-    threshold:
-      type: number
-      description: distance threshold at which to cluster genomes
-      default: 0.05
-      minimum: 0.0
-      maximum: 1.0
-    minfrags:
-      type: integer
-      description: minimum number of aligned fragments to compare genomes
-      default: 100
-      minimum: 50
-    min_completeness:
-      type: integer
-      description: minimum estimated completeness for bins to include in clustering
-      default: 50
-    max_contamination:
-      type: integer
-      description: maximum estimated contamination for bins to include in clustering
-      default: 10
+  fastani:
+    type: object
+    default:
+      kmer_size: 16
+      frag_len: 3000
+      fraction: 0.5
+      ref_list: ""
+      threshold: 0.5
+      minfrags: 100
+      min_completeness: 50
+      max_contamination: 10
+    properties:
+      kmer_size:
+        type: integer
+        description: kmer size to use for fastANI
+        maximum: 16
+      frag_len:
+        type: integer
+        description: fragment length used to calculate ANI
+      fraction:
+        type: number
+        description: aligned fraction required between pairs of genomes
+        minimum: 0.0
+        maximum: 1.0
+      ref_list:
+        type: string
+        description: path to a list of reference genomes to include in ANI calculation
+      threshold:
+        type: number
+        description: distance threshold at which to cluster genomes
+        minimum: 0.0
+        maximum: 1.0
+      minfrags:
+        type: integer
+        description: minimum number of aligned fragments to compare genomes
+        minimum: 50
+      min_completeness:
+        type: integer
+        description: minimum estimated completeness for bins to include in clustering
+      max_contamination:
+        type: integer
+        description: maximum estimated contamination for bins to include in clustering
 
-classification:
-  type: object
-  properties:
-    kraken:
-      type: boolean
-      description: run kraken2 read classifier?
-      default: True
-    centrifuge:
-      type: boolean
-      description: run centrifuge classifier?
-      default: False
-    metaphlan:
-      type: boolean
-      description: run metaphlan profiler?
-      default: False
+  classification:
+    type: object
+    default:
+      kraken: True
+      centrifuge: False
+      metaphlan: False
+    properties:
+      kraken:
+        type: boolean
+        description: run kraken2 read classifier?
+      centrifuge:
+        type: boolean
+        description: run centrifuge classifier?
+      metaphlan:
+        type: boolean
+        description: run metaphlan profiler?
 
-kraken:
-  type: object
-  properties:
-    standard_db:
-      type: boolean
-      description: download and build standard kraken database
-      default: False
-    prebuilt:
-      type: string
-      description: download prebuilt kraken2 database
-      default: "minikraken_8GB"
-      enum: ["16S_Greengenes","16S_RDP","16S_Silva","minikraken_8GB"]
-    custom:
-      type: string
-      description: path to existing kraken database if one exists
-      default: ""
-    reduce_memory:
-      type: boolean
-      description: run kraken2 with reduced memory requirements?
-      default: False
+  kraken:
+    type: object
+    default:
+      standard_db: False
+      prebuilt: "minikraken_8GB"
+      custom: ""
+      reduce_memory: False
+    properties:
+      standard_db:
+        type: boolean
+        description: download and build standard kraken database
+      prebuilt:
+        type: string
+        description: download prebuilt kraken2 database
+        enum: ["16S_Greengenes","16S_RDP","16S_Silva","minikraken_8GB"]
+      custom:
+        type: string
+        description: path to existing kraken database if one exists
+      reduce_memory:
+        type: boolean
+        description: run kraken2 with reduced memory requirements?
 
-centrifuge:
-  type: object
-  properties:
-    prebuilt:
-      type: string
-      description: prebuilt database to download for centrifuge
-      default: "p_compressed+h+v"
-      enum: ["p+h+v","nt_2018_2_12","nt_2018_3_3","p_compressed+h+v", "p_compressed_2018_4_15"]
-    custom:
-      type: string
-      description: path to existing centrifuge database if one exists
-      default: ""
-    min_score:
-      type: integer
-      description: minimum score to use for centrifuge assignments
-      default: 75
-    max_assignments:
-      type: integer
-      description: maximum number of assignments per read
-      default: 1
+  centrifuge:
+    type: object
+    default:
+      prebuilt: "p_compressed+h+v"
+      custom: ""
+      min_score: 75
+      max_assignments: 1
+    properties:
+      prebuilt:
+        type: string
+        description: prebuilt database to download for centrifuge
+        enum: ["p+h+v","nt_2018_2_12","nt_2018_3_3","p_compressed+h+v", "p_compressed_2018_4_15"]
+      custom:
+        type: string
+        description: path to existing centrifuge database if one exists
+      min_score:
+        type: integer
+        description: minimum score to use for centrifuge assignments
+      max_assignments:
+        type: integer
+        description: maximum number of assignments per read
 
-metaphlan:
-  type: object
-  properties:
-    index:
-      type: string
-      description: index version to use for metaphlan
-      default: "mpa_v30_CHOCOPhlAn_201901"
-      enum: ["mpa_v30_CHOCOPhlAn_201901"]
-    plot_rank:
-      type: string
-      description: rank to summarize and plot clustermap
-      default: "genus"
-      enum: ["superkingdom","phylum","class","order","family","genus","species"]
+  metaphlan:
+    type: object
+    default:
+      index: "mpa_v30_CHOCOPhlAn_201901"
+      plot_rank: "genus"
+    properties:
+      index:
+        type: string
+        description: index version to use for metaphlan
+        enum: ["mpa_v30_CHOCOPhlAn_201901"]
+      plot_rank:
+        type: string
+        description: rank to summarize and plot clustermap
+        enum: ["superkingdom","phylum","class","order","family","genus","species"]
 
-bowtie2:
-  type: object
-  properties:
-    threads:
-      type: integer
-      description: maximum number of threads to use for bowtie2
-      default: 10
-      minimum: 1
-    extra_settings:
-      type: string
-      description: extra settings to pass to bowtie2
-      default: "--very-sensitive"
+  bowtie2:
+    type: object
+    default:
+      threads: 10
+      extra_settings: "--very-sensitive"
+    properties:
+      threads:
+        type: integer
+        description: maximum number of threads to use for bowtie2
+        minimum: 1
+      extra_settings:
+        type: string
+        description: extra settings to pass to bowtie2
 
-example_dataset_size:
-  type: integer
-  description: number of reads to generate per example dataset
-  default: 100000
+  example_dataset_size:
+    type: integer
+    description: number of reads to generate per example dataset
+    default: 100000
 
-required:
-  - sample_list
+  required:
+    - sample_list
