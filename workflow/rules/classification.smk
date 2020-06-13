@@ -338,7 +338,8 @@ rule metaphlan2krona:
         files = get_all_files(samples, opj(config["paths"]["results"], "metaphlan"), ".krona"),
         db = opj("resources", "krona", "taxonomy.tab")
     output:
-        opj(config["paths"]["results"], "report", "metaphlan", "metaphlan.html")
+        opj(config["paths"]["results"], "report", "metaphlan",
+                   "metaphlan.html")
     log:
         opj(config["paths"]["results"], "report", "metaphlan", "krona.log")
     conda:
@@ -356,7 +357,8 @@ rule plot_metaphlan:
     input:
         opj(config["paths"]["results"], "report", "metaphlan", "metaphlan.tsv")
     output:
-        opj(config["paths"]["results"], "report", "metaphlan", "metaphlan.pdf")
+        opj(config["paths"]["results"], "report", "metaphlan",
+                   "metaphlan.pdf")
     params:
         rank=config["metaphlan"]["plot_rank"]
     conda:
@@ -390,6 +392,9 @@ rule classifier2krona:
     output:
         opj(config["paths"]["results"], "{classifier}",
             "{sample}_{unit}_{seq_type}.html")
+    log:
+        opj(config["paths"]["results"], "{classifier}",
+            "{sample}_{unit}_{seq_type}.krona.log")
     params:
         tax="resources/krona"
     conda:
@@ -398,9 +403,8 @@ rule classifier2krona:
         "docker://continuumio/miniconda3:4.8.2"
     shell:
         """
-        ktImportTaxonomy -t 5 -m 3 \
-            -tax {params.tax} -o {output[0]} \
-            {input[0]},{wildcards.sample}_{wildcards.unit}
+        ktImportTaxonomy -t 5 -m 3 -tax {params.tax} -o {output[0]} \
+            {input[0]},{wildcards.sample}_{wildcards.unit} > {log} 2>&1
         """
 
 rule all2krona:
@@ -411,7 +415,8 @@ rule all2krona:
                                     "{classifier}"), ".html"),
         t=opj("resources", "krona", "taxonomy.tab")
     output:
-        opj(config["paths"]["results"], "report", "{classifier}", "{classifier}.krona.html")
+        opj(config["paths"]["results"], "report", "{classifier}",
+                   "{classifier}.krona.html")
     log:
         opj(config["paths"]["results"], "report", "{classifier}", "{classifier}.krona.log")
     params:

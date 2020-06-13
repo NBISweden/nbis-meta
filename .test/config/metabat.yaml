@@ -117,11 +117,11 @@ annotation:
   # run tRNAscan-SE?
   tRNAscan: False
   # run infernal for rRNA identification?
-  infernal: True
+  infernal: False
   # run eggnog-mapper to infer KEGG orthologs, pathways and modules?
   eggnog: False
   # run PFAM-scan to infer protein families from PFAM?
-  pfam: True
+  pfam: False
   # run Resistance gene identifier?
   rgi: False
   # run taxonomic annotation of assembled contigs (using tango + sourmash)?
@@ -208,7 +208,7 @@ bowtie2:
 # what type of read-based classification to do
 classification:
   # run kraken2 read classifier?
-  kraken: True
+  kraken: False
   # run centrifuge to classify reads
   centrifuge: False
   # run metaphlan profiler?

@@ -30,7 +30,7 @@ localrules:
 
 rule bin:
     input:
-        binning_input(config, assemblies),
+        binning_input(config),
         opj(config["paths"]["results"], "report", "binning", "bin_report.pdf")
 
 ##### target rule for running checkm analysis #####
@@ -746,7 +746,9 @@ rule generate_fastANI_lists:
         temp(opj(config["paths"]["results"], "binning", "fastANI", "refList")),
         temp(opj(config["paths"]["results"], "binning", "fastANI", "queryList"))
     params:
-        outdir = lambda wildcards, output: os.path.abspath(os.path.dirname(output[0]))
+        outdir = lambda wildcards, output: os.path.abspath(os.path.dirname(output[0])),
+        completeness = config["fastani"]["min_completeness"],
+        contamination = config["fastani"]["max_contamination"]
     message:
         "Generating input lists for fastANI"
     script:
@@ -788,7 +790,8 @@ rule cluster_genomes:
     conda:
         "../envs/fastani.yml"
     params:
-        thresh = config["fastani"]["threshold"]
+        thresh = config["fastani"]["threshold"],
+        minfrags = config["fastani"]["minfrags"]
     script:
         "../scripts/binning_utils.py"
 
@@ -796,7 +799,7 @@ rule cluster_genomes:
 
 rule binning_report:
     input:
-        binning_input(config, assemblies, report=True)
+        binning_input(config, report=True)
     output:
         report(opj(config["paths"]["results"], "report", "binning", "bin_report.pdf"),
                category="Binning", caption="../report/binning.rst")

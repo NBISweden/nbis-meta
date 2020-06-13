@@ -152,7 +152,9 @@ def check_annotation(config):
     """
     # Check whether to set annotation downstream of assembly
     tools = [config["annotation"][key] for key in config["annotation"].keys()]
-    if True in tools:
+    assems = [config["assembly"]["metaspades"], config["assembly"]["megahit"]]
+    config["run_assembly"] = False
+    if True in tools and True in assems:
         config["run_annotation"] = True
         # if True also assume the user wants assembly
         config["run_assembly"] = True
@@ -160,8 +162,6 @@ def check_annotation(config):
         if not config["assembly"]["megahit"] and not config["assembly"][
             "metaspades"]:
             config["assembly"]["megahit"] = True
-    else:
-        config["run_annotation"] = False
     return config
 
 
@@ -310,7 +310,8 @@ def get_fastqc_files(sample, unit, pairs, config, pre):
 
 
 def get_trim_logs(sample, unit, pairs, config, d):
-    if not config["preprocessing"]["trimmomatic"] and not config["preprocessing"]["cutadapt"]:
+    if not config["preprocessing"]["trimmomatic"] and not \
+    config["preprocessing"]["cutadapt"]:
         return []
     if config["preprocessing"]["trimmomatic"]:
         trimmer = "trimmomatic"
@@ -442,16 +443,18 @@ def rename_records(f, fh, i):
 
 # binning functions
 
-def binning_input(config, assemblies, report=False):
+def binning_input(config, report=False):
     """
     Generates input list for the binning part of the workflow
 
     :param config: Snakemake config
-    :param assemblies: Dictionary of assemblies
+    :param report: Whether to gather input for the bin report rule
     :return:
     """
-    bin_input = [opj(config["paths"]["results"], "report", "binning",
-                     "binning_summary.tsv")]
+    bin_input = []
+    if len(get_binners(config)) > 0:
+        bin_input.append(opj(config["paths"]["results"], "report", "binning",
+                             "binning_summary.tsv"))
     if config["binning"]["checkm"]:
         bin_input.append(opj(config["paths"]["results"], "report", "checkm",
                              "checkm.stats.tsv"))
@@ -591,6 +594,8 @@ def concatenate(input, index):
 
 def annotation_input(config, assemblies):
     input = []
+    if not config["assembly"]["megahit"] and not config["assembly"]["metaspades"]:
+        return input
     for group in assemblies.keys():
         # Add orfcalling results
         input.append(opj(config["paths"]["results"], "annotation", group,
