@@ -39,3 +39,30 @@ rule generate_examples:
          seqtk sample -s {wildcards.s} {input} \
             {params.example_dataset_size} | gzip -c > {output}
          """
+
+rule download_cami_data:
+    output:
+        "data/cami/{dataset}.fq.gz"
+    shadow: "minimal"
+    shell:
+        """
+        # Download cami client
+        curl -O https://data.cami-challenge.org/camiClient.jar
+        java -jar camiClient.jar -d https://openstack.cebitec.uni-bielefeld.de:8080/swift/v1/{wildcards.dataset} $TMPDIR/ -p fq.gz
+        mv $TMPDIR/*.fq.gz {output[0]}
+        """
+
+rule deinterleave_cami_data:
+    input:
+        "data/cami/{dataset}.fq.gz"
+    output:
+        "data/cami/{dataset}_R{i}.fastq.gz"
+    conda:
+        "../envs/examples.yml"
+    shell:
+        """
+        seqtk seq -{wildcards.i} {input} | \
+            sed 's/^@\([0-9A-Za-z]\+\)|\([0-9A-Za-z]\+\)|\([0-9A-Za-z]\+\)\/{wildcards.i}/@\1|\2|\3 {wildcards.i}/g' | \
+            gzip -c > $TMPDIR/{wildcards.dataset}_R{wildcards.i}.fastq.gz
+        mv $TMPDIR/{wildcards.dataset}_R{wildcards.i}.fastq.gz {output}
+        """
