@@ -1,0 +1,5 @@
+sample	unit	assembly	fq1	fq2
+RM1_S001	1	CAMI_I_MEDIUM,RM1	data/cami/RM1_S001__insert_5000_R1.fastq.gz	data/cami/RM1_S001__insert_5000_R2.fastq.gz
+RM1_S002	2	CAMI_I_MEDIUM,RM1	data/cami/RM1_S002__insert_5000_R1.fastq.gz	data/cami/RM1_S002__insert_5000_R2.fastq.gz
+RM2_S001	1	CAMI_I_MEDIUM,RM2	data/cami/RM2_S001__insert_270_R1.fastq.gz	data/cami/RM2_S001__insert_270_R2.fastq.gz
+RM2_S002	2	CAMI_I_MEDIUM,RM2	data/cami/RM2_S001__insert_270_R1.fastq.gz	data/cami/RM2_S001__insert_270_R2.fastq.gz
