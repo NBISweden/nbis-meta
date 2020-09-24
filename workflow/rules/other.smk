@@ -1,4 +1,10 @@
 ##### download example files #####
+localrules:
+    download_synthetic,
+    generate_examples,
+    download_cami,
+    deinterleave_cami_data
+
 
 rule download_synthetic:
     """
@@ -58,13 +64,15 @@ def cami_dataset(f):
 rule download_cami:
     output:
         "data/cami/R{c}_S00{s}__insert_{l}.fq.gz"
+    log:
+        "data/cami/R{c}_S00{s}__insert_{l}.log"
     params:
         dataset = lambda wildcards, output: cami_dataset(output[0]),
         base = lambda wildcards, output: os.path.basename(output[0]),
         tmp = "$TMPDIR/R{c}_S00{s}__insert_{l}.fq.gz"
     shell:
         """
-        curl -L -o {params.tmp} https://openstack.cebitec.uni-bielefeld.de:8080/swift/v1/{params.dataset}/{params.base}
+        curl -L -o {params.tmp} https://openstack.cebitec.uni-bielefeld.de:8080/swift/v1/{params.dataset}/{params.base} > {log} 2>&1
         mv {params.tmp} {output}
         """
 
@@ -80,7 +88,7 @@ rule deinterleave_cami_data:
     shell:
         """
         seqtk seq -{wildcards.i} {input} | \
-            sed 's/^@\([0-9A-Za-z]\+\)|\([0-9A-Za-z]\+\)|\([0-9A-Za-z]\+\)\/{wildcards.i}/@\1|\2|\3 {wildcards.i}/g' | \
+            sed "s/^@\([0-9A-Za-z]\+\)|\([0-9A-Za-z]\+\)|\([0-9A-Za-z]\+\)\/{wildcards.i}/@\\1|\\2|\\3 {wildcards.i}/g" | \
             gzip -c > {params.tmp}
         mv {params.tmp} {output}
         """
