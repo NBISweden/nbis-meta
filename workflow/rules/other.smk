@@ -40,29 +40,47 @@ rule generate_examples:
             {params.example_dataset_size} | gzip -c > {output}
          """
 
-rule download_cami_data:
+def cami_dataset(f):
+    cami_datasets = {
+        'RL_S001__insert_270.fq.gz': 'CAMI_I_LOW',
+        'RM1_S001__insert_5000.fq.gz': 'CAMI_I_MEDIUM',
+        'RM1_S002__insert_5000.fq.gz': 'CAMI_I_MEDIUM',
+        'RM2_S001__insert_270.fq.gz': 'CAMI_I_MEDIUM',
+        'RM2_S002__insert_270.fq.gz': 'CAMI_I_MEDIUM',
+        'RH1_S001__insert_270.fq.gz': 'CAMI_I_HIGH',
+        'RH1_S002__insert_270.fq.gz': 'CAMI_I_HIGH',
+        'RH1_S003__insert_270.fq.gz': 'CAMI_I_HIGH',
+        'RH1_S004__insert_270.fq.gz': 'CAMI_I_HIGH',
+        'RH1_S005__insert_270.fq.gz': 'CAMI_I_HIGH'
+    }
+    return cami_datasets[os.path.basename(f)]
+
+rule download_cami:
     output:
-        "data/cami/{dataset}.fq.gz"
-    shadow: "minimal"
+        "data/cami/R{c}_S00{s}__insert_{l}.fq.gz"
+    params:
+        dataset = lambda wildcards, output: cami_dataset(output[0]),
+        base = lambda wildcards, output: os.path.basename(output[0]),
+        tmp = "$TMPDIR/R{c}_S00{s}__insert_{l}.fq.gz"
     shell:
         """
-        # Download cami client
-        curl -O https://data.cami-challenge.org/camiClient.jar
-        java -jar camiClient.jar -d https://openstack.cebitec.uni-bielefeld.de:8080/swift/v1/{wildcards.dataset} $TMPDIR/ -p fq.gz
-        mv $TMPDIR/*.fq.gz {output[0]}
+        curl -L -o {params.tmp} https://openstack.cebitec.uni-bielefeld.de:8080/swift/v1/{params.dataset}/{params.base}
+        mv {params.tmp} {output}
         """
 
 rule deinterleave_cami_data:
     input:
-        "data/cami/{dataset}.fq.gz"
+        "data/cami/R{c}_S00{s}__insert_{l}.fq.gz"
     output:
-        "data/cami/{dataset}_R{i}.fastq.gz"
+        "data/cami/R{c}_S00{s}__insert_{l}_R{i}.fastq.gz"
     conda:
         "../envs/examples.yml"
+    params:
+        tmp = "$TMPDIR/R{c}1_S00{s}__insert_{l}_R{i}.fastq.gz"
     shell:
         """
         seqtk seq -{wildcards.i} {input} | \
             sed 's/^@\([0-9A-Za-z]\+\)|\([0-9A-Za-z]\+\)|\([0-9A-Za-z]\+\)\/{wildcards.i}/@\1|\2|\3 {wildcards.i}/g' | \
-            gzip -c > $TMPDIR/{wildcards.dataset}_R{wildcards.i}.fastq.gz
-        mv $TMPDIR/{wildcards.dataset}_R{wildcards.i}.fastq.gz {output}
+            gzip -c > {params.tmp}
+        mv {params.tmp} {output}
         """
