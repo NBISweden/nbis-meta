@@ -1,6 +1,6 @@
 sample	unit	assembly	fq1	fq2
-RH_S001	1	CAMI_I_HIGH,RH1_S001	data/cami/RH1_S001__insert_270_R1.fastq.gz	data/cami/RH1_S001__insert_270_R2.fastq.gz
-RH_S002	1	CAMI_I_HIGH,RH1_S002	data/cami/RH1_S002__insert_270_R1.fastq.gz	data/cami/RH1_S002__insert_270_R2.fastq.gz
-RH_S003	1	CAMI_I_HIGH,RH1_S003	data/cami/RH1_S003__insert_270_R1.fastq.gz	data/cami/RH1_S003__insert_270_R2.fastq.gz
-RH_S004	1	CAMI_I_HIGH,RH1_S004	data/cami/RH1_S004__insert_270_R1.fastq.gz	data/cami/RH1_S004__insert_270_R2.fastq.gz
-RH_S005	1	CAMI_I_HIGH,RH1_S005	data/cami/RH1_S005__insert_270_R1.fastq.gz	data/cami/RH1_S005__insert_270_R2.fastq.gz
+H_S001	1	CAMI_I_TOY_HIGH,H_S001	data/cami/H_S001__insert_180_reads_anonymous_R1.fastq.gz	data/cami/H_S001__insert_180_reads_anonymous_R2.fastq.gz
+H_S002	1	CAMI_I_TOY_HIGH,H_S002	data/cami/H_S002__insert_180_reads_anonymous_R1.fastq.gz	data/cami/H_S002__insert_180_reads_anonymous_R2.fastq.gz
+H_S003	1	CAMI_I_TOY_HIGH,H_S003	data/cami/H_S003__insert_180_reads_anonymous_R1.fastq.gz	data/cami/H_S003__insert_180_reads_anonymous_R2.fastq.gz
+H_S004	1	CAMI_I_TOY_HIGH,H_S004	data/cami/H_S004__insert_180_reads_anonymous_R1.fastq.gz	data/cami/H_S004__insert_180_reads_anonymous_R2.fastq.gz
+H_S005	1	CAMI_I_TOY_HIGH,H_S005	data/cami/H_S005__insert_180_reads_anonymous_R1.fastq.gz	data/cami/H_S005__insert_180_reads_anonymous_R2.fastq.gz
