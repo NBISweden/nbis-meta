@@ -255,7 +255,7 @@ rule get_kegg_info:
         opj("resources", "kegg", "download.log")
     params:
         outdir=lambda w, output: os.path.dirname(output[0]),
-        src="../scripts/eggnog-parser.py"
+        src="workflow/scripts/eggnog-parser.py"
     shell:
         """
         python {params.src} download {params.outdir} > {log} 2>&1
@@ -371,7 +371,7 @@ rule parse_ko_annotations:
     params:
         outbase=opj(config["paths"]["results"], "annotation", "{assembly}"),
         resource_dir=opj("resources", "kegg"),
-        src="../scripts/eggnog-parser.py"
+        src="workflow/scripts/eggnog-parser.py"
     shell:
         """
         python {params.src} parse {params.resource_dir} {input.annotations} \
