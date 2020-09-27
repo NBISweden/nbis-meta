@@ -110,6 +110,8 @@ def parse_samples(df, config, PREPROCESS):
             for a in assem_list:
                 if sample not in assemblies[a].keys():
                     assemblies[a][sample] = {unit: {}}
+                if unit not in assemblies[a][sample].keys():
+                    assemblies[a][sample][unit] = {}
                 if r2:
                     assemblies[a][sample][unit]["R1"] = [R1_p]
                     assemblies[a][sample][unit]["R2"] = [R2_p]
