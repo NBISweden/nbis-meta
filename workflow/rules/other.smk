@@ -48,28 +48,28 @@ rule generate_examples:
 
 def cami_dataset(f):
     cami_datasets = {
-        'RL_S001__insert_270.fq.gz': 'CAMI_I_LOW',
-        'RM1_S001__insert_5000.fq.gz': 'CAMI_I_MEDIUM',
-        'RM1_S002__insert_5000.fq.gz': 'CAMI_I_MEDIUM',
-        'RM2_S001__insert_270.fq.gz': 'CAMI_I_MEDIUM',
-        'RM2_S002__insert_270.fq.gz': 'CAMI_I_MEDIUM',
-        'RH1_S001__insert_270.fq.gz': 'CAMI_I_HIGH',
-        'RH1_S002__insert_270.fq.gz': 'CAMI_I_HIGH',
-        'RH1_S003__insert_270.fq.gz': 'CAMI_I_HIGH',
-        'RH1_S004__insert_270.fq.gz': 'CAMI_I_HIGH',
-        'RH1_S005__insert_270.fq.gz': 'CAMI_I_HIGH'
+        'S_S001__genomes_30__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_LOW',
+        'M1_S001__insert_5000_reads_anonymous.fq.gz': 'CAMI_I_TOY_MEDIUM',
+        'M1_S002__insert_5000_reads_anonymous.fq.gz': 'CAMI_I_TOY_MEDIUM',
+        'M2_S001__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_MEDIUM',
+        'M2_S002__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_MEDIUM',
+        'H_S001__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_HIGH',
+        'H_S002__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_HIGH',
+        'H_S003__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_HIGH',
+        'H_S004__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_HIGH',
+        'H_S005__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_HIGH'
     }
     return cami_datasets[os.path.basename(f)]
 
 rule download_cami:
     output:
-        "data/cami/R{c}_S00{s}__insert_{l}.fq.gz"
+        "data/cami/{c}_S00{s}__insert_{l}_reads_anonymous.fq.gz"
     log:
-        "data/cami/R{c}_S00{s}__insert_{l}.log"
+        "data/cami/{c}_S00{s}__insert_{l}_reads_anonymous.log"
     params:
         dataset = lambda wildcards, output: cami_dataset(output[0]),
         base = lambda wildcards, output: os.path.basename(output[0]),
-        tmp = "$TMPDIR/R{c}_S00{s}__insert_{l}.fq.gz"
+        tmp = "$TMPDIR/R{c}_S00{s}__insert_{l}_reads_anonymous.fq.gz"
     shell:
         """
         curl -L -o {params.tmp} https://openstack.cebitec.uni-bielefeld.de:8080/swift/v1/{params.dataset}/{params.base} > {log} 2>&1
@@ -78,13 +78,13 @@ rule download_cami:
 
 rule deinterleave_cami_data:
     input:
-        "data/cami/R{c}_S00{s}__insert_{l}.fq.gz"
+        "data/cami/{c}_S00{s}__insert_{l}_reads_anonymous.fq.gz"
     output:
-        "data/cami/R{c}_S00{s}__insert_{l}_R{i}.fastq.gz"
+        "data/cami/{c}_S00{s}__insert_{l}_reads_anonymous_R{i}.fastq.gz"
     conda:
         "../envs/examples.yml"
     params:
-        tmp = "$TMPDIR/R{c}1_S00{s}__insert_{l}_R{i}.fastq.gz"
+        tmp = "$TMPDIR/{c}_S00{s}__insert_{l}_reads_anonymous_R{i}.fastq.gz"
     shell:
         """
         seqtk seq -{wildcards.i} {input} | \
