@@ -778,7 +778,6 @@ rule fastANI:
         fastANI --rl {input[0]} --ql {input[1]} -k {params.k} -t {threads} \
             --fragLen {params.frag_len} --minFraction {params.fraction} \
             --matrix -o {output[0]} > {log} 2>&1
-        rm {params.indir}/*.fa {params.indir}/*.fna
         """
 
 rule cluster_genomes:
