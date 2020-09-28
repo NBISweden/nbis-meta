@@ -664,21 +664,6 @@ def parse_cmout(f):
 
 ## Quantification functions
 
-def markdup_mem(wildcards, cores):
-    """
-    Calculates the memory to allocate when running MarkDuplicates
-    :param wildcards:
-    :param cores: number of cores for currently running workflow
-    :return:
-    """
-    if cores is not None:
-        threads = min(cores, 10)
-    else:
-        threads = 1
-    mem_gb_per_thread = 2
-    return int(mem_gb_per_thread * threads)
-
-
 def get_fc_files(wildcards, file_type):
     g = wildcards.group
     files = []
