@@ -1,2 +1,2 @@
 sample	unit	assembly	fq1	fq2
-S_S001	1	CAMI_I_LOW,S_S001	data/cami/S_S001__genomes_30__insert_180_reads_anonymous_R1.fastq.gz	data/cami/S_S001__genomes_30__insert_180_reads_anonymous_R2.fastq.gz
+S_S001	1	CAMI_I_LOW	data/cami/S_S001__genomes_30__insert_180_reads_anonymous_R1.fastq.gz	data/cami/S_S001__genomes_30__insert_180_reads_anonymous_R2.fastq.gz
