@@ -1,5 +1,3 @@
-from scripts.common import markdup_mem
-
 localrules:
     quantify,
     write_featurefile,
@@ -41,29 +39,37 @@ rule remove_mark_duplicates:
     log:
         opj(config["paths"]["results"], "assembly", "{assembly}", "mapping", "{sample}_{unit}_{seq_type}.markdup.log")
     params:
+        header=opj(config["paths"]["temp"], "{assembly}", "{sample}_{unit}_{seq_type}.header"),
+        rehead_bam=opj(config["paths"]["temp"], "{assembly}", "{sample}_{unit}_{seq_type}.rehead.bam"),
         temp_bam=opj(config["paths"]["temp"], "{assembly}", "{sample}_{unit}_{seq_type}.markdup.bam"),
         temp_sort_bam=opj(config["paths"]["temp"], "{assembly}", "{sample}_{unit}_{seq_type}.markdup.re_sort.bam"),
         temp_dir=opj(config["paths"]["temp"], "{assembly}")
     threads: 10
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*4,
-        mem_mb=lambda wildcards: markdup_mem(wildcards, workflow.cores)
+        runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
         "../envs/quantify.yml"
     shell:
         """
         mkdir -p {params.temp_dir}
-        java -Xms2g -Xmx{resources.mem_mb}g -XX:ParallelGCThreads={threads} \
+        # Fix bam header
+        samtools view -H {input} | egrep -v "^@PG" > {params.header}
+        samtools reheader -P {params.header} {input} > {params.rehead_bam}
+        # Set memory max
+        mem="-Xmx$((6 * {threads}))g"
+        java -Xms2g $mem -XX:ParallelGCThreads={threads} \
             -jar $CONDA_PREFIX/share/picard-*/picard.jar MarkDuplicates \
-            I={input} M={output[2]} O={params.temp_bam} REMOVE_DUPLICATES=TRUE \
-            USE_JDK_DEFLATER=TRUE USE_JDK_INFLATER=TRUE ASO=coordinate 2> {log}
+            I={params.rehead_bam} M={output[2]} O={params.temp_bam} REMOVE_DUPLICATES=TRUE \
+            USE_JDK_DEFLATER=TRUE USE_JDK_INFLATER=TRUE ASSUME_SORT_ORDER=coordinate \
+            PROGRAM_RECORD_ID=null ADD_PG_TAG_TO_READS=FALSE 2> {log}
         # Re sort the bam file using samtools
-        samtools sort -o {params.temp_sort_bam} {params.temp_bam}
+        samtools_threads="$(({threads} - 1))"
+        samtools sort -@ $samtools_threads -o {params.temp_sort_bam} {params.temp_bam} > /dev/null 2>&1
         # Index the bam file
         samtools index {params.temp_sort_bam}
         mv {params.temp_sort_bam} {output[0]}
         mv {params.temp_sort_bam}.bai {output[1]}
-        rm {params.temp_bam}
+        rm {params.temp_bam} {params.rehead_bam} {params.header}
         """
 
 ##### featurecounts #####
