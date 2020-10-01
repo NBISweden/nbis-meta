@@ -164,7 +164,7 @@ rule contigtax_search:
         settings=config["taxonomy"]["search_params"]
     threads: 20
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*10
+        runtime=lambda wildcards, attempt: attempt**2*120*20
     conda:
         "../envs/taxonomy.yml"
     shell:
