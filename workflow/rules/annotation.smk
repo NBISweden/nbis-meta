@@ -207,7 +207,7 @@ rule pfam_scan:
         tmp_out=opj(config["paths"]["temp"], "{assembly}.pfam.out")
     threads: 2
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*10
+        runtime=lambda wildcards, attempt: attempt**2*60*24
     shell:
         """
         pfam_scan.pl -fasta {input[0]} -dir {params.dir} -cpu {threads} \
