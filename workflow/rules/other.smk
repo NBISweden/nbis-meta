@@ -1,3 +1,5 @@
+from scripts.common import cami_dataset, cami_gold_urls
+
 ##### download example files #####
 localrules:
     download_synthetic,
