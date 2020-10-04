@@ -1,5 +1,5 @@
 sample	unit	assembly	fq1	fq2
-M_S001	1	CAMI_I_MEDIUM,M_S001	data/cami/M1_S001__insert_5000_reads_anonymous_R1.fastq.gz	data/cami/M1_S001__insert_5000_reads_anonymous_R2.fastq.gz
-M_S002	1	CAMI_I_MEDIUM,M_S002	data/cami/M1_S002__insert_5000_reads_anonymous_R1.fastq.gz	data/cami/M1_S002__insert_5000_reads_anonymous_R2.fastq.gz
-M_S001	2	CAMI_I_MEDIUM,M_S001	data/cami/M2_S001__insert_180_reads_anonymous_R1.fastq.gz	data/cami/M2_S001__insert_180_reads_anonymous_R2.fastq.gz
-M_S002	2	CAMI_I_MEDIUM,M_S002	data/cami/M2_S002__insert_180_reads_anonymous_R1.fastq.gz	data/cami/M2_S002__insert_180_reads_anonymous_R2.fastq.gz
+M1_S001	1	CAMI_I_TOY_MEDIUM,CAMI_I_TOY_MEDIUM.GOLD,M1_S001__insert_5000.GOLD	data/cami/M1_S001__insert_5000_reads_anonymous_R1.fastq.gz	data/cami/M1_S001__insert_5000_reads_anonymous_R2.fastq.gz
+M1_S002	1	CAMI_I_TOY_MEDIUM,CAMI_I_TOY_MEDIUM.GOLD,M1_S002__insert_5000.GOLD	data/cami/M1_S002__insert_5000_reads_anonymous_R1.fastq.gz	data/cami/M1_S002__insert_5000_reads_anonymous_R2.fastq.gz
+M2_S001	1	CAMI_I_TOY_MEDIUM,CAMI_I_TOY_MEDIUM.GOLD,M2_S001__insert_180.GOLD	data/cami/M2_S001__insert_180_reads_anonymous_R1.fastq.gz	data/cami/M2_S001__insert_180_reads_anonymous_R2.fastq.gz
+M2_S002	1	CAMI_I_TOY_MEDIUM,CAMI_I_TOY_MEDIUM.GOLD,M2_S002__insert_180.GOLD	data/cami/M2_S002__insert_180_reads_anonymous_R1.fastq.gz	data/cami/M2_S002__insert_180_reads_anonymous_R2.fastq.gz
