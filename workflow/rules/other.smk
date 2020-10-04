@@ -53,28 +53,64 @@ def cami_dataset(f):
         'M1_S002__insert_5000_reads_anonymous.fq.gz': 'CAMI_I_TOY_MEDIUM',
         'M2_S001__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_MEDIUM',
         'M2_S002__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_MEDIUM',
+        'M1_M2_pooled_gsa_anonymous.fasta.gz': 'CAMI_I_TOY_MEDIUM',
         'H_S001__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_HIGH',
         'H_S002__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_HIGH',
         'H_S003__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_HIGH',
         'H_S004__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_HIGH',
-        'H_S005__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_HIGH'
+        'H_S005__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_HIGH',
+        'H_pooled_gsa_anonymous.fasta.gz': 'CAMI_I_TOY_HIGH'
     }
     return cami_datasets[os.path.basename(f)]
 
 rule download_cami:
     output:
-        "data/cami/{c}_S00{s}__insert_{l}_reads_anonymous.fq.gz"
+        fq = "data/cami/{c}_S00{s}__insert_{l}_reads_anonymous.fq.gz",
+        fa = opj(config["paths"]["results"], "assembly", "{c}_S00{s}__insert_{l}.GOLD", "final_contigs.fa"),
+        log = touch("results/assembly/{c}_S00{s}__insert_{l}.GOLD/log")
     log:
         "data/cami/{c}_S00{s}__insert_{l}_reads_anonymous.log"
     params:
         dataset = lambda wildcards, output: cami_dataset(output[0]),
-        base = lambda wildcards, output: os.path.basename(output[0]),
-        tmp = "$TMPDIR/R{c}_S00{s}__insert_{l}_reads_anonymous.fq.gz"
+        base_fq = lambda wildcards, output: os.path.basename(output.fq),
+        base_fa = lambda wildcards, output: os.path.basename(os.path.dirname(output.fa)).replace(".GOLD", "_gsa_anonymous.fasta.gz"),
+        tmp_fq = "$TMPDIR/R{c}_S00{s}__insert_{l}_reads_anonymous.fq.gz",
+        tmp_fa = "$TMPDIR/R{c}_S00{s}__insert_{l}_gsa_anonymous.fasta.gz",
+        base_url = "https://openstack.cebitec.uni-bielefeld.de:8080/swift/v1"
     shell:
         """
-        curl -L -o {params.tmp} https://openstack.cebitec.uni-bielefeld.de:8080/swift/v1/{params.dataset}/{params.base} > {log} 2>&1
-        mv {params.tmp} {output}
+        curl -L -o {params.tmp_fq} {params.base_url}/{params.dataset}/{params.base_fq} > {log} 2>&1
+        curl -L -o {params.tmp_fa} {params.base_url}/{params.dataset}/{params.base_fa} > {log} 2>&1
+        gunzip -c {params.tmp_fa} > {output.fa}
+        mv {params.tmp_fq} {output.fq}
         """
+
+def cami_gold_urls(wildcards):
+    url_base = "https://openstack.cebitec.uni-bielefeld.de:8080/swift/v1"
+    d = {
+        "CAMI_I_TOY_MEDIUM": "{url_base}/CAMI_I_TOY_MEDIUM/M1_M2_pooled_gsa_anonymous.fasta.gz".format(url_base=url_base),
+        "CAMI_I_TOY_HIGH": "{url_base}/CAMI_I_TOY_HIGH/H_pooled_gsa_anonymous.fasta.gz".format(url_base=url_base)}
+    return d[wildcards.camidataset]
+
+rule download_cami_gold_asms:
+    output:
+        opj(config["paths"]["results"], "assembly", "{camidataset}.GOLD", "final_contigs.fa"),
+        touch(opj(config["paths"]["results"], "assembly", "{camidataset}.GOLD", "log"))
+    log:
+        opj(config["paths"]["results"], "assembly", "{camidataset}.GOLD", "cami.log")
+    params:
+        tmpdir = "$TMPDIR/{camidataset}.GOLD",
+        tmp = "$TMPDIR/{camidataset}.GOLD/final_contigs.fa.gz",
+        url = lambda wildcards: cami_gold_urls(wildcards)
+    shell:
+        """
+        mkdir -p {params.tmpdir}
+        curl -L -o {params.tmp} {params.url} > {log} 2>&1
+        gunzip -c {params.tmp} > {output[0]}
+        rm -r {params.tmpdir}        
+        """
+
+ruleorder: download_cami > download_cami_gold_asms > megahit
 
 rule deinterleave_cami_data:
     input:
