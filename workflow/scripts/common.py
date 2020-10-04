@@ -5,6 +5,46 @@ import os
 from os.path import join as opj, basename as bn
 from snakemake.io import expand
 
+# test data
+
+
+def cami_dataset(f):
+    """
+    This function returns the CAMI dataset for a specific output file
+
+    :param f: CAMI reads output file
+    :return: CAMI test dataset name
+    """
+    cami_datasets = {
+        'S_S001__genomes_30__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_LOW',
+        'M1_S001__insert_5000_reads_anonymous.fq.gz': 'CAMI_I_TOY_MEDIUM',
+        'M1_S002__insert_5000_reads_anonymous.fq.gz': 'CAMI_I_TOY_MEDIUM',
+        'M2_S001__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_MEDIUM',
+        'M2_S002__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_MEDIUM',
+        'M1_M2_pooled_gsa_anonymous.fasta.gz': 'CAMI_I_TOY_MEDIUM',
+        'H_S001__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_HIGH',
+        'H_S002__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_HIGH',
+        'H_S003__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_HIGH',
+        'H_S004__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_HIGH',
+        'H_S005__insert_180_reads_anonymous.fq.gz': 'CAMI_I_TOY_HIGH',
+        'H_pooled_gsa_anonymous.fasta.gz': 'CAMI_I_TOY_HIGH'
+    }
+    return cami_datasets[os.path.basename(f)]
+
+
+def cami_gold_urls(wildcards):
+    """
+    This function returns the gold assembly url for a specific CAMI dataset
+
+    :param wildcards: snakemake wildcards
+    :return: url for gold assembly
+    """
+    url_base = "https://openstack.cebitec.uni-bielefeld.de:8080/swift/v1"
+    d = {
+        "CAMI_I_TOY_MEDIUM": "{url_base}/CAMI_I_TOY_MEDIUM/M1_M2_pooled_gsa_anonymous.fasta.gz".format(url_base=url_base),
+        "CAMI_I_TOY_HIGH": "{url_base}/CAMI_I_TOY_HIGH/H_pooled_gsa_anonymous.fasta.gz".format(url_base=url_base)}
+    return d[wildcards.camidataset]
+
 
 # configuration
 
