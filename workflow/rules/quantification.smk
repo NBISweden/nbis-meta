@@ -182,7 +182,7 @@ rule quantify_features:
         opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.{fc_type}.tsv")
     shell:
         """
-        python source/utils/eggnog-parser.py \
+        python workflow/scripts/eggnog-parser.py \
             quantify {input.abund} {input.annot} {output[0]}
         """
 
