@@ -186,6 +186,20 @@ rule quantify_features:
             quantify {input.abund} {input.annot} {output[0]}
         """
 
+rule normalize:
+    input:
+        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.raw.tsv")
+    output:
+        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.{norm_method}.tsv")
+    log:
+        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.{norm_method}.log")
+    params:
+        method = "{norm_method}"
+    conda:
+        "../envs/normalize.yml"
+    script:
+        "../scripts/normalize.R"
+
 rule sum_to_taxa:
     input:
         tax=opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
