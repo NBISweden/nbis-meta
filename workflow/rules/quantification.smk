@@ -1,8 +1,8 @@
 localrules:
     quantify,
     write_featurefile,
-    samtools_stats,
     aggregate_featurecount,
+    clean_featurecount,
     sum_to_taxa,
     quantify_features,
     sum_to_rgi
@@ -69,20 +69,6 @@ rule remove_mark_duplicates:
         mv {params.temp_sort_bam} {output[0]}
         mv {params.temp_sort_bam}.bai {output[1]}
         rm {params.temp_bam} {params.rehead_bam} {params.header}
-        """
-
-rule samtools_stats:
-    input:
-        opj(config["paths"]["results"], "assembly", "{assembly}",
-                "mapping", "{sample}_{unit}_{seq_type}"+POSTPROCESS+".bam")
-    output:
-        opj(config["paths"]["results"], "assembly", "{assembly}",
-                "mapping", "{sample}_{unit}_{seq_type}"+POSTPROCESS+".bam.stats")
-    conda:
-        "../envs/quantify.yml"
-    shell:
-        """
-        samtools stats {input} > {output}
         """
 
 ##### featurecounts #####
