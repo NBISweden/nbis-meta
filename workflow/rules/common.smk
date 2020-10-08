@@ -36,6 +36,7 @@ wildcard_constraints:
     binner="[a-z]+",
     group="\w+",
     l="\d+",
+    counts_type="(counts|rpkm)",
     norm_method="(TMM|CSS|REL)"
 
 from scripts.common import check_uppmax, check_annotation, check_assembly, check_classifiers
