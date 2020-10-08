@@ -74,56 +74,33 @@ rule remove_mark_duplicates:
 
 ##### featurecounts #####
 
-rule featurecount_pe:
+rule featurecount:
     input:
         gff=opj(config["paths"]["results"], "annotation", "{assembly}",
                 "final_contigs.features.gff"),
         bam=opj(config["paths"]["results"], "assembly", "{assembly}",
-                "mapping", "{sample}_{unit}_pe"+POSTPROCESS+".bam")
+                "mapping", "{sample}_{unit}_{seq_type}"+POSTPROCESS+".bam")
     output:
         opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
-            "{sample}_{unit}_pe.fc.tsv"),
+            "{sample}_{unit}_{seq_type}.fc.tsv"),
         opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
-            "{sample}_{unit}_pe.fc.tsv.summary")
+            "{sample}_{unit}_{seq_type}.fc.tsv.summary")
     log:
         opj(config["paths"]["results"], "assembly", "{assembly}",
-            "mapping", "{sample}_{unit}_pe.fc.log")
+            "mapping", "{sample}_{unit}_{seq_type}.fc.log")
     threads: 4
-    params: tmpdir=config["paths"]["temp"]
+    params:
+        tmpdir=config["paths"]["temp"],
+        setting=lambda wildcards: "-B -p" if wildcards.seq_type == "pe" else ""
     resources:
         runtime=lambda wildcards, attempt: attempt**2*30
     conda:
         "../envs/quantify.yml"
     shell:
         """
-        featureCounts -a {input.gff} -o {output[0]} -t CDS -g gene_id -M -p \
-            -B -T {threads} --tmpDir {params.tmpdir} {input.bam} > {log} 2>&1
-        """
-
-rule featurecount_se:
-    input:
-        gff=opj(config["paths"]["results"], "annotation", "{assembly}",
-                "final_contigs.features.gff"),
-        bam=opj(config["paths"]["results"], "assembly", "{assembly}",
-                "mapping", "{sample}_{unit}_se"+POSTPROCESS+".bam")
-    output:
-        opj(config["paths"]["results"], "assembly", "{assembly}",
-            "mapping", "{sample}_{unit}_se.fc.tsv"),
-        opj(config["paths"]["results"], "assembly", "{assembly}",
-            "mapping", "{sample}_{unit}_se.fc.tsv.summary")
-    log:
-        opj(config["paths"]["results"], "assembly", "{assembly}",
-            "mapping", "{sample}_{unit}_se.fc.log")
-    threads: 4
-    params: tmpdir=config["paths"]["temp"]
-    resources:
-        runtime=lambda wildcards, attempt: attempt**2*30
-    conda:
-        "../envs/quantify.yml"
-    shell:
-        """
-        featureCounts -a {input.gff} -o {output[0]} -t CDS -g gene_id \
-            -M -T {threads} --tmpDir {params.tmpdir} {input.bam} > {log} 2>&1
+        mkdir -p {params.tmpdir}
+        featureCounts -a {input.gff} -o {output[0]} -t CDS -g gene_id -M \
+            {params.setting} -T {threads} --tmpDir {params.tmpdir} {input.bam} > {log} 2>&1
         """
 
 rule samtools_stats:
