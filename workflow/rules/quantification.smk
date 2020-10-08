@@ -3,8 +3,9 @@ localrules:
     write_featurefile,
     aggregate_featurecount,
     clean_featurecount,
+    count_features,
+    normalize_features,
     sum_to_taxa,
-    quantify_features,
     sum_to_rgi
 
 ##### quantify master rule #####
@@ -12,8 +13,8 @@ localrules:
 rule quantify:
     input:
         expand(opj(config["paths"]["results"], "annotation", "{assembly}",
-                   "fc.{fc_type}.tsv"),
-               assembly=assemblies.keys(), fc_type=["tpm", "raw"])
+                   "gene_{counts_type}.tsv"),
+               assembly=assemblies.keys(), counts_type=["counts", "rpkm"])
 
 
 rule write_featurefile:
@@ -115,11 +116,11 @@ rule clean_featurecount:
 rule aggregate_featurecount:
     """Aggregates all cleaned count files from featureCounts"""
     input:
-        get_all_files(samples, opj(config["paths"]["results"],
-                                             "assembly", "{assembly}", "mapping"),
-                                ".fc.clean.tsv")
+        get_all_files(samples=samples,
+                      dir=opj(config["paths"]["results"],"assembly", "{assembly}", "mapping"),
+                      suffix=".fc.clean.tsv")
     output:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "counts.tsv")
+        opj(config["paths"]["results"], "annotation", "{assembly}", "gene_counts.tsv")
     script:
         "../scripts/quantification_utils.py"
 
@@ -128,9 +129,9 @@ rule rpkm:
     Calculate RPKM for genes in an assembly
     """
     input:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "counts.tsv")
+        opj(config["paths"]["results"], "annotation", "{assembly}", "gene_counts.tsv")
     output:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "rpkm.tsv")
+        opj(config["paths"]["results"], "annotation", "{assembly}", "gene_rpkm.tsv")
     log:
         opj(config["paths"]["results"], "annotation", "{assembly}", "rpkm.log")
     params:
@@ -140,21 +141,18 @@ rule rpkm:
     script:
         "../scripts/normalize.R"
 
-rule quantify_features:
+rule count_features:
     input:
-        abund=opj(config["paths"]["results"], "annotation", "{assembly}", "fc.{fc_type}.tsv"),
+        abund=opj(config["paths"]["results"], "annotation", "{assembly}", "gene_counts.tsv"),
         annot=opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.tsv")
     output:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.{fc_type}.tsv")
-    shell:
-        """
-        python workflow/scripts/eggnog-parser.py \
-            quantify {input.abund} {input.annot} {output[0]}
-        """
+        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.counts.tsv")
+    script:
+        "../scripts/quantification_utils.py"
 
-rule normalize:
+rule normalize_features:
     input:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.raw.tsv")
+        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.counts.tsv")
     output:
         opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.{norm_method}.tsv")
     log:
@@ -170,18 +168,18 @@ rule sum_to_taxa:
     input:
         tax=opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
             "orfs.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"])),
-        abund=opj(config["paths"]["results"], "annotation", "{assembly}", "fc.{fc_type}.tsv")
+        abund=opj(config["paths"]["results"], "annotation", "{assembly}", "gene_{counts_type}.tsv")
     output:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy", "tax.{fc_type}.tsv")
+        opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy", "tax.{counts_type}.tsv")
     script:
         "../scripts/quantification_utils.py"
 
 rule sum_to_rgi:
     input:
         annot=opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.out.txt"),
-        abund=opj(config["paths"]["results"], "annotation", "{assembly}", "fc.{fc_type}.tsv")
+        abund=opj(config["paths"]["results"], "annotation", "{assembly}", "gene_{counts_type}.tsv")
     output:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.{fc_type}.tsv")
+        opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.{counts_type}.tsv")
     script:
         "../scripts/quantification_utils.py"
 
