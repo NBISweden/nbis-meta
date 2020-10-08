@@ -19,7 +19,9 @@ method <- snakemake@params$method
 # Read the counts
 x <- read.delim(snakemake@input[[1]], row.names = 1)
 # Remove unclassified
-x <- x[row.names(x)!="Unclassified", ]
+if ("Unclassified" %in% row.names(x)){
+    x <- x[row.names(x)!="Unclassified", ]
+}
 # Extract only numeric columns
 x_num <- num_cols(x)
 
