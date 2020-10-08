@@ -24,15 +24,25 @@ x <- x[row.names(x)!="Unclassified", ]
 x_num <- num_cols(x)
 
 if (method %in% c("TMM", "RLE")) {
-    library(edgeR, quietly = TRUE)
+    library(edgeR)
     # Create DGE
     obj <- DGEList(x_num)
     # Calculate norm factors
     obj <- calcNormFactors(obj, method = method)
     # Calculate cpms
     norm <- cpm(obj, normalized.lib.sizes = TRUE)
+} else if (method == "RPKM") {
+    library(edgeR)
+    # Extract gene length column
+    gene_length <- x_num$Length
+    x_num <- x_num[, colnames(x_num) != "Length"]
+    obj <- DGEList(x_num)
+    # Calculate norm factors
+    obj <- calcNormFactors(obj, method = "TMM")
+    # Calculate RPKM
+    norm <- rpkm(obj, normalized.lib.sizes = TRUE, gene.length = gene_length)
 } else {
-    library(metagenomeSeq, quietly = TRUE)
+    library(metagenomeSeq)
     obj <- newMRexperiment(x_num)
     norm <- MRcounts(obj, norm = TRUE)
 }
