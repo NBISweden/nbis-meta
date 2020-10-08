@@ -36,117 +36,82 @@ def write_featurefile(sm, score=".", group="gene_id", phase="."):
     return
 
 
-def calculate_tpm(df, readlength, fhlog):
+def clean_featurecount(sm):
     """
-    Calculates transcripts per million normalized values for a sample based
-    on featureCounts output
-    :param df: pandas DataFrame as read from featureCounts output
-    :param readlength: average length of mapped reads
-    :param fhlog: loghandle
-    :return: pandas DataFrame with normalized values per gene
-    """
-    sampleName = df.columns[-1]
-    # 1. Calculate t for sample
-    # t = (reads_mapped_to_gene * read_length) / length_of_gene
-    # Multiply gene counts with read length,
-    # then divide by the Length column (in kb)
-    fhlog.write("Normalizing by read length and gene length\n")
-    t = df[sampleName].multiply(readlength).div(df["Length"].div(1000))
-    df = df.assign(t=pd.Series(t, index=df.index))
-    # 2. Calculate T
-    # T = sum(t)
-    fhlog.write("Calculating sum of normalized values\n")
-    T = df["t"].sum()
-    # 3. Calculate TPM
-    # TPM = t*10^6 / T
-    fhlog.write("Normalization factor T is {}\n".format(T))
-    fhlog.write("Calculating TPM\n")
-    TPM = (df["t"].multiply(1000000)).div(T)
-    df = df.assign(TPM=pd.Series(TPM, index=df.index))
-    return df
+    This cleans the featureCounts output table from format:
+    # Program:featureCounts v2.0.0; Command:"featureCounts" "-a" "etc."
+    Geneid  Chr         Start   End     Strand  Length  path/to/bam/sample.bam
+    1_1     k141_7581   1       459     -       459     1
+    2_1     k141_0      469     714     +       246     2
 
-
-def get_readlength(f):
+    To format:
+    gene_id         Length  sample
+    k141_7581_1     459     1
+    k141_0_1        246     1
     """
-    Reads samtools flagstat file and extract average mapped read length
-    :param f: samtools flagstat file
-    :return:
-    """
-    with open(f, 'r') as fhin:
-        for line in fhin:
-            line = line.rstrip()
-            if line.startswith("SN") and "average length:" in line:
-                length = line.rsplit()[-1]
-    return float(length)
-
-
-def normalize_featurecount(sm):
-    """
-    Master rule for running normalization
-    :param sm: snakemake object
-    :return:
-    """
-    df = pd.read_csv(sm.input[0], skiprows=1, sep="\t")
+    df = pd.read_csv(sm.input[0], comment="#", sep="\t")
+    # Extract gene number and combine with contig id
+    df["gene_num"] = [x[1] for x in df.Geneid.str.split("_")]
+    df.set_index(df.Chr.map(str) + "_" + df.gene_num, inplace=True)
+    df.drop("gene_num", axis=1, inplace=True)
+    df.index.name = 'gene_id'
+    # Set sample and unit name from wildcards
     sample_unit = "{sample}_{unit}".format(sample=sm.wildcards.sample,
                                            unit=sm.wildcards.unit)
     df.columns = list(df.columns)[0:-1] + [sample_unit]
-    # Get average mapped read length
-    readlength = get_readlength(sm.input[1])
-
-    # Perform normalization
-    with open(sm.log[0], 'w') as fhlog:
-        df = calculate_tpm(df, readlength, fhlog)
-
-    df_tpm = df.iloc[:, [0, -1]]
-    df_tpm.columns = ["gene_id", sample_unit]
-    df_tpm.to_csv(sm.output[0], sep="\t", index=False)
-
-    df_raw = df.iloc[:, [0, 6]]
-    df_raw.columns = ["gene_id", sample_unit]
-    df_raw.to_csv(sm.output[1], sep="\t", index=False)
-
-
-def merge_files(files, gff_df):
-    """
-    Merges abundance tables from several samples
-    :param files: list of files
-    :param gff_df: pandas DataFrame with orf ids in the format <contig>_<orfnum>
-    :return: merged pandas DataFrame
-    """
-    df = pd.DataFrame()
-    for f in files:
-        _df = pd.read_csv(f, index_col=0, sep="\t")
-        df = pd.concat([df, _df], axis=1)
-    df = pd.merge(df, gff_df, left_index=True, right_on="gene_id")
-    df.drop("gene_id", axis=1, inplace=True)
-    df.set_index("orf", inplace=True)
-    return df
+    # Extract length and counts
+    df = df.loc[:, ["Length", sample_unit]]
+    df.to_csv(sm.output[0], sep="\t")
 
 
 def aggregate_featurecount(sm):
     """
-    Aggregates normalized and raw tables per sample into one table per assembly
+    Aggregates cleaned featureCounts tables into one table per assembly
 
     :param sm: snakemake object
     :return:
     """
-    gff_df = pd.read_csv(sm.input.gff_file, header=None, usecols=[0, 8],
-                         names=["contig", "gene"], sep="\t")
-    gff_df = gff_df.assign(
-        gene_id=pd.Series([x.replace("gene_id ", "") for x in gff_df.gene],
-                          index=gff_df.index))
-    gff_df = gff_df.assign(
-        suffix=pd.Series([x.split(" ")[-1].split("_")[-1] for x in gff_df.gene],
-                         index=gff_df.index))
-    gff_df = gff_df.assign(
-        orf=pd.Series(gff_df.contig + "_" + gff_df.suffix, index=gff_df.index))
-    gff_df = gff_df[["orf", "gene_id"]]
+    df = pd.DataFrame()
+    lmap = {}
+    for f in sm.input:
+        _df = pd.read_csv(f, sep="\t", index_col=0)
+        lmap.update(_df.to_dict()["Length"])
+        _df.drop("Length", axis=1, inplace=True)
+        df = pd.merge(df, _df, right_index=True, left_index=True, how="outer")
+    counts = pd.merge(df, pd.DataFrame(lmap, index=["Length"]).T,
+                      left_index=True, right_index=True)
+    counts.to_csv(sm.output[0], sep="\t")
 
-    raw_df = merge_files(sm.input.raw_files, gff_df)
-    tpm_df = merge_files(sm.input.tpm_files, gff_df)
-    raw_df.to_csv(sm.output.raw, sep="\t")
-    tpm_df.to_csv(sm.output.tpm, sep="\t")
 
+def process_and_sum(q_df, annot_df):
+    # Merge annotations and abundance
+    # keep ORFs without annotation as "Unclassified"
+    annot_q_df = pd.merge(annot_df, q_df, left_index=True, right_index=True,
+                          how="right")
+    annot_q_df.fillna("Unclassified", inplace=True)
+    feature_cols = annot_df.columns
+    annot_q_sum = annot_q_df.groupby(list(feature_cols)).sum().reset_index()
+    annot_q_sum.set_index(feature_cols[0], inplace=True)
+    return annot_q_sum
+
+
+def sum_to_features(abundance, parsed):
+    parsed_df = pd.read_csv(parsed, index_col=0, sep="\t")
+    abundance_df = pd.read_csv(abundance, index_col=0, sep="\t")
+    abundance_df.drop("Length", axis=1, inplace=True, errors="ignore")
+    feature_sum = process_and_sum(abundance_df, parsed_df)
+    return feature_sum
+
+
+def count_features(sm):
+    """
+    Counts reads mapped to features such as KOs, PFAMs etc.
+
+    :param sm:
+    :return:
+    """
+    feature_sum = sum_to_features(sm.input.abundance, sm.input.parsed)
+    feature_sum.to_csv(sm.output[0], sep="\t")
 
 def sum_to_taxa(sm):
     """
@@ -184,10 +149,12 @@ def sum_to_rgi(sm):
     dfsum = df.groupby("AMR Gene Family").sum()
     dfsum.to_csv(sm.output[0], sep="\t", index=True, header=True)
 
+
 def main(sm):
     toolbox = {"write_featurefile": write_featurefile,
-               "normalize_featurecount": normalize_featurecount,
+               "clean_featurecount": clean_featurecount,
                "aggregate_featurecount": aggregate_featurecount,
+               "count_features": count_features,
                "sum_to_taxa": sum_to_taxa,
                "sum_to_rgi": sum_to_rgi}
 
