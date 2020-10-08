@@ -2,7 +2,6 @@ localrules:
     quantify,
     write_featurefile,
     samtools_stats,
-    normalize_featurecount,
     aggregate_featurecount,
     sum_to_taxa,
     quantify_features,
@@ -72,6 +71,20 @@ rule remove_mark_duplicates:
         rm {params.temp_bam} {params.rehead_bam} {params.header}
         """
 
+rule samtools_stats:
+    input:
+        opj(config["paths"]["results"], "assembly", "{assembly}",
+                "mapping", "{sample}_{unit}_{seq_type}"+POSTPROCESS+".bam")
+    output:
+        opj(config["paths"]["results"], "assembly", "{assembly}",
+                "mapping", "{sample}_{unit}_{seq_type}"+POSTPROCESS+".bam.stats")
+    conda:
+        "../envs/quantify.yml"
+    shell:
+        """
+        samtools stats {input} > {output}
+        """
+
 ##### featurecounts #####
 
 rule featurecount:
@@ -103,53 +116,43 @@ rule featurecount:
             {params.setting} -T {threads} --tmpDir {params.tmpdir} {input.bam} > {log} 2>&1
         """
 
-rule samtools_stats:
-    input:
-        opj(config["paths"]["results"], "assembly", "{assembly}",
-                "mapping", "{sample}_{unit}_{seq_type}"+POSTPROCESS+".bam")
-    output:
-        opj(config["paths"]["results"], "assembly", "{assembly}",
-                "mapping", "{sample}_{unit}_{seq_type}"+POSTPROCESS+".bam.stats")
-    conda:
-        "../envs/quantify.yml"
-    shell:
-        """
-        samtools stats {input} > {output}
-        """
-
-rule normalize_featurecount:
+rule clean_featurecount:
     input:
         opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
-            "{sample}_{unit}_{seq_type}.fc.tsv"),
-        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
-            "{sample}_{unit}_{seq_type}"+POSTPROCESS+".bam.stats")
+            "{sample}_{unit}_{seq_type}.fc.tsv")
     output:
         opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
-            "{sample}_{unit}_{seq_type}.fc.tpm.tsv"),
-        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
-            "{sample}_{unit}_{seq_type}.fc.raw.tsv")
-    log:
-        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
-            "{sample}_{unit}_{seq_type}.fc.norm.log")
+            "{sample}_{unit}_{seq_type}.fc.clean.tsv")
     script:
         "../scripts/quantification_utils.py"
 
 rule aggregate_featurecount:
-    """Aggregates raw and normalized featureCounts files"""
+    """Aggregates all cleaned count files from featureCounts"""
     input:
-        raw_files=get_all_files(samples, opj(config["paths"]["results"],
+        get_all_files(samples, opj(config["paths"]["results"],
                                              "assembly", "{assembly}", "mapping"),
-                                ".fc.raw.tsv"),
-        tpm_files=get_all_files(samples, opj(config["paths"]["results"],
-                                             "assembly", "{assembly}", "mapping"),
-                                ".fc.tpm.tsv"),
-        gff_file=opj(config["paths"]["results"], "annotation", "{assembly}",
-                     "final_contigs.features.gff")
+                                ".fc.clean.tsv")
     output:
-        raw=opj(config["paths"]["results"], "annotation", "{assembly}", "fc.raw.tsv"),
-        tpm=opj(config["paths"]["results"], "annotation", "{assembly}", "fc.tpm.tsv")
+        opj(config["paths"]["results"], "annotation", "{assembly}", "counts.tsv")
     script:
         "../scripts/quantification_utils.py"
+
+rule rpkm:
+    """
+    Calculate RPKM for genes in an assembly
+    """
+    input:
+        opj(config["paths"]["results"], "annotation", "{assembly}", "counts.tsv")
+    output:
+        opj(config["paths"]["results"], "annotation", "{assembly}", "rpkm.tsv")
+    log:
+        opj(config["paths"]["results"], "annotation", "{assembly}", "rpkm.log")
+    params:
+        method = "RPKM"
+    conda:
+        "../envs/normalize.yml"
+    script:
+        "../scripts/normalize.R"
 
 rule quantify_features:
     input:
