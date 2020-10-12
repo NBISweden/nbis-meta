@@ -611,24 +611,25 @@ def annotation_input(config, assemblies):
         # Add EGGNOG annotation
         if config["annotation"]["eggnog"]:
             input += expand(opj(config["paths"]["results"], "annotation", group,
-                                "{db}.parsed.{fc}.tsv"),
+                                "{db}.parsed.{norm_method}.tsv"),
                             db=["enzymes", "pathways", "kos", "modules"],
-                            fc=["raw", "tpm"])
+                            norm_method=["counts", "TMM", "RLE", "CSS"])
         # Add PFAM annotation
         if config["annotation"]["pfam"]:
             input += expand(opj(config["paths"]["results"], "annotation", group,
-                                "pfam.parsed.{fc}.tsv"), fc=["tpm", "raw"])
+                                "pfam.parsed.{norm_method}.tsv"),
+                            norm_method=["counts", "TMM", "RLE", "CSS"])
         # Add taxonomic annotation
         if config["annotation"]["taxonomy"]:
             input += expand(
                 opj(config["paths"]["results"], "annotation", group, "taxonomy",
-                    "tax.{fc}.tsv"), fc=["tpm", "raw"])
+                    "tax.{counts_type}.tsv"),
+                counts_type=["counts", "rpkm"])
         # Add Resistance Gene Identifier output
         if config["annotation"]["rgi"]:
             input += expand(opj(config["paths"]["results"], "annotation", group,
-                                "rgi.{fc}.tsv"), fc=["raw", "tpm"])
-            input.append(opj(config["paths"]["results"], "annotation", group,
-                             "rgi.out.txt"))
+                                "rgi.parsed.{norm_method}.tsv"),
+                            norm_method=["counts", "TMM", "RLE", "CSS"])
     return input
 
 

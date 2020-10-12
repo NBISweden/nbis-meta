@@ -35,7 +35,9 @@ wildcard_constraints:
     seq_type="[sp]e",
     binner="[a-z]+",
     group="\w+",
-    l="\d+"
+    l="\d+",
+    counts_type="(counts|rpkm)",
+    norm_method="(TMM|CSS|RLE)"
 
 from scripts.common import check_uppmax, check_annotation, check_assembly, check_classifiers
 

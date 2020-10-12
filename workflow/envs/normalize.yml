@@ -1,0 +1,8 @@
+name: normalize
+channels:
+  - r
+  - bioconda
+  - defaults
+dependencies:
+  - bioconductor-edger=3.30.0
+  - bioconductor-metagenomeseq=1.30.0
