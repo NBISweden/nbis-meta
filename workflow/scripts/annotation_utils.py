@@ -5,7 +5,8 @@ import pandas as pd
 
 def parse_rgi(sm):
     annot = pd.read_csv(sm.input.txt, sep="\t", index_col=0)
-    annot = annot.loc[:, ["AMR Gene Family", "Resistance Mechanism"]]
+    annot = annot.loc[:, ["Model_ID", "AMR Gene Family", "Resistance Mechanism"]]
+    annot.loc[:, "Model_ID"] = ["RGI_{}".format(x) for x in annot.Model_ID]
     annot.rename(index=lambda x: x.split(" ")[0], inplace=True)
     annot.to_csv(sm.output.tsv, sep="\t", index=True)
 
