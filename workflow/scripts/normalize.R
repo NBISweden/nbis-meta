@@ -17,11 +17,16 @@ str_cols <- function(x) {
 method <- snakemake@params$method
 
 # Read the counts
-x <- read.delim(snakemake@input[[1]], row.names = 1)
+x <- read.delim(snakemake@input[[1]], row.names = 1, sep = "\t", header = TRUE)
 # Remove unclassified
 if ("Unclassified" %in% row.names(x)){
     x <- x[row.names(x)!="Unclassified", ]
 }
+if (nrow(x)==0) {
+    write.table(x, file = snakemake@output[[1]], quote = FALSE, sep="\t")
+    quit()
+}
+
 # Extract only numeric columns
 x_num <- num_cols(x)
 
@@ -46,6 +51,16 @@ if (method %in% c("TMM", "RLE")) {
 } else {
     library(metagenomeSeq)
     obj <- newMRexperiment(x_num)
+    smat = lapply(1:ncol(x_num), function(i) {
+	    sort(x_num[which(x_num[, i]>0),i], decreasing = TRUE)
+	})
+    if(any(sapply(smat,length)==1)) {
+        fh <-file(snakemake@output[[1]])
+        writeLines(c("WARNING: Sample with one or zero features",
+                     "Cumulative Sum Scaling failed for sample"), fh)
+        close(fh)
+        quit()
+    }
     norm <- MRcounts(obj, norm = TRUE)
 }
 
