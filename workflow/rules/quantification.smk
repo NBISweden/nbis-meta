@@ -142,6 +142,9 @@ rule rpkm:
         "../scripts/normalize.R"
 
 rule count_features:
+    """
+    Sums read counts for gene annotation features such as pfam, KOs etc.
+    """
     input:
         abund=opj(config["paths"]["results"], "annotation", "{assembly}", "gene_counts.tsv"),
         annot=opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.tsv")
@@ -151,6 +154,9 @@ rule count_features:
         "../scripts/quantification_utils.py"
 
 rule normalize_features:
+    """
+    Normalizes counts of features using TMM, REL or CSS
+    """
     input:
         opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.counts.tsv")
     output:
@@ -165,6 +171,9 @@ rule normalize_features:
         "../scripts/normalize.R"
 
 rule sum_to_taxa:
+    """
+    Sums read counts and RPKM values for genes to assigned taxonomy
+    """
     input:
         tax=opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
             "orfs.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"])),
@@ -173,13 +182,3 @@ rule sum_to_taxa:
         opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy", "tax.{counts_type}.tsv")
     script:
         "../scripts/quantification_utils.py"
-
-rule sum_to_rgi:
-    input:
-        annot=opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.out.txt"),
-        abund=opj(config["paths"]["results"], "annotation", "{assembly}", "gene_{counts_type}.tsv")
-    output:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.{counts_type}.tsv")
-    script:
-        "../scripts/quantification_utils.py"
-
