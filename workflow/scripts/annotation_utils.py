@@ -3,6 +3,13 @@
 import pandas as pd
 
 
+def parse_rgi(sm):
+    annot = pd.read_csv(sm.input.txt, sep="\t", index_col=0)
+    annot = annot.loc[:, ["AMR Gene Family", "Resistance Mechanism"]]
+    annot.rename(index=lambda x: x.split(" ")[0], inplace=True)
+    annot.to_csv(sm.output.tsv, sep="\t", index=True)
+
+
 def parse_pfam(sm):
     annot = pd.read_csv(sm.input[0], comment="#", header=None, sep=" +",
                         usecols=[0, 5, 7, 14], engine="python",
@@ -28,7 +35,8 @@ def parse_pfam(sm):
 
 
 def main(sm):
-    toolbox = {"parse_pfam": parse_pfam}
+    toolbox = {"parse_pfam": parse_pfam,
+               "parse_rgi": parse_rgi}
     toolbox[sm.rule](sm)
 
 
