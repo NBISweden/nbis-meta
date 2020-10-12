@@ -126,6 +126,8 @@ def sum_to_taxa(sm):
     df = pd.read_csv(sm.input.tax, sep="\t", index_col=0, header=None,
                      names=header)
     abund_df = pd.read_csv(sm.input.abund, header=0, index_col=0, sep="\t")
+    # Remove length column
+    abund_df.drop("Length", axis=1, inplace=True, errors="ignore")
     taxa_abund = pd.merge(df, abund_df, right_index=True, left_index=True)
     taxa_abund_sum = taxa_abund.groupby(header[1:]).sum().reset_index()
     taxa_abund_sum.to_csv(sm.output[0], sep="\t", index=False)
