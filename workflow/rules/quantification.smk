@@ -91,7 +91,7 @@ rule featurecount:
     threads: 4
     params:
         tmpdir=config["paths"]["temp"],
-        setting=lambda wildcards: "-B -p" if wildcards.seq_type == "pe" else ""
+        setting=lambda wildcards: "-Q 10 -B -p" if wildcards.seq_type == "pe" else ""
     resources:
         runtime=lambda wildcards, attempt: attempt**2*30
     conda:
