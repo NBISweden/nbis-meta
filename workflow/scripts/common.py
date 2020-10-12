@@ -628,10 +628,8 @@ def annotation_input(config, assemblies):
         # Add Resistance Gene Identifier output
         if config["annotation"]["rgi"]:
             input += expand(opj(config["paths"]["results"], "annotation", group,
-                                "rgi.{norm_method}.tsv"),
+                                "rgi.parsed.{norm_method}.tsv"),
                             norm_method=["counts", "TMM", "REL", "CSS"])
-            input.append(opj(config["paths"]["results"], "annotation", group,
-                             "rgi.out.txt"))
     return input
 
 
