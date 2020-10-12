@@ -110,7 +110,7 @@ def count_features(sm):
     :param sm:
     :return:
     """
-    feature_sum = sum_to_features(sm.input.abundance, sm.input.parsed)
+    feature_sum = sum_to_features(sm.input.abund, sm.input.annot)
     feature_sum.to_csv(sm.output[0], sep="\t")
 
 def sum_to_taxa(sm):
@@ -133,32 +133,12 @@ def sum_to_taxa(sm):
     taxa_abund_sum.to_csv(sm.output[0], sep="\t", index=False)
 
 
-def sum_to_rgi(sm):
-    """
-    Takes Resistance gene identifier output and abundance info per orf and sums
-    values to gene family level
-
-    :param sm: snakemake object
-    :return:
-    """
-    annot = pd.read_csv(sm.input.annot, sep="\t", header=0, index_col=0,
-                        usecols=[0, 16])
-    # Rename index for annotations to remove text after whitespace
-    annot.rename(index=lambda x: x.split(" ")[0], inplace=True)
-    abund = pd.read_csv(sm.input.abund, sep="\t", header=0, index_col=0)
-    df = pd.merge(annot, abund, left_index=True, right_index=True)
-    # Sum to Gene family
-    dfsum = df.groupby("AMR Gene Family").sum()
-    dfsum.to_csv(sm.output[0], sep="\t", index=True, header=True)
-
-
 def main(sm):
     toolbox = {"write_featurefile": write_featurefile,
                "clean_featurecount": clean_featurecount,
                "aggregate_featurecount": aggregate_featurecount,
                "count_features": count_features,
-               "sum_to_taxa": sum_to_taxa,
-               "sum_to_rgi": sum_to_rgi}
+               "sum_to_taxa": sum_to_taxa}
 
     toolbox[sm.rule](sm)
 
