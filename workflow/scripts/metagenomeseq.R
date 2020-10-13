@@ -1,15 +1,11 @@
 #!/usr/bin/env Rscript
 
+log <- file(snakemake@log[[1]], open="wt")
+sink(log)
+sink(log, type="message")
+
 library(metagenomeSeq)
-source("common.R")
-
-log <- file(snakemake@log[[1]], open="wt")
-sink(log)
-sink(log, type="message")
-
-log <- file(snakemake@log[[1]], open="wt")
-sink(log)
-sink(log, type="message")
+source("workflow/scripts/common.R")
 
 method <- snakemake@params$method
 input <- snakemake@input[[1]]

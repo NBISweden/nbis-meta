@@ -1,12 +1,11 @@
 #!/usr/bin/env Rscript
 
-library(edgeR)
-source("common.R")
-
 log <- file(snakemake@log[[1]], open="wt")
 sink(log)
 sink(log, type="message")
+source("workflow/scripts/common.R")
 
+library(edgeR)
 method <- snakemake@params$method
 input <- snakemake@input[[1]]
 output <- snakemake@output[[1]]
