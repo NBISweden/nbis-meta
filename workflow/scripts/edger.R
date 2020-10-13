@@ -10,7 +10,14 @@ method <- snakemake@params$method
 input <- snakemake@input[[1]]
 output <- snakemake@output[[1]]
 
-x_num <- process_data(input, output)
+# Read the counts
+x <- read.delim(input, row.names = 1, sep = "\t", header = TRUE)
+# Remove unclassified
+if ("Unclassified" %in% row.names(x)){
+    x <- x[row.names(x)!="Unclassified", ]
+}
+
+x_num <- process_data(x, output)
 
 if (method %in% c("TMM", "RLE")) {
     # Create DGE
