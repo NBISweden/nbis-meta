@@ -117,13 +117,13 @@ annotation:
   # run tRNAscan-SE?
   tRNAscan: False
   # run infernal for rRNA identification?
-  infernal: True
+  infernal: False
   # run eggnog-mapper to infer KEGG orthologs, pathways and modules?
   eggnog: False
   # run PFAM-scan to infer protein families from PFAM?
-  pfam: True
+  pfam: False
   # run Resistance gene identifier?
-  rgi: False
+  rgi: True
   # run taxonomic annotation of assembled contigs (using tango + sourmash)?
   taxonomy: False
 

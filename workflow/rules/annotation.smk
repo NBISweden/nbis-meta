@@ -411,6 +411,7 @@ rule rgi:
     params:
         out=opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.out"),
         settings="-a diamond --local --clean --input_type protein"
+    shadow: "minimal"
     conda:
         "../envs/rgi.yml"
     threads: 10
@@ -418,7 +419,15 @@ rule rgi:
         runtime=lambda wildcards, attempt: attempt**2*60
     shell:
         """
-        rgi load --card_json {input.db} --local > {log} 2>&1
+        rgi load -i {input.db} --local > {log} 2>&1
         rgi main -i {input.faa} -o {params.out} \
             -n {threads} {params.settings} >>{log} 2>>{log}
         """
+
+rule parse_rgi:
+    input:
+        txt=opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.out.txt")
+    output:
+        tsv=opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.parsed.tsv")
+    script:
+        "../scripts/annotation_utils.py"
