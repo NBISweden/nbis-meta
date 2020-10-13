@@ -2,16 +2,17 @@ from scripts.common import annotation_input
 
 localrules: 
     annotate,
-    parse_ko_annotations, 
-    parse_pfam,
     download_rfams,
     press_rfams,
     download_pfam,
-    press_pfam,
     download_pfam_info,
+    press_pfam,
+    parse_pfam,
     download_eggnog,
     get_kegg_info,
-    download_rgi_data
+    parse_ko_annotations,
+    download_rgi_data,
+    parse_rgi
 
 ##### annotation master rule #####
 
