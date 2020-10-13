@@ -119,7 +119,7 @@ annotation:
   # run infernal for rRNA identification?
   infernal: False
   # run eggnog-mapper to infer KEGG orthologs, pathways and modules?
-  eggnog: False
+  eggnog: True
   # run PFAM-scan to infer protein families from PFAM?
   pfam: False
   # run Resistance gene identifier?

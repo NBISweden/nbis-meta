@@ -49,8 +49,9 @@ jobs:
     - name: Kraken
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml -p results/kraken/sample1_1_pe.kreport results/kraken/sample4_1_se.kreport
-    - name: Metaspades + RGI
+    - name: Metaspades + annotation
       run: |
+        bash .test/scripts/prep_eggnog.sh
         snakemake --use-conda -j 4 --configfile .test/config/metaspades.yaml -p annotate
         rm -r results/assembly results/report examples/data/sample*
     - name: Prepare taxonomy
