@@ -77,7 +77,7 @@ if config["assembly"]["metaspades"]:
             metaspades.py \
                 -t {threads} -1 {input.R1} -2 {input.R2} $single \
                 -o {params.tmp} > {log} 2>&1
-            
+
             # If set to keep intermediate contigs, move to intermediate folder before deleting
             if [ "{config[metaspades][keep_intermediate]}" == "True" ]; then
                 mkdir -p {params.intermediate_contigs}
@@ -87,7 +87,7 @@ if config["assembly"]["metaspades"]:
                 mkdir -p {params.corrected}
                 cp -r {params.tmp}/corrected {params.corrected}
             fi
-            
+
             # Clear intermediate contigs
             rm -rf {params.tmp}/K*
             # Clear corrected reads dir
@@ -162,20 +162,20 @@ else:
             else
                 single=""
             fi
-            
+
             # Run Megahit
             megahit -t {threads} $paired $single -o {params.tmp} \
                 {params.additional_settings} >{log} 2>&1
-            
+
             # Sync intermediate contigs if asked for
             if [ "{config[megahit][keep_intermediate]}" == "True" ]; then
                 mkdir -p {params.intermediate_contigs}
                 cp -r {params.tmp}/intermediate_contigs/* {params.intermediate_contigs}
             fi
-            
+
             # Cleanup intermediate
             rm -rf {params.tmp}/intermediate_contigs
-            
+
             # Sync tmp output to outdir before removing
             cp -r {params.tmp}/* {params.output_dir}
             rm -rf {params.tmp}
@@ -277,7 +277,7 @@ rule bowtie_map_se:
     shell:
         """
         bowtie2 {params.setting} -p {threads} -x {params.prefix} \
-            -U {input.se} 2>{output.log} | samtools view -bh - | samtools sort - -o {params.temp_bam} 
+            -U {input.se} 2>{output.log} | samtools view -bh - | samtools sort - -o {params.temp_bam}
         samtools index {params.temp_bam}
         mv {params.temp_bam} {output.bam}
         mv {params.temp_bam}.bai {output.bai}
@@ -304,7 +304,7 @@ rule samtools_flagstat:
         "../envs/quantify.yml"
     shell:
         """
-        for f in {input} ; 
+        for f in {input} ;
         do
             al=$(samtools \
                 flagstat \

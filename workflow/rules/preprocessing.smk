@@ -131,13 +131,13 @@ rule sortmerna_fastq_pe:
         "../envs/preprocess.yml"
     shell:
          """
-         mkdir -p {params.scratch} 
+         mkdir -p {params.scratch}
          # Run SortMeRNA
          sortmerna --blast 1 --log -v --fastx --ref {params.ref_string} \
             --reads {input.fastq} -a {threads} --{params.paired_strategy} \
             --aligned {params.aligned_prefix} --other {params.other_prefix} \
             {params.score_params} >{log} 2>&1
-         
+
          mv {params.aligned_prefix}.fastq {output.aligned}
          mv {params.aligned_prefix}.log {log}
          mv {params.other_prefix}.fastq {output.other}
@@ -257,7 +257,7 @@ rule sortmerna_fastq_se:
             --reads {input.fastq} -a {threads} --other {params.other_prefix} \
             --aligned {params.aligned_prefix} {params.score_params} \
             >{log} 2>&1
-        
+
         mv {params.aligned_prefix}.fastq {output.aligned}
         mv {params.aligned_prefix}.log {log}
         mv {params.other_prefix}.fastq {output.other}
@@ -360,7 +360,7 @@ rule trimmomatic_pe:
             2>{log.R1log}
         sed \
             's/{wildcards.sample}_{wildcards.unit}_R1/{wildcards.sample}_{wildcards.unit}_R2/g' \
-            {log.R1log} > {log.R2log}    
+            {log.R1log} > {log.R2log}
         """
 
 rule trimmomatic_se:
