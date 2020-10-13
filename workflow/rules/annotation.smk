@@ -411,7 +411,9 @@ rule rgi:
         opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.log")
     params:
         out=opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.out"),
-        settings="-a diamond --local --clean --input_type protein"
+        settings="-a diamond --local --clean --input_type protein",
+        faa=opj(config["paths"]["temp"], "{assembly}.rgi", "final_contig.faa"),
+        tmpdir=opj(config["paths"]["temp"], "{assembly}.rgi")
     shadow: "minimal"
     conda:
         "../envs/rgi.yml"
@@ -420,9 +422,12 @@ rule rgi:
         runtime=lambda wildcards, attempt: attempt**2*60
     shell:
         """
+        mkdir -p {params.tmpdir}
         rgi load -i {input.db} --local > {log} 2>&1
-        rgi main -i {input.faa} -o {params.out} \
+        sed 's/*//g' {input.faa} > {params.faa}
+        rgi main -i {params.faa} -o {params.out} \
             -n {threads} {params.settings} >>{log} 2>>{log}
+        rm -r {params.tmpdir}
         """
 
 rule parse_rgi:
