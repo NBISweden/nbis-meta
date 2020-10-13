@@ -1,6 +1,6 @@
 from scripts.common import annotation_input
 
-localrules: 
+localrules:
     annotate,
     download_rfams,
     press_rfams,
@@ -59,7 +59,7 @@ rule trnascan:
     shell:
         """
         tRNAscan-SE -G -b {output.bed} -o {output.file} -a {output.fasta} \
-            --thread {threads} {input} >{log} 2>&1            
+            --thread {threads} {input} >{log} 2>&1
         """
 
 rule download_rfams:
@@ -85,11 +85,11 @@ rule download_rfams:
         # Extract only rfams of interest
         tar -C {params.dir} -zxf {output.tar} {params.rfams}
         cat {params.dir}/*.cm > {output.cm}
-        
+
         # Get release
         curl -o {output.readme} {params.url}/README 2>/dev/null
         grep -m 1 Release {output.readme} > {output.version}
-        
+
         # Get clans
         curl {params.url}/Rfam.clanin 2>/dev/null | egrep -w \
             "CL0011[123]" > {output.clanin}
@@ -287,7 +287,7 @@ rule emapper_homology_search:
     shell:
         """
         mkdir -p {params.tmpdir}
-        emapper.py {params.flags} --cpu {threads} --temp_dir {params.tmpdir} \ 
+        emapper.py {params.flags} --cpu {threads} --temp_dir {params.tmpdir} \
         -i {input[0]} -o {params.out} --output_dir {params.tmpdir} \
             --data_dir {params.resource_dir} >{log} 2>&1
         mv {params.tmp_out}.emapper.seed_orthologs {output[0]}
