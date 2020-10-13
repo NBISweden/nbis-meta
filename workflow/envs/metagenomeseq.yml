@@ -1,7 +1,9 @@
-name: normalize
+name: metagenomeseq
 channels:
+  - conda-forge
   - bioconda
+  - r
   - defaults
 dependencies:
-  - bioconductor-edger
+  - r-base
   - bioconductor-metagenomeseq

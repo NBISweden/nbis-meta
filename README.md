@@ -5,7 +5,7 @@ A workflow for metagenomic projects
 [![Snakemake 5.11.2](https://img.shields.io/badge/snakemake-5.11.2-brightgreen.svg)](https://img.shields.io/badge/snakemake-5.11.2)
 ![CI](https://github.com/NBISweden/nbis-meta/workflows/CI/badge.svg?branch=master)
 ![Docker](https://img.shields.io/docker/pulls/nbisweden/nbis-meta)
-
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
 ## Overview
 A [snakemake](http://snakemake.readthedocs.io/en/stable/) workflow for
@@ -19,7 +19,7 @@ You can use this workflow for _e.g._:
 - **functional and taxonomic annotation**
 - **metagenomic binning**
 
-See the [Wiki-pages](https://github.com/NBISweden/nbis-meta/wiki) for 
+See the [Wiki-pages](https://github.com/NBISweden/nbis-meta/wiki) for
 instructions on how to run the workflow.
 
 ## Installation
