@@ -51,11 +51,8 @@ jobs:
         snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml -p results/kraken/sample1_1_pe.kreport results/kraken/sample4_1_se.kreport
     - name: Metaspades + RGI
       run: |
-        snakemake --use-conda -j 4 --configfile .test/config/metaspades.yaml -p assemble
-        rm -r results/assembly results/report examples/data/sample*
-    - name: RGI
-      run: |
         snakemake --use-conda -j 4 --configfile .test/config/metaspades.yaml -p annotate
+        rm -r results/assembly results/report examples/data/sample*
     - name: Prepare taxonomy
       run: bash .test/scripts/prep_taxonomy.sh
     - name: Taxonomy
