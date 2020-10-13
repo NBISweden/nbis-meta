@@ -1,12 +1,12 @@
 localrules:
     quantify,
     write_featurefile,
-    aggregate_featurecount,
     clean_featurecount,
+    aggregate_featurecount,
+    rpkm,
     count_features,
     normalize_features,
-    sum_to_taxa,
-    sum_to_rgi
+    sum_to_taxa
 
 ##### quantify master rule #####
 

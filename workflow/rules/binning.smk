@@ -22,7 +22,6 @@ localrules:
     cluster_genomes,
     count_rRNA,
     count_tRNA,
-    aggregate_gtdbtk,
     aggregate_bin_annot,
     binning_report
 

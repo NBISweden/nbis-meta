@@ -16,6 +16,8 @@ rule assemble:
         opj(config["paths"]["results"], "report", "assembly", "alignment_frequency.pdf")
 
 if config["assembly"]["metaspades"]:
+    localrules:
+        generate_metaspades_input
     rule generate_metaspades_input:
         """Generate input files for use with Metaspades"""
         input:
@@ -97,6 +99,8 @@ if config["assembly"]["metaspades"]:
             """
 
 else:
+    localrules:
+        generate_megahit_input
     rule generate_megahit_input:
         """Generate input lists for Megahit"""
         input:
