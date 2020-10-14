@@ -13,6 +13,8 @@ on:
       - 'LICENSE'
     branches:
       - master
+env:
+  TMPDIR: /tmp
 
 jobs:
   test:
