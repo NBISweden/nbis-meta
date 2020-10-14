@@ -27,45 +27,50 @@ jobs:
     - uses: s-weigand/setup-conda@v1
     - name: Install the conda environment
       run: conda env update -n base -f environment.yml
+    # First dry-run on full workflow
     - name: Dry run
       run: snakemake --use-conda -j 4 --configfile .test/config/dry-run.yaml -n
+    # Test cutadapt (10k reads/sample)
     - name: Cutadapt
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/cutadapt.yaml -p --notemp qc
         snakemake -j 1 --configfile .test/config/cutadapt.yaml --report report.html qc
+    # Upload sample report
     - name: Upload cutadapt report
       uses: actions/upload-artifact@v1
       with:
         name: ${{ runner.os }}-cutadapt.html
         path: report.html
+    # Test all other preprocessing software except cutadapt (10k reads/sample)
     - name: Preprocess
       run: |
         rm -rf results report.html
         snakemake --use-conda -j 4 --configfile .test/config/preprocess.yaml -p qc
         snakemake --use-conda -j 4 --configfile .test/config/preprocess.yaml -p --report report.html qc
+    # Upload samples report
     - name: Upload samples report
       uses: actions/upload-artifact@v1
       with:
         name: ${{ runner.os }}-samples_report.html
         path: report.html
+    # Run kraken for sample1 (paired-end) and sample4 (single-end) (10k reads/sample)
     - name: Kraken
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml -p results/kraken/sample1_1_pe.kreport results/kraken/sample4_1_se.kreport
-    - name: Metaspades + annotation
+        rm -rf results examples/data/sample*
+    # Test annotations + normalizations with metaspades (100k reads/sample)
+    - name: Annotation
       run: |
         bash .test/scripts/prep_eggnog.sh
-        snakemake --use-conda -j 4 --configfile .test/config/metaspades.yaml -p annotate
+        bash .test/scripts/prep_taxonomy.sh
+        snakemake --use-conda -j 4 --configfile .test/config/annotate.yaml -p annotate
         rm -r results/assembly results/report examples/data/sample*
-    - name: Prepare taxonomy
-      run: bash .test/scripts/prep_taxonomy.sh
-    - name: Taxonomy
-      run: |
-        snakemake --use-conda -j 4 --configfile .test/config/taxonomy.yaml -p taxonomy
-        rm -r results examples/data/sample*
+    # Test Metabat2 with Megahit (200k reads/sample)
     - name: Metabat
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p bin assemble
         snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p --report report.html bin assemble
+    # Upload report
     - name: Upload snakemake report
       uses: actions/upload-artifact@v1
       with:
@@ -89,16 +94,20 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-${{ env.cache-name }}
           ${{ runner.os }}-
+    # Run kraken and produce final output reports (linux only) (10k reads/sample)
     - name: Kraken
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/kraken.yaml --notemp -p classify
         rm -r examples/data/sample* results
+    # Run binning including also checkm (200k reads/sample)
     - name: Binning
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/binning.yaml -p assemble bin
+    # Create report for assembly and binning
     - name: Snakemake report
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/binning.yaml -p --report report.html assemble bin
+    # Upload report
     - name: Upload snakemake report
       uses: actions/upload-artifact@v1
       with:
