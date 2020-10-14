@@ -27,7 +27,6 @@ rule link_files:
         lambda wildcards: samples[wildcards.sample][wildcards.unit][wildcards.pair]
     output:
         opj(config["paths"]["results"], "intermediate", "preprocess", "{sample}_{unit}_{pair}.fastq.gz")
-    message: "Linking {wildcards.sample}_{wildcards.unit}_{wildcards.pair}.fastq.gz"
     run:
         link(input[0], output[0])
 
