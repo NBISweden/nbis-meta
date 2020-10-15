@@ -38,7 +38,7 @@ wildcard_constraints:
     l="\d+",
     camidataset="CAMI_I_TOY_LOW|CAMI_I_TOY_MEDIUM|CAMI_I_TOY_HIGH",
     counts_type="(counts|rpkm)",
-    norm_method="(TMM|CSS|RLE)"
+    norm_method="(TMM|RLE)"
 
 from scripts.common import check_uppmax, check_annotation, check_assembly, check_classifiers
 

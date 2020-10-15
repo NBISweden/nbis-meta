@@ -1,0 +1,9 @@
+name: metagenomeseq
+channels:
+  - conda-forge
+  - bioconda
+  - r
+  - defaults
+dependencies:
+  - r-base
+  - bioconductor-metagenomeseq

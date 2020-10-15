@@ -125,7 +125,7 @@ rule contigtax_update:
         else
             cd {params.dir}
             ln -s $(basename {input.idmap}) $(basename {output.idmap})
-        fi            
+        fi
         """
 
 rule contigtax_build:
@@ -145,7 +145,7 @@ rule contigtax_build:
     shell:
          """
          contigtax build -d {output} -p {threads} {input.fasta} \
-            {input.idmap} {input.nodes} >{log} 2>&1 
+            {input.idmap} {input.nodes} >{log} 2>&1
          """
 
 rule contigtax_search:

@@ -14,15 +14,15 @@ preprocessing:
   # if no preprocessing is done, fastqc will be run on the raw reads
   fastqc: False
   # trim reads with trimmomatic? (quality and adapter trimming)
-  trimmomatic: True
+  trimmomatic: False
   # trim reads with cutadapt? (runs instead of trimmomatic, no quality trimming)
   cutadapt: False
   # run fastuniq (removes duplicates from paired-end samples)
-  fastuniq: True
+  fastuniq: False
   # map reads agains the phix genome and keep only reads that do not map concordantly
-  phix_filter: True
+  phix_filter: False
   # run SortMeRNA to identify (and filter) rRNA sequences
-  sortmerna: True
+  sortmerna: False
 
 # parameters for trimmomatic
 trimmomatic:
@@ -91,7 +91,7 @@ remove_duplicates: True
 
 assembly:
   # run Megahit assembler?
-  megahit: True
+  megahit: False
   # Use Metaspades instead of Megahit for assembly?
   metaspades: True
 
@@ -119,13 +119,13 @@ annotation:
   # run infernal for rRNA identification?
   infernal: False
   # run eggnog-mapper to infer KEGG orthologs, pathways and modules?
-  eggnog: False
+  eggnog: True
   # run PFAM-scan to infer protein families from PFAM?
   pfam: False
   # run Resistance gene identifier?
   rgi: True
   # run taxonomic annotation of assembled contigs (using tango + sourmash)?
-  taxonomy: False
+  taxonomy: True
 
 # params for taxonomic annotation of contigs/orfs
 taxonomy:
@@ -262,4 +262,4 @@ metaphlan:
 # this sets the number of reads to generate for example input files
 # the files are generated based on the config/samples.tsv file and stored
 # under examples/data
-example_dataset_size: 10000
+example_dataset_size: 100000

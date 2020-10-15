@@ -5,7 +5,8 @@ localrules:
     aggregate_featurecount,
     rpkm,
     count_features,
-    normalize_features,
+    edger_normalize_features,
+    css_normalize_features,
     sum_to_taxa
 
 ##### quantify master rule #####
@@ -137,9 +138,9 @@ rule rpkm:
     params:
         method = "RPKM"
     conda:
-        "../envs/normalize.yml"
+        "../envs/edger.yml"
     script:
-        "../scripts/normalize.R"
+        "../scripts/edger.R"
 
 rule count_features:
     """
@@ -153,9 +154,9 @@ rule count_features:
     script:
         "../scripts/quantification_utils.py"
 
-rule normalize_features:
+rule edger_normalize_features:
     """
-    Normalizes counts of features using TMM, REL or CSS
+    Normalizes counts of features using TMM and REL
     """
     input:
         opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.counts.tsv")
@@ -166,9 +167,24 @@ rule normalize_features:
     params:
         method = "{norm_method}"
     conda:
-        "../envs/normalize.yml"
+        "../envs/edger.yml"
     script:
-        "../scripts/normalize.R"
+        "../scripts/edger.R"
+
+rule css_normalize_features:
+    """
+    Normalizes counts of features using CSS from metagenomeSeq
+    """
+    input:
+        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.counts.tsv")
+    output:
+        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.CSS.tsv")
+    log:
+        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.CSS.log")
+    conda:
+        "../envs/metagenomeseq.yml"
+    script:
+        "../scripts/metagenomeseq.R"
 
 rule sum_to_taxa:
     """

@@ -12,9 +12,9 @@ paths:
 preprocessing:
   # run fastqc on (preprocessed) input?
   # if no preprocessing is done, fastqc will be run on the raw reads
-  fastqc: True
+  fastqc: False
   # trim reads with trimmomatic? (quality and adapter trimming)
-  trimmomatic: True
+  trimmomatic: False
   # trim reads with cutadapt? (runs instead of trimmomatic, no quality trimming)
   cutadapt: False
   # run fastuniq (removes duplicates from paired-end samples)
@@ -87,13 +87,13 @@ sortmerna:
   extra_settings: "--num_alignments 1"
 
 # remove duplicates from bam files?
-remove_duplicates: True
+remove_duplicates: False
 
 assembly:
   # run Megahit assembler?
-  megahit: False
+  megahit: True
   # Use Metaspades instead of Megahit for assembly?
-  metaspades: True
+  metaspades: False
 
 megahit:
   # maximum threads for megahit
