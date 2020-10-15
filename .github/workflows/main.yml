@@ -63,7 +63,7 @@ jobs:
       run: |
         bash .test/scripts/prep_eggnog.sh
         bash .test/scripts/prep_taxonomy.sh
-        snakemake --use-conda -j 4 --configfile .test/config/annotate.yaml -p annotate
+        snakemake --use-conda -j 2 --configfile .test/config/annotate.yaml -p annotate
         rm -r results/assembly examples/data/sample*
     # Test Metabat2 with Megahit (200k reads/sample)
     - name: Metabat
