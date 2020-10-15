@@ -1,8 +1,9 @@
-name: metaphlan
+name: edger
 channels:
   - conda-forge
   - bioconda
+  - r
   - defaults
 dependencies:
-  - python=3.7.6
-  - metaphlan=3.0
+  - r-base
+  - bioconductor-edger=3.30.0

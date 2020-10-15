@@ -9,7 +9,7 @@ localrules:
     contig_map,
     binning_stats,
     aggregate_binning_stats,
-    download_checkm, 
+    download_checkm,
     checkm_qa,
     remove_checkm_zerocols,
     aggregate_checkm_stats,
@@ -22,7 +22,6 @@ localrules:
     cluster_genomes,
     count_rRNA,
     count_tRNA,
-    aggregate_gtdbtk,
     aggregate_bin_annot,
     binning_report
 
@@ -119,12 +118,12 @@ rule maxbin:
         else
             # Rename fasta files
             ls {params.tmp_dir} | grep ".fasta" | while read f;
-            do 
+            do
                 mv {params.tmp_dir}/$f {params.dir}/${{f%.fasta}}.fa
             done
             # Move output from temporary dir
             ls {params.tmp_dir} | while read f;
-            do 
+            do
                 mv {params.tmp_dir}/$f {params.dir}/
             done
         fi
@@ -155,11 +154,11 @@ rule concoct_coverage_table:
         p=POSTPROCESS
     shell:
         """
-        for f in {input.bam} ; 
-            do 
-                n=$(basename $f); 
-                s=$(echo -e $n | sed 's/_[ps]e{params.p}.bam//g'); 
-                echo $s; 
+        for f in {input.bam} ;
+            do
+                n=$(basename $f);
+                s=$(echo -e $n | sed 's/_[ps]e{params.p}.bam//g');
+                echo $s;
             done > {params.samplenames}
         concoct_coverage_table.py \
             --samplenames {params.samplenames} \
@@ -423,7 +422,7 @@ rule checkm_qa:
         else
             checkm qa -o 2 --tab_table -f {output.tsv} \
                 {input.ms} {params.dir} > {log} 2>&1
-        fi 
+        fi
         """
 
 rule checkm_coverage:
@@ -573,7 +572,7 @@ rule gtdbtk_classify:
 
 rule aggregate_gtdbtk:
     """
-    Aggregates GTDB-TK phylogenetic results from several assemblies into a 
+    Aggregates GTDB-TK phylogenetic results from several assemblies into a
     single table.
     """
     input:
@@ -635,7 +634,7 @@ rule barrnap:
                     barrnap --kingdom $k --quiet {params.indir}/$g.fa | \
                         egrep -v "^#" | sed "s/$/;genome=$g/g" >> {output}
                 done
-        fi              
+        fi
         """
 
 rule count_rRNA:
@@ -688,7 +687,7 @@ rule trnascan_bins:
                     tRNAscan-SE $model --quiet --thread {threads} \
                         {params.indir}/$g.fa | tail -n +4 | sed "s/$/\t$g/g" >> {output}
                 done
-        fi          
+        fi
         """
 
 rule count_tRNA:
@@ -705,7 +704,7 @@ rule count_tRNA:
 
 rule aggregate_bin_annot:
     input:
-        trna=expand(opj(config["paths"]["results"], "binning", "{binner}", 
+        trna=expand(opj(config["paths"]["results"], "binning", "{binner}",
                         "{assembly}", "{l}", "tRNAscan", "tRNA.total.tsv"),
                     binner=get_binners(config),
                     assembly=assemblies.keys(),
@@ -778,7 +777,6 @@ rule fastANI:
         fastANI --rl {input[0]} --ql {input[1]} -k {params.k} -t {threads} \
             --fragLen {params.frag_len} --minFraction {params.fraction} \
             --matrix -o {output[0]} > {log} 2>&1
-        rm {params.indir}/*.fa {params.indir}/*.fna
         """
 
 rule cluster_genomes:

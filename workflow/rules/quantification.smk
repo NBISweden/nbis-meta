@@ -1,22 +1,21 @@
-from scripts.common import markdup_mem
-
 localrules:
     quantify,
     write_featurefile,
-    samtools_stats,
-    normalize_featurecount,
+    clean_featurecount,
     aggregate_featurecount,
-    sum_to_taxa,
-    quantify_features,
-    sum_to_rgi
+    rpkm,
+    count_features,
+    edger_normalize_features,
+    css_normalize_features,
+    sum_to_taxa
 
 ##### quantify master rule #####
 
 rule quantify:
     input:
         expand(opj(config["paths"]["results"], "annotation", "{assembly}",
-                   "fc.{fc_type}.tsv"),
-               assembly=assemblies.keys(), fc_type=["tpm", "raw"])
+                   "gene_{counts_type}.tsv"),
+               assembly=assemblies.keys(), counts_type=["counts", "rpkm"])
 
 
 rule write_featurefile:
@@ -41,161 +40,161 @@ rule remove_mark_duplicates:
     log:
         opj(config["paths"]["results"], "assembly", "{assembly}", "mapping", "{sample}_{unit}_{seq_type}.markdup.log")
     params:
+        header=opj(config["paths"]["temp"], "{assembly}", "{sample}_{unit}_{seq_type}.header"),
+        rehead_bam=opj(config["paths"]["temp"], "{assembly}", "{sample}_{unit}_{seq_type}.rehead.bam"),
         temp_bam=opj(config["paths"]["temp"], "{assembly}", "{sample}_{unit}_{seq_type}.markdup.bam"),
         temp_sort_bam=opj(config["paths"]["temp"], "{assembly}", "{sample}_{unit}_{seq_type}.markdup.re_sort.bam"),
         temp_dir=opj(config["paths"]["temp"], "{assembly}")
     threads: 10
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*4,
-        mem_mb=lambda wildcards: markdup_mem(wildcards, workflow.cores)
+        runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
         "../envs/quantify.yml"
     shell:
         """
         mkdir -p {params.temp_dir}
-        java -Xms2g -Xmx{resources.mem_mb}g -XX:ParallelGCThreads={threads} \
+        # Fix bam header
+        samtools view -H {input} | egrep -v "^@PG" > {params.header}
+        samtools reheader -P {params.header} {input} > {params.rehead_bam}
+        # Set memory max
+        mem="-Xmx$((6 * {threads}))g"
+        java -Xms2g $mem -XX:ParallelGCThreads={threads} \
             -jar $CONDA_PREFIX/share/picard-*/picard.jar MarkDuplicates \
-            I={input} M={output[2]} O={params.temp_bam} REMOVE_DUPLICATES=TRUE \
-            USE_JDK_DEFLATER=TRUE USE_JDK_INFLATER=TRUE ASO=coordinate 2> {log}
+            I={params.rehead_bam} M={output[2]} O={params.temp_bam} REMOVE_DUPLICATES=TRUE \
+            USE_JDK_DEFLATER=TRUE USE_JDK_INFLATER=TRUE ASSUME_SORT_ORDER=coordinate \
+            PROGRAM_RECORD_ID=null ADD_PG_TAG_TO_READS=FALSE 2> {log}
         # Re sort the bam file using samtools
-        samtools sort -o {params.temp_sort_bam} {params.temp_bam}
+        samtools_threads="$(({threads} - 1))"
+        samtools sort -@ $samtools_threads -o {params.temp_sort_bam} {params.temp_bam} > /dev/null 2>&1
         # Index the bam file
         samtools index {params.temp_sort_bam}
         mv {params.temp_sort_bam} {output[0]}
         mv {params.temp_sort_bam}.bai {output[1]}
-        rm {params.temp_bam}
+        rm {params.temp_bam} {params.rehead_bam} {params.header}
         """
 
 ##### featurecounts #####
 
-rule featurecount_pe:
+rule featurecount:
     input:
         gff=opj(config["paths"]["results"], "annotation", "{assembly}",
                 "final_contigs.features.gff"),
         bam=opj(config["paths"]["results"], "assembly", "{assembly}",
-                "mapping", "{sample}_{unit}_pe"+POSTPROCESS+".bam")
-    output:
-        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
-            "{sample}_{unit}_pe.fc.tsv"),
-        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
-            "{sample}_{unit}_pe.fc.tsv.summary")
-    log:
-        opj(config["paths"]["results"], "assembly", "{assembly}",
-            "mapping", "{sample}_{unit}_pe.fc.log")
-    threads: 4
-    params: tmpdir=config["paths"]["temp"]
-    resources:
-        runtime=lambda wildcards, attempt: attempt**2*30
-    conda:
-        "../envs/quantify.yml"
-    shell:
-        """
-        featureCounts -a {input.gff} -o {output[0]} -t CDS -g gene_id -M -p \
-            -B -T {threads} --tmpDir {params.tmpdir} {input.bam} > {log} 2>&1
-        """
-
-rule featurecount_se:
-    input:
-        gff=opj(config["paths"]["results"], "annotation", "{assembly}",
-                "final_contigs.features.gff"),
-        bam=opj(config["paths"]["results"], "assembly", "{assembly}",
-                "mapping", "{sample}_{unit}_se"+POSTPROCESS+".bam")
-    output:
-        opj(config["paths"]["results"], "assembly", "{assembly}",
-            "mapping", "{sample}_{unit}_se.fc.tsv"),
-        opj(config["paths"]["results"], "assembly", "{assembly}",
-            "mapping", "{sample}_{unit}_se.fc.tsv.summary")
-    log:
-        opj(config["paths"]["results"], "assembly", "{assembly}",
-            "mapping", "{sample}_{unit}_se.fc.log")
-    threads: 4
-    params: tmpdir=config["paths"]["temp"]
-    resources:
-        runtime=lambda wildcards, attempt: attempt**2*30
-    conda:
-        "../envs/quantify.yml"
-    shell:
-        """
-        featureCounts -a {input.gff} -o {output[0]} -t CDS -g gene_id \
-            -M -T {threads} --tmpDir {params.tmpdir} {input.bam} > {log} 2>&1
-        """
-
-rule samtools_stats:
-    input:
-        opj(config["paths"]["results"], "assembly", "{assembly}",
                 "mapping", "{sample}_{unit}_{seq_type}"+POSTPROCESS+".bam")
     output:
-        opj(config["paths"]["results"], "assembly", "{assembly}",
-                "mapping", "{sample}_{unit}_{seq_type}"+POSTPROCESS+".bam.stats")
-    conda:
-        "../envs/quantify.yml"
-    shell:
-        """
-        samtools stats {input} > {output}
-        """
-
-rule normalize_featurecount:
-    input:
         opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
             "{sample}_{unit}_{seq_type}.fc.tsv"),
         opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
-            "{sample}_{unit}_{seq_type}"+POSTPROCESS+".bam.stats")
+            "{sample}_{unit}_{seq_type}.fc.tsv.summary")
+    log:
+        opj(config["paths"]["results"], "assembly", "{assembly}",
+            "mapping", "{sample}_{unit}_{seq_type}.fc.log")
+    threads: 4
+    params:
+        tmpdir=config["paths"]["temp"],
+        setting=lambda wildcards: "-Q 10 -B -p" if wildcards.seq_type == "pe" else ""
+    resources:
+        runtime=lambda wildcards, attempt: attempt**2*30
+    conda:
+        "../envs/quantify.yml"
+    shell:
+        """
+        mkdir -p {params.tmpdir}
+        featureCounts -a {input.gff} -o {output[0]} -t CDS -g gene_id -M \
+            {params.setting} -T {threads} --tmpDir {params.tmpdir} {input.bam} > {log} 2>&1
+        """
+
+rule clean_featurecount:
+    input:
+        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
+            "{sample}_{unit}_{seq_type}.fc.tsv")
     output:
         opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
-            "{sample}_{unit}_{seq_type}.fc.tpm.tsv"),
-        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
-            "{sample}_{unit}_{seq_type}.fc.raw.tsv")
-    log:
-        opj(config["paths"]["results"], "assembly", "{assembly}", "mapping",
-            "{sample}_{unit}_{seq_type}.fc.norm.log")
+            "{sample}_{unit}_{seq_type}.fc.clean.tsv")
     script:
         "../scripts/quantification_utils.py"
 
 rule aggregate_featurecount:
-    """Aggregates raw and normalized featureCounts files"""
+    """Aggregates all cleaned count files from featureCounts"""
     input:
-        raw_files=get_all_files(samples, opj(config["paths"]["results"],
-                                             "assembly", "{assembly}", "mapping"),
-                                ".fc.raw.tsv"),
-        tpm_files=get_all_files(samples, opj(config["paths"]["results"],
-                                             "assembly", "{assembly}", "mapping"),
-                                ".fc.tpm.tsv"),
-        gff_file=opj(config["paths"]["results"], "annotation", "{assembly}",
-                     "final_contigs.features.gff")
+        get_all_files(samples=samples,
+                      dir=opj(config["paths"]["results"],"assembly", "{assembly}", "mapping"),
+                      suffix=".fc.clean.tsv")
     output:
-        raw=opj(config["paths"]["results"], "annotation", "{assembly}", "fc.raw.tsv"),
-        tpm=opj(config["paths"]["results"], "annotation", "{assembly}", "fc.tpm.tsv")
+        opj(config["paths"]["results"], "annotation", "{assembly}", "gene_counts.tsv")
     script:
         "../scripts/quantification_utils.py"
 
-rule quantify_features:
+rule rpkm:
+    """
+    Calculate RPKM for genes in an assembly
+    """
     input:
-        abund=opj(config["paths"]["results"], "annotation", "{assembly}", "fc.{fc_type}.tsv"),
+        opj(config["paths"]["results"], "annotation", "{assembly}", "gene_counts.tsv")
+    output:
+        opj(config["paths"]["results"], "annotation", "{assembly}", "gene_rpkm.tsv")
+    log:
+        opj(config["paths"]["results"], "annotation", "{assembly}", "rpkm.log")
+    params:
+        method = "RPKM"
+    conda:
+        "../envs/edger.yml"
+    script:
+        "../scripts/edger.R"
+
+rule count_features:
+    """
+    Sums read counts for gene annotation features such as pfam, KOs etc.
+    """
+    input:
+        abund=opj(config["paths"]["results"], "annotation", "{assembly}", "gene_counts.tsv"),
         annot=opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.tsv")
     output:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.{fc_type}.tsv")
-    shell:
-        """
-        python source/utils/eggnog-parser.py \
-            quantify {input.abund} {input.annot} {output[0]}
-        """
+        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.counts.tsv")
+    script:
+        "../scripts/quantification_utils.py"
+
+rule edger_normalize_features:
+    """
+    Normalizes counts of features using TMM and REL
+    """
+    input:
+        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.counts.tsv")
+    output:
+        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.{norm_method}.tsv")
+    log:
+        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.{norm_method}.log")
+    params:
+        method = "{norm_method}"
+    conda:
+        "../envs/edger.yml"
+    script:
+        "../scripts/edger.R"
+
+rule css_normalize_features:
+    """
+    Normalizes counts of features using CSS from metagenomeSeq
+    """
+    input:
+        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.counts.tsv")
+    output:
+        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.CSS.tsv")
+    log:
+        opj(config["paths"]["results"], "annotation", "{assembly}", "{db}.parsed.CSS.log")
+    conda:
+        "../envs/metagenomeseq.yml"
+    script:
+        "../scripts/metagenomeseq.R"
 
 rule sum_to_taxa:
+    """
+    Sums read counts and RPKM values for genes to assigned taxonomy
+    """
     input:
         tax=opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
             "orfs.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"])),
-        abund=opj(config["paths"]["results"], "annotation", "{assembly}", "fc.{fc_type}.tsv")
+        abund=opj(config["paths"]["results"], "annotation", "{assembly}", "gene_{counts_type}.tsv")
     output:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy", "tax.{fc_type}.tsv")
+        opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy", "tax.{counts_type}.tsv")
     script:
         "../scripts/quantification_utils.py"
-
-rule sum_to_rgi:
-    input:
-        annot=opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.out.txt"),
-        abund=opj(config["paths"]["results"], "annotation", "{assembly}", "fc.{fc_type}.tsv")
-    output:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.{fc_type}.tsv")
-    script:
-        "../scripts/quantification_utils.py"
-

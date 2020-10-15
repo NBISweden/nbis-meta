@@ -335,7 +335,7 @@ def main():
                               help="emapper.py annotation files (Typically *.emapper.annotations)")
     annot_parser.add_argument("outdir",
                               help="Output directory for parsed files")
-    annot_parser.add_argument("--map_go", action="store_true", 
+    annot_parser.add_argument("--map_go", action="store_true",
                               help="Also map GO terms (can take a long time)")
     annot_parser.set_defaults(func=parse)
     # Sum annotations parser

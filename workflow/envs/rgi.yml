@@ -3,4 +3,4 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - rgi=4.0.3
+  - rgi=5.1.1

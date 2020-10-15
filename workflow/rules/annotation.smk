@@ -1,17 +1,18 @@
 from scripts.common import annotation_input
 
-localrules: 
+localrules:
     annotate,
-    parse_ko_annotations, 
-    parse_pfam,
     download_rfams,
     press_rfams,
     download_pfam,
-    press_pfam,
     download_pfam_info,
+    press_pfam,
+    parse_pfam,
     download_eggnog,
     get_kegg_info,
-    download_rgi_data
+    parse_ko_annotations,
+    download_rgi_data,
+    parse_rgi
 
 ##### annotation master rule #####
 
@@ -58,7 +59,7 @@ rule trnascan:
     shell:
         """
         tRNAscan-SE -G -b {output.bed} -o {output.file} -a {output.fasta} \
-            --thread {threads} {input} >{log} 2>&1            
+            --thread {threads} {input} >{log} 2>&1
         """
 
 rule download_rfams:
@@ -84,11 +85,11 @@ rule download_rfams:
         # Extract only rfams of interest
         tar -C {params.dir} -zxf {output.tar} {params.rfams}
         cat {params.dir}/*.cm > {output.cm}
-        
+
         # Get release
         curl -o {output.readme} {params.url}/README 2>/dev/null
         grep -m 1 Release {output.readme} > {output.version}
-        
+
         # Get clans
         curl {params.url}/Rfam.clanin 2>/dev/null | egrep -w \
             "CL0011[123]" > {output.clanin}
@@ -207,7 +208,7 @@ rule pfam_scan:
         tmp_out=opj(config["paths"]["temp"], "{assembly}.pfam.out")
     threads: 2
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*4
+        runtime=lambda wildcards, attempt: attempt**2*60*10
     shell:
         """
         pfam_scan.pl -fasta {input[0]} -dir {params.dir} -cpu {threads} \
@@ -255,7 +256,7 @@ rule get_kegg_info:
         opj("resources", "kegg", "download.log")
     params:
         outdir=lambda w, output: os.path.dirname(output[0]),
-        src="../scripts/eggnog-parser.py"
+        src="workflow/scripts/eggnog-parser.py"
     shell:
         """
         python {params.src} download {params.outdir} > {log} 2>&1
@@ -286,7 +287,7 @@ rule emapper_homology_search:
     shell:
         """
         mkdir -p {params.tmpdir}
-        emapper.py {params.flags} --cpu {threads} --temp_dir {params.tmpdir} \ 
+        emapper.py {params.flags} --cpu {threads} --temp_dir {params.tmpdir} \
         -i {input[0]} -o {params.out} --output_dir {params.tmpdir} \
             --data_dir {params.resource_dir} >{log} 2>&1
         mv {params.tmp_out}.emapper.seed_orthologs {output[0]}
@@ -371,7 +372,7 @@ rule parse_ko_annotations:
     params:
         outbase=opj(config["paths"]["results"], "annotation", "{assembly}"),
         resource_dir=opj("resources", "kegg"),
-        src="../scripts/eggnog-parser.py"
+        src="workflow/scripts/eggnog-parser.py"
     shell:
         """
         python {params.src} parse {params.resource_dir} {input.annotations} \
@@ -410,7 +411,10 @@ rule rgi:
         opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.log")
     params:
         out=opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.out"),
-        settings="-a diamond --local --clean --input_type protein"
+        settings="-a diamond --local --clean --input_type protein",
+        faa=opj(config["paths"]["temp"], "{assembly}.rgi", "final_contig.faa"),
+        tmpdir=opj(config["paths"]["temp"], "{assembly}.rgi")
+    shadow: "minimal"
     conda:
         "../envs/rgi.yml"
     threads: 10
@@ -418,7 +422,18 @@ rule rgi:
         runtime=lambda wildcards, attempt: attempt**2*60
     shell:
         """
-        rgi load --card_json {input.db} --local > {log} 2>&1
-        rgi main -i {input.faa} -o {params.out} \
+        mkdir -p {params.tmpdir}
+        rgi load -i {input.db} --local > {log} 2>&1
+        sed 's/*//g' {input.faa} > {params.faa}
+        rgi main -i {params.faa} -o {params.out} \
             -n {threads} {params.settings} >>{log} 2>>{log}
+        rm -r {params.tmpdir}
         """
+
+rule parse_rgi:
+    input:
+        txt=opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.out.txt")
+    output:
+        tsv=opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.parsed.tsv")
+    script:
+        "../scripts/annotation_utils.py"

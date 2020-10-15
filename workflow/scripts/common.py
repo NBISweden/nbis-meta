@@ -110,6 +110,8 @@ def parse_samples(df, config, PREPROCESS):
             for a in assem_list:
                 if sample not in assemblies[a].keys():
                     assemblies[a][sample] = {unit: {}}
+                if unit not in assemblies[a][sample].keys():
+                    assemblies[a][sample][unit] = {}
                 if r2:
                     assemblies[a][sample][unit]["R1"] = [R1_p]
                     assemblies[a][sample][unit]["R2"] = [R2_p]
@@ -609,24 +611,25 @@ def annotation_input(config, assemblies):
         # Add EGGNOG annotation
         if config["annotation"]["eggnog"]:
             input += expand(opj(config["paths"]["results"], "annotation", group,
-                                "{db}.parsed.{fc}.tsv"),
+                                "{db}.parsed.{norm_method}.tsv"),
                             db=["enzymes", "pathways", "kos", "modules"],
-                            fc=["raw", "tpm"])
+                            norm_method=["counts", "TMM", "RLE", "CSS"])
         # Add PFAM annotation
         if config["annotation"]["pfam"]:
             input += expand(opj(config["paths"]["results"], "annotation", group,
-                                "pfam.parsed.{fc}.tsv"), fc=["tpm", "raw"])
+                                "pfam.parsed.{norm_method}.tsv"),
+                            norm_method=["counts", "TMM", "RLE", "CSS"])
         # Add taxonomic annotation
         if config["annotation"]["taxonomy"]:
             input += expand(
                 opj(config["paths"]["results"], "annotation", group, "taxonomy",
-                    "tax.{fc}.tsv"), fc=["tpm", "raw"])
+                    "tax.{counts_type}.tsv"),
+                counts_type=["counts", "rpkm"])
         # Add Resistance Gene Identifier output
         if config["annotation"]["rgi"]:
             input += expand(opj(config["paths"]["results"], "annotation", group,
-                                "rgi.{fc}.tsv"), fc=["raw", "tpm"])
-            input.append(opj(config["paths"]["results"], "annotation", group,
-                             "rgi.out.txt"))
+                                "rgi.parsed.{norm_method}.tsv"),
+                            norm_method=["counts", "TMM", "RLE", "CSS"])
     return input
 
 
@@ -661,21 +664,6 @@ def parse_cmout(f):
 
 
 ## Quantification functions
-
-def markdup_mem(wildcards, cores):
-    """
-    Calculates the memory to allocate when running MarkDuplicates
-    :param wildcards:
-    :param cores: number of cores for currently running workflow
-    :return:
-    """
-    if cores is not None:
-        threads = min(cores, 10)
-    else:
-        threads = 1
-    mem_gb_per_thread = 2
-    return int(mem_gb_per_thread * threads)
-
 
 def get_fc_files(wildcards, file_type):
     g = wildcards.group

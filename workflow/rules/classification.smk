@@ -141,7 +141,7 @@ rule download_centrifuge_build:
         tar -C {params.dir} -xf {params.tar} >>{log} 2>&1
         rm {params.tar}
         """
-    
+
 rule centrifuge_pe:
     input:
         R1=opj(config["paths"]["results"], "intermediate", "preprocess",
@@ -212,13 +212,13 @@ rule centrifuge_se:
 
 rule centrifuge_kreport:
     input:
-        f=opj(config["paths"]["results"], "centrifuge", 
+        f=opj(config["paths"]["results"], "centrifuge",
               "{sample}_{unit}_{seq_type}.out"),
         db=expand(opj(config["centrifuge"]["dir"],
-                      "{base}.{i}.cf"), 
+                      "{base}.{i}.cf"),
                   i=[1, 2, 3], base=config["centrifuge"]["base"])
     output:
-        opj(config["paths"]["results"], "centrifuge", 
+        opj(config["paths"]["results"], "centrifuge",
             "{sample}_{unit}_{seq_type}.kreport")
     params:
         min_score=config["centrifuge"]["min_score"],
@@ -306,7 +306,7 @@ rule metaphlan_se:
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     shell:
-        """       
+        """
         metaphlan {input.se} --bowtie2db {params.dir} --add_viruses --force \
             --nproc {threads} --input_type fastq -o {output.tsv} \
              --bowtie2out {output.bt2} > {log} 2>&1
@@ -365,7 +365,7 @@ rule plot_metaphlan:
         "../envs/plotting.yml"
     notebook:
         "../notebooks/metaphlan.py.ipynb"
-        
+
 ##### krona #####
 
 rule krona_taxonomy:

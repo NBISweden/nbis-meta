@@ -16,7 +16,7 @@ preprocessing:
   # trim reads with trimmomatic? (quality and adapter trimming)
   trimmomatic: False
   # trim reads with cutadapt? (runs instead of trimmomatic, no quality trimming)
-  cutadapt: True
+  cutadapt: False
   # run fastuniq (removes duplicates from paired-end samples)
   fastuniq: False
   # map reads agains the phix genome and keep only reads that do not map concordantly
@@ -87,7 +87,7 @@ sortmerna:
   extra_settings: "--num_alignments 1"
 
 # remove duplicates from bam files?
-remove_duplicates: True
+remove_duplicates: False
 
 assembly:
   # run Megahit assembler?
