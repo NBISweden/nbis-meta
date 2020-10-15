@@ -87,7 +87,7 @@ sortmerna:
   extra_settings: "--num_alignments 1"
 
 # remove duplicates from bam files?
-remove_duplicates: True
+remove_duplicates: False
 
 assembly:
   # run Megahit assembler?
