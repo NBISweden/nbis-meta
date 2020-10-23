@@ -1,0 +1,11 @@
+sample	unit	assembly	fq1	fq2
+S_S001	1	CAMI_I_TOY_LOW,S_S001__genomes_30__insert_180.GOLD	data/cami/S_S001__genomes_30__insert_180_reads_anonymous_R1.fastq.gz	data/cami/S_S001__genomes_30__insert_180_reads_anonymous_R2.fastq.gz
+M1_S001	1	CAMI_I_TOY_MEDIUM,CAMI_I_TOY_MEDIUM.GOLD,M1_S001,M1_S001.GOLD	data/cami/M1_S001__insert_5000_reads_anonymous_R1.fastq.gz	data/cami/M1_S001__insert_5000_reads_anonymous_R2.fastq.gz
+M1_S002	1	CAMI_I_TOY_MEDIUM,CAMI_I_TOY_MEDIUM.GOLD,M1_S002,M1_S002.GOLD	data/cami/M1_S002__insert_5000_reads_anonymous_R1.fastq.gz	data/cami/M1_S002__insert_5000_reads_anonymous_R2.fastq.gz
+M2_S001	1	CAMI_I_TOY_MEDIUM,CAMI_I_TOY_MEDIUM.GOLD,M2_S001,M2_S001.GOLD	data/cami/M2_S001__insert_180_reads_anonymous_R1.fastq.gz	data/cami/M2_S001__insert_180_reads_anonymous_R2.fastq.gz
+M2_S002	1	CAMI_I_TOY_MEDIUM,CAMI_I_TOY_MEDIUM.GOLD,M2_S002,M2_S002.GOLD	data/cami/M2_S002__insert_180_reads_anonymous_R1.fastq.gz	data/cami/M2_S002__insert_180_reads_anonymous_R2.fastq.gz
+H_S001	1	CAMI_I_TOY_HIGH,CAMI_I_TOY_HIGH.GOLD,H_S001,H_S001.GOLD	data/cami/H_S001__insert_180_reads_anonymous_R1.fastq.gz	data/cami/H_S001__insert_180_reads_anonymous_R2.fastq.gz
+H_S002	1	CAMI_I_TOY_HIGH,CAMI_I_TOY_HIGH.GOLD,H_S002,H_S002.GOLD	data/cami/H_S002__insert_180_reads_anonymous_R1.fastq.gz	data/cami/H_S002__insert_180_reads_anonymous_R2.fastq.gz
+H_S003	1	CAMI_I_TOY_HIGH,CAMI_I_TOY_HIGH.GOLD,H_S003,H_S003.GOLD	data/cami/H_S003__insert_180_reads_anonymous_R1.fastq.gz	data/cami/H_S003__insert_180_reads_anonymous_R2.fastq.gz
+H_S004	1	CAMI_I_TOY_HIGH,CAMI_I_TOY_HIGH.GOLD,H_S004,H_S004.GOLD	data/cami/H_S004__insert_180_reads_anonymous_R1.fastq.gz	data/cami/H_S004__insert_180_reads_anonymous_R2.fastq.gz
+H_S005	1	CAMI_I_TOY_HIGH,CAMI_I_TOY_HIGH.GOLD,H_S005,H_S005.GOLD	data/cami/H_S005__insert_180_reads_anonymous_R1.fastq.gz	data/cami/H_S005__insert_180_reads_anonymous_R2.fastq.gz
