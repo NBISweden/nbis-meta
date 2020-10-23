@@ -5,6 +5,7 @@ localrules:
     download_synthetic,
     generate_examples,
     download_cami,
+    download_cami_gold_asms,
     deinterleave_cami_data
 
 
