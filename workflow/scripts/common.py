@@ -34,7 +34,7 @@ def cami_dataset(f):
 
 def cami_gold_urls(wildcards):
     """
-    This function returns the gold assembly url for a specific CAMI dataset
+    This function returns the gold assembly url for a specific CAMI sample
 
     :param wildcards: snakemake wildcards
     :return: url for gold assembly
@@ -42,8 +42,17 @@ def cami_gold_urls(wildcards):
     url_base = "https://openstack.cebitec.uni-bielefeld.de:8080/swift/v1"
     d = {
         "CAMI_I_TOY_MEDIUM": "{url_base}/CAMI_I_TOY_MEDIUM/M1_M2_pooled_gsa_anonymous.fasta.gz".format(url_base=url_base),
-        "CAMI_I_TOY_HIGH": "{url_base}/CAMI_I_TOY_HIGH/H_pooled_gsa_anonymous.fasta.gz".format(url_base=url_base)}
-    return d[wildcards.camidataset]
+        "M1_S001": "{url_base}/CAMI_I_TOY_MEDIUM/M1_S001__insert_5000_gsa_anonymous.fasta.gz".format(url_base=url_base),
+        "M1_S002": "{url_base}/CAMI_I_TOY_MEDIUM/M1_S002__insert_5000_gsa_anonymous.fasta.gz".format(url_base=url_base),
+        "M2_S001": "{url_base}/CAMI_I_TOY_MEDIUM/M2_S001__insert_180_gsa_anonymous.fasta.gz".format(url_base=url_base),
+        "M2_S002": "{url_base}/CAMI_I_TOY_MEDIUM/M2_S002__insert_180_gsa_anonymous.fasta.gz".format(url_base=url_base),
+        "CAMI_I_TOY_HIGH": "{url_base}/CAMI_I_TOY_HIGH/H_pooled_gsa_anonymous.fasta.gz".format(url_base=url_base),
+        "H_S001": "{url_base}/CAMI_I_TOY_HIGH/H_S001__insert_180_gsa_anonymous.fasta.gz".format(url_base=url_base),
+        "H_S002": "{url_base}/CAMI_I_TOY_HIGH/H_S002__insert_180_gsa_anonymous.fasta.gz".format(url_base=url_base),
+        "H_S003": "{url_base}/CAMI_I_TOY_HIGH/H_S003__insert_180_gsa_anonymous.fasta.gz".format(url_base=url_base),
+        "H_S004": "{url_base}/CAMI_I_TOY_HIGH/H_S004__insert_180_gsa_anonymous.fasta.gz".format(url_base=url_base),
+        "H_S005": "{url_base}/CAMI_I_TOY_HIGH/H_S004__insert_180_gsa_anonymous.fasta.gz".format(url_base=url_base)}
+    return d[wildcards.cami]
 
 
 # configuration
