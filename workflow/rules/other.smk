@@ -72,20 +72,20 @@ rule download_cami:
 
 rule download_cami_gold_asms:
     output:
-        opj(config["paths"]["results"], "assembly", "{camidataset}.GOLD", "final_contigs.fa"),
-        touch(opj(config["paths"]["results"], "assembly", "{camidataset}.GOLD", "log"))
+        opj(config["paths"]["results"], "assembly", "{cami}.GOLD", "final_contigs.fa"),
+        touch(opj(config["paths"]["results"], "assembly", "{cami}.GOLD", "log"))
     log:
-        opj(config["paths"]["results"], "assembly", "{camidataset}.GOLD", "cami.log")
+        opj(config["paths"]["results"], "assembly", "{cami}.GOLD", "cami.log")
     params:
-        tmpdir = "$TMPDIR/{camidataset}.GOLD",
-        tmp = "$TMPDIR/{camidataset}.GOLD/final_contigs.fa.gz",
+        tmpdir = "$TMPDIR/{cami}.GOLD",
+        tmp = "$TMPDIR/{cami}.GOLD/final_contigs.fa.gz",
         url = lambda wildcards: cami_gold_urls(wildcards)
     shell:
         """
         mkdir -p {params.tmpdir}
         curl -L -o {params.tmp} {params.url} > {log} 2>&1
         gunzip -c {params.tmp} > {output[0]}
-        rm -r {params.tmpdir}        
+        rm -r {params.tmpdir}
         """
 
 ruleorder: download_cami > download_cami_gold_asms > megahit
