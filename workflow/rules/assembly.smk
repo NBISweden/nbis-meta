@@ -6,6 +6,7 @@ localrules:
     plot_assembly_stats,
     assembly_stats,
     samtools_flagstat,
+    sourmash_compute_asm,
     sourmash_compare
 
 ##### master assembly rule #####
@@ -349,7 +350,7 @@ rule plot_assembly_stats:
     notebook:
         "../notebooks/assembly_stats.py.ipynb"
 
-rule sourmash_compute:
+rule sourmash_compute_asm:
     input:
         opj(config["paths"]["results"],"assembly","{assembly}", "final_contigs.fa")
     output:
