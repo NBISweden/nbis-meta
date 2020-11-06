@@ -6,7 +6,6 @@ localrules:
     plot_assembly_stats,
     assembly_stats,
     samtools_flagstat,
-    sourmash_compute_asm,
     sourmash_compare
 
 ##### master assembly rule #####
@@ -355,13 +354,15 @@ rule sourmash_compute_asm:
         opj(config["paths"]["results"],"assembly","{assembly}", "final_contigs.fa")
     output:
         opj(config["paths"]["results"],"sourmash","{assembly}", "{assembly}.sig")
+    log:
+        opj(config["paths"]["results"],"sourmash","{assembly}", "sourmash.log")
     conda:
         "../envs/sourmash.yml"
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60
     shell:
         """
-        sourmash compute --scaled 100 -o {output} {input}
+        sourmash compute --scaled 100 -o {output} {input} 2> {log}
         """
 
 rule sourmash_compare:
@@ -370,9 +371,11 @@ rule sourmash_compare:
                assembly = assemblies.keys())
     output:
         opj(config["paths"]["results"], "report", "assembly", "containment.csv")
+    log:
+        opj(config["paths"]["results"], "report", "assembly", "sourmash.log")
     conda:
         "../envs/sourmash.yml"
     shell:
         """
-        sourmash compare --containment --csv {output} {input}
+        sourmash compare --containment --csv {output} {input} 2>{log}
         """
