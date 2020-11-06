@@ -5,7 +5,8 @@ localrules:
     fasta2bed,
     plot_assembly_stats,
     assembly_stats,
-    samtools_flagstat
+    samtools_flagstat,
+    sourmash_compare
 
 ##### master assembly rule #####
 
@@ -347,3 +348,30 @@ rule plot_assembly_stats:
         "../envs/plotting.yml"
     notebook:
         "../notebooks/assembly_stats.py.ipynb"
+
+rule sourmash_compute:
+    input:
+        opj(config["paths"]["results"],"assembly","{assembly}", "final_contigs.fa")
+    output:
+        opj(config["paths"]["results"],"sourmash","{assembly}", "{assembly}.sig")
+    conda:
+        "../envs/sourmash.yml"
+    resources:
+        runtime = lambda wildcards, attempt: attempt**2*60
+    shell:
+        """
+        sourmash compute --scaled 100 -o {output} {input}
+        """
+
+rule sourmash_compare:
+    input:
+        expand(opj(config["paths"]["results"],"sourmash","{assembly}", "{assembly}.sig"),
+               assembly = assemblies.keys())
+    output:
+        opj(config["paths"]["results"], "report", "assembly", "containment.csv")
+    conda:
+        "../envs/sourmash.yml"
+    shell:
+        """
+        sourmash compare --containment --csv {output} {input}
+        """
