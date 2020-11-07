@@ -89,8 +89,10 @@ rule download_cami_gold_asms:
         rm -r {params.tmpdir}
         """
 
-ruleorder: download_cami > download_cami_gold_asms > megahit
-
+if config["assembly"]["megahit"]:
+    ruleorder: download_cami > download_cami_gold_asms > megahit
+if config["assembly"]["metaspades"]:
+    ruleorder: download_cami > download_cami_gold_asms > metaspades
 rule deinterleave_cami_data:
     input:
         "data/cami/{c}_S00{s}__insert_{l}_reads_anonymous.fq.gz"
