@@ -68,19 +68,23 @@ rule kraken_build_standard:
 
 rule kraken_pe:
     input:
-        R1=opj(config["paths"]["results"], "intermediate", "preprocess",
-               "{sample}_{unit}_R1"+PREPROCESS+".fastq.gz"),
-        R2=opj(config["paths"]["results"], "intermediate", "preprocess",
-               "{sample}_{unit}_R2"+PREPROCESS+".fastq.gz"),
-        db=expand(opj(config["kraken"]["index_path"], "{n}.k2d"),
+        R1=expand("{results_path}/intermediate/preprocess/{{sample}}_{{unit}}_R1{preprocess}.fastq.gz",
+                  results_path=config["paths"]["results"], preprocess=PREPROCESS),
+        R2=expand("{results_path}/intermediate/preprocess/{{sample}}_{{unit}}_R2{preprocess}.fastq.gz",
+                  results_path=config["paths"]["results"], preprocess=PREPROCESS),
+        db=expand("{kraken_index_path}/{n}.k2d",
+                  kraken_index_path=config["kraken"]["index_path"],
                   n=["hash", "opts", "taxo"])
     output:
-        opj(config["paths"]["results"], "kraken", "{sample}_{unit}_pe.out"),
-        opj(config["paths"]["results"], "kraken", "{sample}_{unit}_pe.kreport")
+        expand("{results_path}/kraken/{{sample}}_{{unit}}_pe.out",
+               results_path=config["paths"]["results"]),
+        expand("{results_path}/kraken/{{sample}}_{{unit}}_pe.kreport",
+               results_path=config["paths"]["results"])
     log:
-        opj(config["paths"]["results"], "kraken", "{sample}_{unit}_pe.log")
+        expand("{results_path}/kraken/{{sample}}_{{unit}}_pe.log",
+               results_path=config["paths"]["results"])
     params:
-        db=opj(config["kraken"]["index_path"]),
+        db=config["kraken"]["index_path"],
         mem=config["kraken"]["mem"]
     threads: 10
     resources:
@@ -96,17 +100,21 @@ rule kraken_pe:
 
 rule kraken_se:
     input:
-        se=opj(config["paths"]["results"], "intermediate", "preprocess",
-               "{sample}_{unit}_se"+PREPROCESS+".fastq.gz"),
-        db=expand(opj(config["kraken"]["index_path"], "{n}.k2d"),
+        se=expand("{results_path}/intermediate/preprocess/{{sample}}_{{unit}}_se{preprocess}.fastq.gz",
+                  results_path=config["paths"]["results"], preprocess=PREPROCESS),
+        db=expand("{kraken_index_path}/{n}.k2d",
+                  kraken_index_path=config["kraken"]["index_path"],
                   n=["hash", "opts", "taxo"])
     output:
-        opj(config["paths"]["results"], "kraken", "{sample}_{unit}_se.out"),
-        opj(config["paths"]["results"], "kraken", "{sample}_{unit}_se.kreport")
+        expand("{results_path}/kraken/{{sample}}_{{unit}}_se.out",
+               results_path=config["paths"]["results"]),
+        expand("{results_path}/kraken/{{sample}}_{{unit}}_se.kreport",
+               results_path=config["paths"]["results"])
     log:
-        opj(config["paths"]["results"], "kraken", "{sample}_{unit}_se.log")
+        expand("{results_path}/kraken/{{sample}}_{{unit}}_se.log",
+               results_path=config["paths"]["results"])
     params:
-        db=opj(config["kraken"]["index_path"]),
+        db=config["kraken"]["index_path"],
         mem=config["kraken"]["mem"]
     threads: 10
     resources:
