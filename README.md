@@ -3,7 +3,7 @@ A workflow for metagenomic projects
 
 [![Python 3.7.6](https://img.shields.io/badge/python-3.7.6-brightgreen.svg)](https://www.python.org/downloads/release/python-376/)
 [![Snakemake 5.11.2](https://img.shields.io/badge/snakemake-5.11.2-brightgreen.svg)](https://img.shields.io/badge/snakemake-5.11.2)
-![CI](https://github.com/NBISweden/nbis-meta/workflows/CI/badge.svg?branch=master)
+![CI](https://github.com/NBISweden/nbis-meta/workflows/CI/badge.svg?branch=main)
 ![Docker](https://img.shields.io/docker/pulls/nbisweden/nbis-meta)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 

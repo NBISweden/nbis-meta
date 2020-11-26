@@ -6,13 +6,13 @@ on:
       - 'README.md'
       - 'LICENSE'
     branches:
-      - master
+      - main
   pull_request:
     paths-ignore:
       - 'README.md'
       - 'LICENSE'
     branches:
-      - master
+      - main
 env:
   TMPDIR: /tmp
 
