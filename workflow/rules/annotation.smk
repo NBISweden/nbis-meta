@@ -368,7 +368,7 @@ rule parse_ko_annotations:
         expand(opj(config["paths"]["results"], "annotation", "{{assembly}}", "{db}.parsed.tsv"),
             db=["enzymes", "pathways", "modules", "kos"])
     log:
-        opj(config["paths"]["results"], "annotation", "{{assembly}}", "eggnog-parser.log")
+        opj(config["paths"]["results"], "annotation", "{assembly}", "eggnog-parser.log")
     params:
         outbase=opj(config["paths"]["results"], "annotation", "{assembly}"),
         resource_dir=opj("resources", "kegg"),
