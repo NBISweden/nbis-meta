@@ -429,9 +429,9 @@ rule checkm_coverage:
     input:
         tsv=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "summary_stats.tsv"),
         bam=get_all_files(samples, opj(config["paths"]["results"], "assembly",
-                                         "{assembly}", "mapping"), ".markdup.bam"),
+                                         "{assembly}", "mapping"), "{p}.bam".format(p=POSTPROCESS)),
         bai=get_all_files(samples, opj(config["paths"]["results"], "assembly",
-                                         "{assembly}", "mapping"), ".markdup.bam.bai")
+                                         "{assembly}", "mapping"), "{p}.bam.bai".format(p=POSTPROCESS))
     output:
         cov=temp(opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "checkm", "coverage.tsv"))
     log:
