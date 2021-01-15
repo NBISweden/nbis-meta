@@ -118,7 +118,7 @@ rule aggregate_featurecount:
     """Aggregates all cleaned count files from featureCounts"""
     input:
         get_all_files(samples=samples,
-                      dir=opj(config["paths"]["results"],"assembly", "{assembly}", "mapping"),
+                      directory=opj(config["paths"]["results"],"assembly", "{assembly}", "mapping"),
                       suffix=".fc.clean.tsv")
     output:
         opj(config["paths"]["results"], "annotation", "{assembly}", "gene_counts.tsv")
