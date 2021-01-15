@@ -133,15 +133,16 @@ rule kraken_se:
 rule download_centrifuge_build:
     """Downloads pre-built centrifuge index"""
     output:
-        db=expand(opj(config["centrifuge"]["dir"],
-                      "{base}.{i}.cf"), i=[1, 2, 3],
-                  base=config["centrifuge"]["base"])
+        db=expand("{centrifuge_dir}/{base}.{i}.cf",
+                  centrifuge_dir=config["centrifuge"]["dir"],
+                  base=config["centrifuge"]["base"],
+                  i=[1, 2, 3],)
     log:
-        opj(config["centrifuge"]["dir"], "download.log")
+        "{centrifuge_dir}/download.log".format(centrifuge_dir=config["centrifuge"]["dir"])
     params:
         dir=config["centrifuge"]["dir"],
-        tar=opj(config["centrifuge"]["dir"],
-                "{base}.tar.gz".format(base=config["centrifuge"]["base"])),
+        tar="{centrifuge_dir}/{base}.tar.gz".format(base=config["centrifuge"]["base"],
+                                                    centrifuge_dir=config["centrifuge"]["dir"]),
         url=get_centrifuge_index_url(config)
     shell:
         """
@@ -152,23 +153,29 @@ rule download_centrifuge_build:
 
 rule centrifuge_pe:
     input:
-        R1=opj(config["paths"]["results"], "intermediate", "preprocess",
-               "{sample}_{unit}_R1"+PREPROCESS+".fastq.gz"),
-        R2=opj(config["paths"]["results"], "intermediate", "preprocess",
-               "{sample}_{unit}_R2"+PREPROCESS+".fastq.gz"),
-        db=expand(opj(config["centrifuge"]["dir"], "{base}.{i}.cf"),
-                  i=[1, 2, 3], base=config["centrifuge"]["base"])
+        R1=expand("{results_path}/intermediate/preprocess/{{sample}}_{{unit}}_R1{preprocess}.fastq.gz",
+                  results_path=config["paths"]["results"], preprocess=PREPROCESS),
+        R2=expand("{results_path}/intermediate/preprocess/{{sample}}_{{unit}}_R2{preprocess}.fastq.gz",
+                  results_path=config["paths"]["results"], preprocess=PREPROCESS),
+        db=expand("{centrifuge_dir}/{base}.{i}.cf",
+                  centrifuge_dir=config["centrifuge"]["dir"],
+                  base=config["centrifuge"]["base"], i=[1, 2, 3])
     output:
-        opj(config["paths"]["results"], "centrifuge", "{sample}_{unit}_pe.out"),
-        opj(config["paths"]["results"], "centrifuge", "{sample}_{unit}_pe.report")
+        expand("{results_path}/centrifuge/{{sample}}_{{unit}}_pe.out",
+               results_path=config["paths"]["results"]),
+        expand("{results_path}/centrifuge/{{sample}}_{{unit}}_pe.report",
+               results_path=config["paths"]["results"])
     log:
-        opj(config["paths"]["results"], "centrifuge", "{sample}_{unit}_pe.log")
+        expand("{results_path}/centrifuge/{{sample}}_{{unit}}_pe.log",
+               results_path=config["paths"]["results"])
     params:
-        prefix=opj(config["centrifuge"]["dir"],
-                   "{base}".format(base=config["centrifuge"]["base"])),
-        tmp_out=opj(config["paths"]["temp"], "{sample}_{unit}_pe.out"),
+        prefix="{centrifuge_dir}/{base}".format(centrifuge_dir=config["centrifuge"]["dir"],
+                                                base=config["centrifuge"]["base"]),
+        tmp_out=expand("{temp}/{{sample}}_{{unit}}_pe.out",
+                       temp=config["paths"]["temp"]),
         tmpdir=config["paths"]["temp"],
-        tmp_report=opj(config["paths"]["temp"], "{sample}_{unit}_pe.report"),
+        tmp_report=expand("{temp}/{{sample}}_{{unit}}_pe.report",
+                          temp=config["paths"]["temp"]),
         k=config["centrifuge"]["max_assignments"]
     threads: 20
     resources:
@@ -187,21 +194,27 @@ rule centrifuge_pe:
 
 rule centrifuge_se:
     input:
-        se=opj(config["paths"]["results"], "intermediate", "preprocess",
-               "{sample}_{unit}_se"+PREPROCESS+".fastq.gz"),
-        db=expand(opj(config["centrifuge"]["dir"], "{base}.{i}.cf"),
-                  i=[1, 2, 3], base=config["centrifuge"]["base"])
+        se=expand("{results_path}/intermediate/preprocess/{{sample}}_{{unit}}_se{preprocess}.fastq.gz",
+                  results_path=config["paths"]["results"], preprocess=PREPROCESS),
+        db=expand("{centrifuge_dir}/{base}.{i}.cf",
+                  centrifuge_dir=config["centrifuge"]["dir"],
+                  base=config["centrifuge"]["base"], i=[1, 2, 3])
     output:
-        opj(config["paths"]["results"], "centrifuge", "{sample}_{unit}_se.out"),
-        opj(config["paths"]["results"], "centrifuge", "{sample}_{unit}_se.report")
+        expand("{results_path}/centrifuge/{{sample}}_{{unit}}_se.out",
+               results_path=config["paths"]["results"]),
+        expand("{results_path}/centrifuge/{{sample}}_{{unit}}_se.report",
+               results_path=config["paths"]["results"])
     log:
-        opj(config["paths"]["results"], "centrifuge", "{sample}_{unit}_se.log")
+        expand("{results_path}/centrifuge/{{sample}}_{{unit}}_se.log",
+               results_path=config["paths"]["results"])
     params:
-        prefix=opj(config["centrifuge"]["dir"],
-                   "{base}".format(base=config["centrifuge"]["base"])),
-        tmp_out=opj(config["paths"]["temp"], "{sample}_{unit}_se.out"),
+        prefix="{centrifuge_dir}/{base}".format(centrifuge_dir=config["centrifuge"]["dir"],
+                                                base=config["centrifuge"]["base"]),
+        tmp_out=expand("{temp}/{{sample}}_{{unit}}_se.out",
+                       temp=config["paths"]["temp"]),
         tmpdir=config["paths"]["temp"],
-        tmp_report=opj(config["paths"]["temp"], "{sample}_{unit}_se.report"),
+        tmp_report=expand("{temp}/{{sample}}_{{unit}}_se.report",
+                          temp=config["paths"]["temp"]),
         k=config["centrifuge"]["max_assignments"]
     threads: 20
     resources:
@@ -268,20 +281,23 @@ rule build_metaphlan:
 
 rule metaphlan_pe:
     input:
-        R1=opj(config["paths"]["results"], "intermediate", "preprocess",
-                 "{sample}_{unit}_R1"+PREPROCESS+".fastq.gz"),
-        R2=opj(config["paths"]["results"], "intermediate", "preprocess",
-                 "{sample}_{unit}_R2"+PREPROCESS+".fastq.gz"),
-        db=expand(opj("resources", "metaphlan", "{index}.{s}.bt2"),
+        R1=expand("{results_path}/intermediate/preprocess/{{sample}}_{{unit}}_R1{preprocess}.fastq.gz",
+                  results_path=config["paths"]["results"], preprocess=PREPROCESS),
+        R2=expand("{results_path}/intermediate/preprocess/{{sample}}_{{unit}}_R2{preprocess}.fastq.gz",
+                  results_path=config["paths"]["results"], preprocess=PREPROCESS),
+        db=expand("resources/metaphlan/{index}.{s}.bt2",
                   index=config["metaphlan"]["index"],
                   s=["1", "2", "3", "4", "rev.1", "rev.2"])
     output:
-        tsv=opj(config["paths"]["results"], "metaphlan", "{sample}_{unit}_pe.tsv"),
-        bt2=opj(config["paths"]["results"], "metaphlan", "{sample}_{unit}_pe.bt2")
+        tsv=expand("{results_path}/metaphlan/{{sample}}_{{unit}}_pe.tsv",
+                   results_path=config["paths"]["results"]),
+        bt2=expand("{results_path}/metaphlan/{{sample}}_{{unit}}_pe.bt2",
+                   results_path=config["paths"]["results"])
     log:
-        opj(config["paths"]["results"], "metaphlan", "{sample}_{unit}_pe.log")
+        expand("{results_path}/metaphlan/{{sample}}_{{unit}}_pe.log",
+               results_path=config["paths"]["results"])
     params:
-        dir=opj("resources", "metaphlan")
+        dir="resources/metaphlan"
     conda:
         "../envs/metaphlan.yml"
     threads: 10
@@ -296,18 +312,21 @@ rule metaphlan_pe:
 
 rule metaphlan_se:
     input:
-        se=opj(config["paths"]["results"], "intermediate", "preprocess",
-               "{sample}_{unit}_se"+PREPROCESS+".fastq.gz"),
-        db=expand(opj("resources", "metaphlan", "{index}.{s}.bt2"),
-                  index = config["metaphlan"]["index"],
-                  s = ["1", "2", "3", "4", "rev.1", "rev.2"])
+        se=expand("{results_path}/intermediate/preprocess/{{sample}}_{{unit}}_se{preprocess}.fastq.gz",
+                  results_path=config["paths"]["results"], preprocess=PREPROCESS),
+        db=expand("resources/metaphlan/{index}.{s}.bt2",
+                  index=config["metaphlan"]["index"],
+                  s=["1", "2", "3", "4", "rev.1", "rev.2"])
     output:
-        tsv=opj(config["paths"]["results"], "metaphlan", "{sample}_{unit}_se.tsv"),
-        bt2=opj(config["paths"]["results"], "metaphlan", "{sample}_{unit}_se.bt2")
+        tsv=expand("{results_path}/metaphlan/{{sample}}_{{unit}}_se.tsv",
+                   results_path=config["paths"]["results"]),
+        bt2=expand("{results_path}/metaphlan/{{sample}}_{{unit}}_se.bt2",
+                   results_path=config["paths"]["results"])
     log:
-        opj(config["paths"]["results"], "metaphlan", "{sample}_{unit}_se.log")
+        expand("{results_path}/metaphlan/{{sample}}_{{unit}}_se.log",
+               results_path=config["paths"]["results"])
     params:
-        dir = opj("resources", "metaphlan")
+        dir = "resources/metaphlan"
     conda:
         "../envs/metaphlan.yml"
     threads: 10
@@ -322,9 +341,9 @@ rule metaphlan_se:
 
 rule merge_metaphlan:
     input:
-        get_all_files(samples, opj(config["paths"]["results"], "metaphlan"), ".tsv")
+        get_all_files(samples, "{}/metaphlan".format(config["paths"]["results"]), ".tsv")
     output:
-        opj(config["paths"]["results"], "report", "metaphlan", "metaphlan.tsv")
+        "{}/report/metaphlan/metaphlan.tsv".format(config["paths"]["results"])
     conda:
         "../envs/metaphlan.yml"
     shell:
@@ -334,22 +353,22 @@ rule merge_metaphlan:
 
 rule metaphlan2krona_table:
     input:
-        opj(config["paths"]["results"], "metaphlan", "{sample}_{unit}_{seq_type}.tsv")
+        expand("{results_path}/metaphlan/{{sample}}_{{unit}}_{{seq_type}}.tsv",
+               results_path=config["paths"]["results"])
     output:
-        temp(opj(config["paths"]["results"], "metaphlan",
-                 "{sample}_{unit}_{seq_type}.krona"))
+        temp(expand("{results_path}/metaphlan/{{sample}}_{{unit}}_{{seq_type}}.krona",
+                    results_path=config["paths"]["results"]))
     script:
         "../scripts/classification_utils.py"
 
 rule metaphlan2krona:
     input:
-        files = get_all_files(samples, opj(config["paths"]["results"], "metaphlan"), ".krona"),
-        db = opj("resources", "krona", "taxonomy.tab")
+        files=get_all_files(samples, "{}/metaphlan".format(config["paths"]["results"]), ".krona"),
+        db="resources/krona/taxonomy.tab"
     output:
-        opj(config["paths"]["results"], "report", "metaphlan",
-                   "metaphlan.html")
+        "{}/report/metaphlan/metaphlan.html".format(config["paths"]["results"])
     log:
-        opj(config["paths"]["results"], "report", "metaphlan", "krona.log")
+        "{}/report/metaphlan/krona.log".format(config["paths"]["results"])
     conda:
         "../envs/krona.yml"
     params:
@@ -363,10 +382,9 @@ rule metaphlan2krona:
 
 rule plot_metaphlan:
     input:
-        opj(config["paths"]["results"], "report", "metaphlan", "metaphlan.tsv")
+        "{}/report/metaphlan/metaphlan.tsv".format(config["paths"]["results"])
     output:
-        opj(config["paths"]["results"], "report", "metaphlan",
-                   "metaphlan.pdf")
+        "{}/report/metaphlan/metaphlan.pdf".format(config["paths"]["results"])
     params:
         rank=config["metaphlan"]["plot_rank"]
     conda:
@@ -378,14 +396,14 @@ rule plot_metaphlan:
 
 rule krona_taxonomy:
     output:
-        tab=opj("resources", "krona", "taxonomy.tab")
+        tab="resources/krona/taxonomy.tab"
     log:
-        opj("resources", "krona", "taxonomy.log")
+        "resources/krona/taxonomy.log"
     params:
         taxdir=lambda w, output: os.path.dirname(output.tab)
     conda:
         "../envs/krona.yml"
-    singularity:
+    container:
         "docker://biocontainers/krona:v2.7.1_cv1"
     shell:
         """
@@ -394,20 +412,20 @@ rule krona_taxonomy:
 
 rule classifier2krona:
     input:
-        opj(config["paths"]["results"], "{classifier}",
-            "{sample}_{unit}_{seq_type}.kreport"),
-        opj("resources", "krona", "taxonomy.tab")
+        expand("{results_path}/{{classifier}}/{{sample}}_{{unit}}_{{seq_type}}.kreport",
+               results_path = config["paths"]["results"]),
+        "resources/krona/taxonomy.tab"
     output:
-        opj(config["paths"]["results"], "{classifier}",
-            "{sample}_{unit}_{seq_type}.html")
+        expand("{results_path}/{{classifier}}/{{sample}}_{{unit}}_{{seq_type}}.html",
+               results_path = config["paths"]["results"])
     log:
-        opj(config["paths"]["results"], "{classifier}",
-            "{sample}_{unit}_{seq_type}.krona.log")
+        expand("{results_path}/{{classifier}}/{{sample}}_{{unit}}_{{seq_type}}.krona.log",
+               results_path = config["paths"]["results"])
     params:
         tax="resources/krona"
     conda:
         "../envs/krona.yml"
-    singularity:
+    container:
         "docker://continuumio/miniconda3:4.8.2"
     shell:
         """
@@ -417,22 +435,25 @@ rule classifier2krona:
 
 rule all2krona:
     input:
-        f=get_all_files(samples, opj(config["paths"]["results"],
-                                    "{classifier}"), ".kreport"),
-        h=get_all_files(samples, opj(config["paths"]["results"],
-                                    "{classifier}"), ".html"),
-        t=opj("resources", "krona", "taxonomy.tab")
+        f=get_all_files(samples,
+                        expand("{results_path}/{{classifier}}", results_path = config["paths"]["results"]),
+                        ".kreport"),
+        h=get_all_files(samples,
+                        expand("{results_path}/{{classifier}}", results_path = config["paths"]["results"]),
+                        ".html"),
+        t="resources/krona/taxonomy.tab"
     output:
-        opj(config["paths"]["results"], "report", "{classifier}",
-                   "{classifier}.krona.html")
+        expand("{results_path}/report/{{classifier}}/{{classifier}}.krona.html",
+               results_path = config["paths"]["results"])
     log:
-        opj(config["paths"]["results"], "report", "{classifier}", "{classifier}.krona.log")
+        expand("{results_path}/report/{{classifier}}/{{classifier}}.krona.log",
+               results_path = config["paths"]["results"])
     params:
         tax="resources/krona",
         input_string=krona_input(config, samples, "{classifier}")
     conda:
         "../envs/krona.yml"
-    singularity:
+    container:
         "docker://continuumio/miniconda3:4.8.2"
     shell:
          """
