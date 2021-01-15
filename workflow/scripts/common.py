@@ -259,23 +259,25 @@ def is_pe(d):
     return False
 
 
-def get_all_files(samples, dir, suffix="", nested=False):
+def get_all_files(samples, directory, suffix="", nested=False):
     """
     Returns a list of files based on samples and directory
 
     :param samples: Samples dictionary
-    :param dir: Directory to find files in
+    :param directory: Directory to find files in
     :param suffix: Suffix of files to return
     :param nested: If True look for files inside sample_run directory
     :return:
     """
     files = []
+    if type(directory) == list:
+        directory = directory[0]
     for sample in samples:
         for unit in samples[sample].keys():
             if nested:
-                d = "{}/{}_{}".format(dir, sample, unit)
+                d = "{}/{}_{}".format(directory, sample, unit)
             else:
-                d = "{}".format(dir)
+                d = "{}".format(directory)
             if is_pe(samples[sample][unit]):
                 files.append(opj(d, "{}_{}_pe{}".format(sample, unit, suffix)))
             else:
