@@ -24,19 +24,17 @@ rule classify:
 rule download_kraken_build:
     """Downloads pre-built kraken2 index"""
     output:
-        expand(opj("resources", "kraken", "prebuilt",
-                   config["kraken"]["prebuilt"], "{n}.k2d"),
-               n=["hash", "opts", "taxo"])
+        expand("resources/kraken/prebuilt/{kraken_prebuilt}/{n}.k2d",
+               kraken_prebuilt=config["kraken"]["prebuilt"], n=["hash", "opts", "taxo"])
     log:
-        opj("resources", "kraken", "prebuilt",
-                   config["kraken"]["prebuilt"], "download.log")
+        "resources/kraken/prebuilt/{kraken_prebuilt}/download.log".format(kraken_prebuilt=config["kraken"]["prebuilt"])
     params:
         dir=lambda w, output: os.path.dirname(output[0]),
-        tar=opj(config["paths"]["temp"],
-                "{base}.tgz".format(base=config["kraken"]["prebuilt"])),
+        tar="{temp}/{base}.tgz".format(temp=config["paths"]["temp"],
+                                       base=config["kraken"]["prebuilt"]),
         url=get_kraken_index_url(config["kraken"]["prebuilt"]),
         db_version=get_kraken_index_url(config["kraken"]["prebuilt"], version=True),
-        tmpdir = opj(config["paths"]["temp"], "kraken_db")
+        tmpdir = "{}/kraken_db".format(config["paths"]["temp"])
     shell:
          """
          mkdir -p {params.tmpdir}
@@ -49,11 +47,11 @@ rule download_kraken_build:
 
 rule kraken_build_standard:
     output:
-        expand(opj("resources", "kraken", "standard", "{n}.k2d"),
+        expand("resources/kraken/standard/{n}.k2d",
                n=["hash", "opts", "taxo"])
     log:
-        build=opj("resources", "kraken", "standard", "build.log"),
-        clean=opj("resources", "kraken", "standard", "clean.log"),
+        build="resources/kraken/standard/build.log",
+        clean="resources/kraken/standard/clean.log",
     params:
         dir=lambda w, output: os.path.dirname(output[0])
     conda:
@@ -233,18 +231,18 @@ rule centrifuge_se:
 
 rule centrifuge_kreport:
     input:
-        f=opj(config["paths"]["results"], "centrifuge",
-              "{sample}_{unit}_{seq_type}.out"),
-        db=expand(opj(config["centrifuge"]["dir"],
-                      "{base}.{i}.cf"),
+        f=expand("{results_path}/centrifuge/{{sample}}_{{unit}}_{{seq_type}}.out",
+            results_path=config["paths"]["results"]),
+        db=expand("{dirname}/{base}.{i}.cf",
+                  dirname=config["centrifuge"]["dir"],
                   i=[1, 2, 3], base=config["centrifuge"]["base"])
     output:
-        opj(config["paths"]["results"], "centrifuge",
-            "{sample}_{unit}_{seq_type}.kreport")
+        expand("{results_path}/centrifuge/{{sample}}_{{unit}}_{{seq_type}}.kreport",
+            results_path=config["paths"]["results"])
     params:
         min_score=config["centrifuge"]["min_score"],
-        prefix=opj(config["centrifuge"]["dir"],
-                   "{base}".format(base=config["centrifuge"]["base"]))
+        prefix="{dirname}/{base}".format(dirname=config["centrifuge"]["dir"],
+                                         base=config["centrifuge"]["base"])
     conda:
         "../envs/centrifuge.yml"
     shell:
@@ -260,13 +258,13 @@ rule build_metaphlan:
     Download and build the metaphlan bowtie2 database
     """
     output:
-        expand(opj("resources", "metaphlan", "{index}.{s}.bt2"),
+        expand("resources/metaphlan/{index}.{s}.bt2",
                index=config["metaphlan"]["index"],
                s=["1", "2", "3", "4", "rev.1", "rev.2"])
     log:
-        opj("resources", "metaphlan", "mpa.log")
+        "resources/metaphlan/mpa.log"
     params:
-        dir=opj("resources", "metaphlan"),
+        dir="resources/metaphlan",
         index=config["metaphlan"]["index"]
     threads: 4
     resources:
