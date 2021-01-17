@@ -23,12 +23,12 @@ if config["assembly"]["metaspades"]:
         input:
             lambda wildcards: get_all_assembly_files(assemblies[wildcards.assembly])
         output:
-            R1=temp(opj(config["paths"]["results"],"assembly",
-                        "{assembly}","R1.fq")),
-            R2=temp(opj(config["paths"]["results"],"assembly",
-                        "{assembly}","R2.fq")),
-            se=touch(temp(opj(config["paths"]["results"],"assembly",
-                        "{assembly}","se.fq")))
+            R1=temp(expand("{results_path}/assembly/{{assembly}}/R1.fq",
+                results_path=config["paths"]["results"])),
+            R2=temp(expand("{results_path}/assembly/{{assembly}}/R2.fq",
+                results_path=config["paths"]["results"])),
+            se=touch(temp(expand("{results_path}/assembly/{{assembly}}/se.fq",
+                results_path=config["paths"]["results"]))),
         params:
             assembly = lambda wildcards: assemblies[wildcards.assembly],
             assembler = "metaspades"
