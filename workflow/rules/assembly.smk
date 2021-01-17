@@ -11,9 +11,9 @@ localrules:
 
 rule assemble:
     input:
-        opj(config["paths"]["results"], "report", "assembly", "assembly_stats.pdf"),
-        opj(config["paths"]["results"], "report", "assembly", "assembly_size_dist.pdf"),
-        opj(config["paths"]["results"], "report", "assembly", "alignment_frequency.pdf")
+        expand("{results_path}/report/assembly/{f}.pdf",
+            results_path = config["paths"]["results"],
+            f=["assembly_stats", "assembly_size_dist", "alignment_frequency"])
 
 if config["assembly"]["metaspades"]:
     localrules:
