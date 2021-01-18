@@ -110,15 +110,15 @@ else:
         input:
             lambda wildcards: get_all_assembly_files(assemblies[wildcards.assembly])
         output:
-            R1=temp(opj(config["paths"]["results"],"assembly",
-                            "{assembly}","input_1")),
-            R2=temp(opj(config["paths"]["results"],"assembly",
-                            "{assembly}","input_2")),
-            se=temp(opj(config["paths"]["results"],"assembly",
-                            "{assembly}","input_se"))
+            R1=temp(expand("{results_path}/assembly/{{assembly}}/input_1",
+                results_path=config["paths"]["results"])),
+            R2=temp(expand("{results_path}/assembly/{{assembly}}/input_2",
+                results_path=config["paths"]["results"])),
+            se=temp(expand("{results_path}/assembly/{{assembly}}/input_se",
+                results_path=config["paths"]["results"]))
         log:
-            opj(config["paths"]["results"],"assembly",
-                            "{assembly}","input_list.log")
+            expand("{results_path}/assembly/{{assembly}}/input_list.log",
+                results_path=config["paths"]["results"])
         params:
             assembly = lambda wildcards: assemblies[wildcards.assembly]
         script:
@@ -126,22 +126,25 @@ else:
 
     rule megahit:
         input:
-            R1=opj(config["paths"]["results"],"assembly",
-                            "{assembly}","input_1"),
-            R2=opj(config["paths"]["results"],"assembly",
-                            "{assembly}","input_2"),
-            se=opj(config["paths"]["results"],"assembly",
-                            "{assembly}","input_se")
+            R1=expand("{results_path}/assembly/{{assembly}}/input_1",
+                results_path=config["paths"]["results"]),
+            R2=expand("{results_path}/assembly/{{assembly}}/input_2",
+                results_path=config["paths"]["results"]),
+            se=expand("{results_path}/assembly/{{assembly}}/input_se",
+                results_path=config["paths"]["results"]),
         output:
-            opj(config["paths"]["results"],"assembly","{assembly}","final_contigs.fa")
+            expand("{results_path}/assembly/{{assembly}}/final_contigs.fa",
+                results_path=config["paths"]["results"])
         log:
-            opj(config["paths"]["results"],"assembly","{assembly}","log")
+            expand("{results_path}/assembly/{{assembly}}/log",
+                results_path=config["paths"]["results"])
         params:
-            intermediate_contigs=opj(config["paths"]["results"], "intermediate","assembly",
-                                     "{assembly}","intermediate_contigs"),
+            intermediate_contigs=expand("{results_path}/intermediate/assembly/{{assembly}}/intermediate_contigs",
+                results_path=config["paths"]["results"]),
             additional_settings=config["megahit"]["extra_settings"],
-            tmp=opj(config["paths"]["temp"],"{assembly}.megahit"),
-            output_dir=opj(config["paths"]["results"],"assembly","{assembly}")
+            tmp=expand("{results_path}/{{assembly}}.megahit",
+                results_path=config["paths"]["results"]),
+            output_dir=lambda wildcards, output: os.path.dirname(output[0])
         threads: config["megahit"]["threads"]
         resources:
             runtime=lambda wildcards, attempt: attempt**2*60*4
