@@ -192,9 +192,11 @@ else:
 rule fasta2bed:
     """Creates bed-format file from assembly"""
     input:
-        opj(config["paths"]["results"],"assembly","{assembly}","final_contigs.fa")
+        expand("{results_path}/assembly/{{assembly}}/final_contigs.fa",
+            results_path=config["paths"]["results"])
     output:
-        opj(config["paths"]["results"],"assembly","{assembly}","final_contigs.bed")
+        expand("{results_path}/assembly/{{assembly}}/final_contigs.bed",
+            results_path=config["paths"]["results"])
     script:
         "../scripts/assembly_utils.py"
 
