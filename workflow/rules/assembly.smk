@@ -37,24 +37,28 @@ if config["assembly"]["metaspades"]:
 
     rule metaspades:
         input:
-            R1=opj(config["paths"]["results"],"assembly",
-                        "{assembly}","R1.fq"),
-            R2=opj(config["paths"]["results"],"assembly",
-                        "{assembly}","R2.fq"),
-            se=opj(config["paths"]["results"],"assembly",
-                        "{assembly}","se.fq")
+            R1=expand("{results_path}/assembly/{{assembly}}/R1.fq",
+                results_path=config["paths"]["results"]),
+            R2=expand("{results_path}/assembly/{{assembly}}/R2.fq",
+                results_path=config["paths"]["results"]),
+            se=expand("{results_path}/assembly/{{assembly}}/se.fq",
+                results_path=config["paths"]["results"]),
         output:
-            opj(config["paths"]["results"],"assembly","{assembly}","final_contigs.fa")
+            expand("{results_path}/assembly/{{assembly}}/final_contigs.fa",
+                results_path=config["paths"]["results"])
         log:
-            opj(config["paths"]["results"],"assembly","{assembly}","spades.log")
+            expand("{results_path}/assembly/{{assembly}}/spades.log",
+                results_path=config["paths"]["results"])
         params:
-            intermediate_contigs=opj(config["paths"]["results"], "intermediate","assembly",
-                                     "{assembly}","intermediate_contigs"),
-            corrected=opj(config["paths"]["results"], "intermediate","assembly",
-                          "{assembly}","corrected"),
+            intermediate_contigs=expand("{results_path}/intermediate/assembly/{{assembly}}/intermediate_contigs",
+                results_path=config["paths"]["results"]),
+            corrected=expand("{results_path}/intermediate/assembly/{{assembly}}/corrected",
+                results_path=config["paths"]["results"]),
             additional_settings=config["metaspades"]["extra_settings"],
-            tmp=opj(config["paths"]["temp"],"{assembly}.metaspades"),
-            output_dir=opj(config["paths"]["results"],"assembly","{assembly}")
+            tmp=expand("{results_path}/{assembly}.metaspades",
+                results_path=config["paths"]["temp"]),
+            output_dir=expand("{results_path}/assembly/{assembly}",
+                results_path=config["paths"]["results"])
         threads: config["metaspades"]["threads"]
         resources:
             runtime=lambda wildcards, attempt: attempt**2*60*4
