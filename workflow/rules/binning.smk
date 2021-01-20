@@ -440,7 +440,7 @@ rule checkm_coverage:
         dir=lambda wildcards, input: os.path.dirname(input.tsv)
     threads: 10
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60
+        runtime=lambda wildcards, attempt: attempt**2*60*10
     conda:
         "../envs/checkm.yml"
     shell:
