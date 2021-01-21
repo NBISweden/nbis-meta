@@ -157,7 +157,7 @@ def count_rrna(sm):
     :param sm:
     :return:
     """
-    df = pd.read_csv(sm.input, sep="\t", usecols=[0, 2, 8], header=None,
+    df = pd.read_csv(sm.input[0], sep="\t", usecols=[0, 2, 8], header=None,
                      names=["contig", "type", "fields"])
     types = [x.split(";")[0].split("=")[-1] for x in df.fields]
     bins = [x.split(";")[-1].split("=")[-1] for x in df.fields]
