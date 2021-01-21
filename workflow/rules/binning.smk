@@ -591,7 +591,7 @@ rule aggregate_gtdbtk:
                 summary=opj(gtdb_dir, "gtdbtk.{}.summary.tsv".format(m))
                 if os.path.exists(summary):
                     summaries.append(summary)
-        df=concatenate(summaries, -3)
+        df=concatenate(summaries, index=-3)
         df.to_csv(output.summary, sep="\t")
 
 ##### annotate bins #####
@@ -723,9 +723,9 @@ rule aggregate_bin_annot:
         trna=opj(config["paths"]["results"], "report", "bin_annotation", "tRNA.total.tsv"),
         rrna=opj(config["paths"]["results"], "report", "bin_annotation", "rRNA.types.tsv")
     run:
-        df=concatenate(input.trna)
+        df=concatenate(input.trna, index=-3)
         df.to_csv(output.trna, sep="\t", index=True)
-        df=concatenate(input.rrna)
+        df=concatenate(input.rrna, index=-3)
         df.to_csv(output.rrna, sep="\t", index=True)
 
 ##### genome clustering #####
