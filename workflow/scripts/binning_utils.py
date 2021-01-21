@@ -174,7 +174,7 @@ def count_rrna(sm):
                          right_index=True)
     table = table.loc[:, ["5S_rRNA", "16S_rRNA", "23S_rRNA"]]
     table.index.name = "Bin_Id"
-    table.to_csv(sm.output, sep="\t", index=True)
+    table.to_csv(sm.output[0], sep="\t", index=True)
 
 
 def count_trna(sm):
