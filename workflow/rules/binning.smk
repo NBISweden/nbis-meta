@@ -591,7 +591,7 @@ rule aggregate_gtdbtk:
                 summary=opj(gtdb_dir, "gtdbtk.{}.summary.tsv".format(m))
                 if os.path.exists(summary):
                     summaries.append(summary)
-        df=concatenate(summaries)
+        df=concatenate(summaries, -3)
         df.to_csv(output.summary, sep="\t")
 
 ##### annotate bins #####
