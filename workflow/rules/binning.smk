@@ -611,7 +611,8 @@ rule barrnap:
         "../envs/barrnap.yml"
     params:
         indir=lambda wildcards, input: os.path.dirname(input.tsv),
-        gtdbtk_dir=lambda wildcards, input: os.path.dirname(input.gtdbtk)
+        gtdbtk_dir=lambda wildcards, input: os.path.dirname(input.gtdbtk),
+        outdir=lambda wildcards, output: os.path.dirname(output[0])
     resources:
         runtime=lambda wildcards, attempt: attempt**2*30
     threads: 1
@@ -631,9 +632,13 @@ rule barrnap:
                     else
                         k="arc"
                     fi
-                    barrnap --kingdom $k {params.indir}/$g.fa 2>>{log} | \
-                        egrep -v "^#" | sed "s/$/;genome=$g/g" >> {output}
+                    barrnap --kingdom $k {params.indir}/$g.fa > {params.outdir}/out 2>>{log}
+                    lines=$(wc -l {params.outdir}/out)
+                    if [ $lines > 1 ]; then
+                        egrep -v "^#" {params.outdir}/out | sed "s/$/;genome=$g/g" >> {output}
+                    fi
                 done
+            rm {params.outdir}/out
         fi
         """
 
