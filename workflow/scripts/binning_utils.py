@@ -183,7 +183,7 @@ def count_trna(sm):
     :param sm:
     :return:
     """
-    df = pd.read_csv(sm.input, sep="\t")
+    df = pd.read_csv(sm.input[0], sep="\t")
     dfc = df.groupby(["tRNA_type", "Bin_Id"]).count().reset_index().loc[:,
           ["tRNA_type", "tRNA#", "Bin_Id"]]
     table = dfc.pivot_table(columns="tRNA_type", index="Bin_Id")[
