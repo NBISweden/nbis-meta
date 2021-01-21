@@ -631,7 +631,7 @@ rule barrnap:
                     else
                         k="arc"
                     fi
-                    barrnap --kingdom $k --quiet {params.indir}/$g.fa | \
+                    barrnap --kingdom $k {params.indir}/$g.fa 2>>{log} | \
                         egrep -v "^#" | sed "s/$/;genome=$g/g" >> {output}
                 done
         fi
