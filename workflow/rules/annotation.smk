@@ -294,7 +294,7 @@ rule emapper_homology_search:
         rm -rf {params.tmpdir}
         """
 
-if config["runOnUppMax"] == "yes":
+if config["runOnUppMax"]:
     rule emapper_annotate_hits_uppmax:
         """Copy EGGNOG db into memory before running annotations"""
         input:
