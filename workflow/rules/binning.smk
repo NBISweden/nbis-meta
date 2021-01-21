@@ -633,7 +633,7 @@ rule barrnap:
                         k="arc"
                     fi
                     barrnap --kingdom $k {params.indir}/$g.fa > {params.outdir}/out 2>>{log}
-                    lines=$(wc -l {params.outdir}/out)
+                    lines=$(wc -l {params.outdir}/out | | cut -f1 -d ' ')
                     if [ $lines > 1 ]; then
                         egrep -v "^#" {params.outdir}/out | sed "s/$/;genome=$g/g" >> {output}
                     fi
