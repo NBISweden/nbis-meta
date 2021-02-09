@@ -9,7 +9,7 @@ A workflow for metagenomic projects
 
 ## Overview
 A [snakemake](http://snakemake.readthedocs.io/en/stable/) workflow for
-paired- and/or single-end metagenomic data.
+paired- and/or single-end whole-genome shotgun metagenomic data.
 
 You can use this workflow for _e.g._:
 
