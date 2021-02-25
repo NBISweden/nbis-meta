@@ -636,6 +636,8 @@ rule barrnap:
                     lines=$(wc -l {params.outdir}/out | cut -f1 -d ' ')
                     if [ $lines -gt 1 ]; then
                         egrep -v "^#" {params.outdir}/out | sed "s/$/;genome=$g/g" >> {output}
+                    else
+                        touch {output}
                     fi
                 done
             rm {params.outdir}/out
