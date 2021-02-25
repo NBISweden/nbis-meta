@@ -438,7 +438,7 @@ rule checkm_coverage:
         opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "checkm", "checkm_coverage.log")
     params:
         dir=lambda wildcards, input: os.path.dirname(input.tsv)
-    threads: 10
+    threads: 20
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60
     conda:
