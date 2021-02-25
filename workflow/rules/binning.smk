@@ -429,16 +429,16 @@ rule checkm_coverage:
     input:
         tsv=opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "summary_stats.tsv"),
         bam=get_all_files(samples, opj(config["paths"]["results"], "assembly",
-                                         "{assembly}", "mapping"), ".markdup.bam"),
+                                         "{assembly}", "mapping"), "{p}.bam".format(p=POSTPROCESS)),
         bai=get_all_files(samples, opj(config["paths"]["results"], "assembly",
-                                         "{assembly}", "mapping"), ".markdup.bam.bai")
+                                         "{assembly}", "mapping"), "{p}.bam.bai".format(p=POSTPROCESS))
     output:
         cov=temp(opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "checkm", "coverage.tsv"))
     log:
         opj(config["paths"]["results"], "binning", "{binner}", "{assembly}", "{l}", "checkm", "checkm_coverage.log")
     params:
         dir=lambda wildcards, input: os.path.dirname(input.tsv)
-    threads: 10
+    threads: 20
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60
     conda:
@@ -591,7 +591,7 @@ rule aggregate_gtdbtk:
                 summary=opj(gtdb_dir, "gtdbtk.{}.summary.tsv".format(m))
                 if os.path.exists(summary):
                     summaries.append(summary)
-        df=concatenate(summaries)
+        df=concatenate(summaries, index=-3)
         df.to_csv(output.summary, sep="\t")
 
 ##### annotate bins #####
@@ -611,7 +611,8 @@ rule barrnap:
         "../envs/barrnap.yml"
     params:
         indir=lambda wildcards, input: os.path.dirname(input.tsv),
-        gtdbtk_dir=lambda wildcards, input: os.path.dirname(input.gtdbtk)
+        gtdbtk_dir=lambda wildcards, input: os.path.dirname(input.gtdbtk),
+        outdir=lambda wildcards, output: os.path.dirname(output[0])
     resources:
         runtime=lambda wildcards, attempt: attempt**2*30
     threads: 1
@@ -631,9 +632,15 @@ rule barrnap:
                     else
                         k="arc"
                     fi
-                    barrnap --kingdom $k --quiet {params.indir}/$g.fa | \
-                        egrep -v "^#" | sed "s/$/;genome=$g/g" >> {output}
+                    barrnap --kingdom $k {params.indir}/$g.fa > {params.outdir}/out 2>>{log}
+                    lines=$(wc -l {params.outdir}/out | cut -f1 -d ' ')
+                    if [ $lines -gt 1 ]; then
+                        egrep -v "^#" {params.outdir}/out | sed "s/$/;genome=$g/g" >> {output}
+                    else
+                        touch {output}
+                    fi
                 done
+            rm {params.outdir}/out
         fi
         """
 
@@ -718,9 +725,9 @@ rule aggregate_bin_annot:
         trna=opj(config["paths"]["results"], "report", "bin_annotation", "tRNA.total.tsv"),
         rrna=opj(config["paths"]["results"], "report", "bin_annotation", "rRNA.types.tsv")
     run:
-        df=concatenate(input.trna)
+        df=concatenate(input.trna, index=-3)
         df.to_csv(output.trna, sep="\t", index=True)
-        df=concatenate(input.rrna)
+        df=concatenate(input.rrna, index=-3)
         df.to_csv(output.rrna, sep="\t", index=True)
 
 ##### genome clustering #####
