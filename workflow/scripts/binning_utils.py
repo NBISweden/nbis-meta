@@ -134,7 +134,7 @@ def remove_checkm_zerocols(sm):
     zero_cols = df_sum.loc[df_sum == 0].index
     cols_to_drop = []
     # find suffix of zero cols
-    for c in list(zero_cols) + ["Mapped reads"]:
+    for c in list(zero_cols):
         suffix = ".{}".format(c.split(".")[-1])
         if suffix == ".Mapped reads":
             suffix = ""
