@@ -118,9 +118,13 @@ properties:
         description: reverse adapter sequence to trim with cutadapt
       error_rate:
         type: number
-        description:
+        description: error tolerance when searching for adapters
         minimum: 0
         maximum: 1
+      extra_params:
+        type: string
+        description: extra parameters to pass to cutadapt
+        default: ""
 
   sortmerna:
     type: object
