@@ -159,6 +159,12 @@ def count_rrna(sm):
     """
     df = pd.read_csv(sm.input[0], sep="\t", usecols=[0, 2, 8], header=None,
                      names=["contig", "type", "fields"])
+    # If empty dataframe, just write an empty file
+    if df.shape[0] == 0:
+        table = pd.DataFrame(columns=["5S_rRNA", "16S_rRNA", "23S_rRNA"])
+        table.index.name = "Bin Id"
+        table.to_csv(sm.output[0], sep="\t", header=True)
+        return
     types = [x.split(";")[0].split("=")[-1] for x in df.fields]
     bins = [x.split(";")[-1].split("=")[-1] for x in df.fields]
     _df = pd.DataFrame(data={'rRNA_type': types, 'Bin_Id': bins})
