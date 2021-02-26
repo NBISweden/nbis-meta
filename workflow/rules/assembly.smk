@@ -55,9 +55,9 @@ if config["assembly"]["metaspades"]:
             corrected=expand("{results_path}/intermediate/assembly/{{assembly}}/corrected",
                 results_path=config["paths"]["results"]),
             additional_settings=config["metaspades"]["extra_settings"],
-            tmp=expand("{results_path}/{assembly}.metaspades",
+            tmp=expand("{results_path}/{{assembly}}.metaspades",
                 results_path=config["paths"]["temp"]),
-            output_dir=expand("{results_path}/assembly/{assembly}",
+            output_dir=expand("{results_path}/assembly/{{assembly}}",
                 results_path=config["paths"]["results"])
         threads: config["metaspades"]["threads"]
         resources:
