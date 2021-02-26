@@ -411,7 +411,8 @@ rule cutadapt_pe:
     params:
         adapter=config["cutadapt"]["adapter_sequence"],
         rev_adapter=config["cutadapt"]["rev_adapter_sequence"],
-        error_rate=config["cutadapt"]["error_rate"]
+        error_rate=config["cutadapt"]["error_rate"],
+        extra_params=config["cutadapt"]["extra_params"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
@@ -420,6 +421,7 @@ rule cutadapt_pe:
     shell:
         """
         cutadapt \
+            {params.extra_params} \
             -e {params.error_rate} \
             -a {params.adapter} \
             -A {params.rev_adapter} \
