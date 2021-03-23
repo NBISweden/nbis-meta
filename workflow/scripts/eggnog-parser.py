@@ -60,14 +60,19 @@ def get_kegg_ortholog_hierarchy(s):
     return hier
 
 
-def get_kegg_ortholog_info(outdir):
+def get_kegg_ortholog_info(outdir, tmpdir="/scratch"):
     outdir = outdir.rstrip("/")
     if not os.path.exists(outdir):
         os.makedirs(outdir)
+    try:
+        os.makedirs(tmpdir, exist_ok=True)
+    except PermissionError:
+        tmpdir = "temp"
+        os.makedirs(tmpdir, exist_ok=True)
     url = "https://www.genome.jp/kegg-bin/download_htext?htext=ko00001.keg&format=json"
     logging.info("Fetching ko00001.keg from www.kegg.jp")
     # Download file
-    tmp_out = os.path.expandvars("$TMPDIR/ko00001.json")
+    tmp_out = os.path.expandvars(f"{tmpdir}/ko00001.json")
     request.urlretrieve(url, tmp_out)
     with open(tmp_out) as fh:
         s = json.load(fh)
@@ -114,12 +119,17 @@ def get_kegg_ortholog_info(outdir):
                 fh_ec2path.write("{}\t{}\n".format(enzyme, pathway))
 
 
-def get_kegg_module_info(outdir):
+def get_kegg_module_info(outdir, tmpdir="/scratch"):
+    try:
+        os.makedirs(tmpdir, exist_ok=True)
+    except PermissionError:
+        tmpdir = "temp"
+        os.makedirs(tmpdir, exist_ok=True)
     outdir = outdir.rstrip("/")
     # Process KEGG Module information
     logging.info("Fetching ko00002.keg from www.kegg.jp")
     url = "https://www.kegg.jp/kegg-bin/download_htext?htext=ko00002.keg&format=json"
-    tmp_out = os.path.expandvars("$TMPDIR/ko00002.json")
+    tmp_out = os.path.expandvars(f"{tmpdir}/ko00002.json")
     request.urlretrieve(url, tmp_out)
     modules_out = "{}/kegg_modules.tsv".format(outdir)
     with open(tmp_out) as fh:
