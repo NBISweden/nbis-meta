@@ -8,3 +8,4 @@ dependencies:
   - samtools=1.9
   - picard=2.21.9
   - bowtie2=2.4.1
+  - tbb=2020.3
