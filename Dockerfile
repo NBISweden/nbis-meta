@@ -9,6 +9,9 @@ SHELL ["/bin/bash", "-c"]
 # Set workdir
 WORKDIR /analysis
 
+# Set tmpdir
+ENV TMPDIR="/scratch"
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl && apt-get clean
 
