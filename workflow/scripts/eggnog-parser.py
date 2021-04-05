@@ -60,15 +60,20 @@ def get_kegg_ortholog_hierarchy(s):
     return hier
 
 
-def get_kegg_ortholog_info(outdir, tmpdir="/scratch"):
+def setup_tmpdir(tmpdir):
+    if not os.path.isdir(os.path.expandvars(tmpdir)):
+        try:
+            os.makedirs(tmpdir, exist_ok=True)
+        except PermissionError:
+            tmpdir = "temp"
+            os.makedirs(tmpdir, exist_ok=True)
+
+
+def get_kegg_ortholog_info(outdir, tmpdir="$TMPDIR"):
     outdir = outdir.rstrip("/")
     if not os.path.exists(outdir):
         os.makedirs(outdir)
-    try:
-        os.makedirs(tmpdir, exist_ok=True)
-    except PermissionError:
-        tmpdir = "temp"
-        os.makedirs(tmpdir, exist_ok=True)
+    setup_tmpdir(tmpdir)
     url = "https://www.genome.jp/kegg-bin/download_htext?htext=ko00001.keg&format=json"
     logging.info("Fetching ko00001.keg from www.kegg.jp")
     # Download file
@@ -119,12 +124,11 @@ def get_kegg_ortholog_info(outdir, tmpdir="/scratch"):
                 fh_ec2path.write("{}\t{}\n".format(enzyme, pathway))
 
 
-def get_kegg_module_info(outdir, tmpdir="/scratch"):
-    try:
-        os.makedirs(tmpdir, exist_ok=True)
-    except PermissionError:
-        tmpdir = "temp"
-        os.makedirs(tmpdir, exist_ok=True)
+def get_kegg_module_info(outdir, tmpdir="$TMPDIR"):
+    outdir = outdir.rstrip("/")
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    setup_tmpdir(tmpdir)
     outdir = outdir.rstrip("/")
     # Process KEGG Module information
     logging.info("Fetching ko00002.keg from www.kegg.jp")
