@@ -712,57 +712,6 @@ def krona_input(config, samples, classifier):
     return input_string
 
 
-def get_centrifuge_index_url(config):
-    url_base = "ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data"
-    d = {'nt_2018_2_12': 'nt_2018_2_12.tar.gz',
-         'nt_2018_3_3': 'nt_2018_3_3.tar.gz', 'p+h+v': 'p+h+v.tar.gz',
-         'p_compressed+h+v': 'p_compressed+h+v.tar.gz',
-         'p_compressed_2018_4_15': 'p_compressed_2018_4_15.tar.gz'}
-    try:
-        url = "{}/{}".format(url_base, d[config["centrifuge_base"]])
-    except KeyError:
-        url = ""
-    return url
-
-
-def get_kraken_index_url(kraken_prebuilt, version=False):
-    """
-    Downloads latest prebuilt kraken index
-
-    :param kraken_prebuilt: prebuilt version
-    :param version: Return db version on True
-    :return: url text string
-    """
-    import subprocess
-    import re
-    url_base = "ftp://ftp.ccb.jhu.edu/pub/data/kraken2_dbs"
-    r = subprocess.run(["curl", "ftp://ftp.ccb.jhu.edu/pub/data/kraken2_dbs/"],
-                       capture_output=True)
-    _files = [x.split(" ")[-1] for x in r.stdout.decode().split("\n")]
-    # List all tar archives
-    files = [x for x in _files if ".tgz" in x]
-    # Figure out versions
-    versions = []
-    types = []
-    for t in ["_".join(x.split("_")[0:2]) for x in files]:
-        if t == "minikraken_8GB":
-            types.append(t)
-            versions.append("")
-            continue
-        v = re.search("\d+.*", t.split("_")[-1]).group()
-        types.append(t.replace(v, ""))
-        versions.append(v)
-    # Build a DataFrame and sort by version
-    df = pd.DataFrame({'type': types, 'version': versions, 'file': files})
-    df = df.sort_values("version", ascending=False)
-    if df.shape[0] == 0:
-        return ""
-    f = df.loc[df.type == kraken_prebuilt].head(1)["file"].values[0]
-    if version:
-        return os.path.splitext(f)[0]
-    return "{}/{}".format(url_base, f)
-
-
 def metaphlan_krona_string(input):
     """
     Returns the input string (<file1>,<name1> ... <fileN>,<nameN>) for krona
