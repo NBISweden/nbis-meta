@@ -257,9 +257,10 @@ kraken:
   standard_db: False
   # download a prebuilt kraken2 database from the CCB servers
   # choose from "minikraken_8GB","16S_Greengenes","16S_RDP","16S_Silva"
-  prebuilt: "minikraken_8GB"
+  prebuilt: "Standard-8"
   # if you already have access to a built kraken database you may specify the
   # database path here (path must contain hash.k2d, opts.k2d and taxo.k2d files
+  prebuilt_url: "https://genome-idx.s3.amazonaws.com/kraken/k2_standard_8gb_20200919.tar.gz"
   custom: ""
   # should kraken2 run with reduced memory requirements?
   # setting reduce_memory to True makes kraken2 run in "--memory-mapping" mode
@@ -272,9 +273,10 @@ centrifuge:
   # CCB servers. choose from:
   # "p+h+v", "nt_2018_2_12", "nt_2018_3_3", "p_compressed+h+v" or "p_compressed_2018_4_15"
   # see http://ccb.jhu.edu/software/centrifuge/ for more info
-  prebuilt: "p_compressed+h+v"
+  prebuilt: "refseq-compressed"
   # if you already have access to a built centrifuge database you may specify
   # the path to it here.
+  prebuilt_url: "https://genome-idx.s3.amazonaws.com/centrifuge/p_compressed%2Bh%2Bv.tar.gz"
   custom: ""
   # minimum score for classifications by centrifuge.
   # because centrifuge doesn't have a filtering algorithm,

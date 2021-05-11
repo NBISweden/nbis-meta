@@ -420,7 +420,8 @@ properties:
     type: object
     default:
       standard_db: False
-      prebuilt: "minikraken_8GB"
+      prebuilt: "Standard-8"
+      prebuilt_url: "https://genome-idx.s3.amazonaws.com/kraken/k2_standard_8gb_20200919.tar.gz"
       custom: ""
       reduce_memory: False
     properties:
@@ -430,7 +431,9 @@ properties:
       prebuilt:
         type: string
         description: download prebuilt kraken2 database
-        enum: ["16S_Greengenes","16S_RDP","16S_Silva","minikraken_8GB"]
+      prebuilt_url:
+        type: string
+        description: url to prebuilt kraken2 database
       custom:
         type: string
         description: path to existing kraken database if one exists
@@ -441,7 +444,8 @@ properties:
   centrifuge:
     type: object
     default:
-      prebuilt: "p_compressed+h+v"
+      prebuilt: "refseq-compressed"
+      prebuilt_url: "https://genome-idx.s3.amazonaws.com/centrifuge/p_compressed%2Bh%2Bv.tar.gz"
       custom: ""
       min_score: 75
       max_assignments: 1
@@ -449,7 +453,9 @@ properties:
       prebuilt:
         type: string
         description: prebuilt database to download for centrifuge
-        enum: ["p+h+v","nt_2018_2_12","nt_2018_3_3","p_compressed+h+v", "p_compressed_2018_4_15"]
+      prebuilt_url:
+        type: string
+        description: URL to prebuilt centrifuge database
       custom:
         type: string
         description: path to existing centrifuge database if one exists
