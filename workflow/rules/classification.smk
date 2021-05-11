@@ -1,5 +1,4 @@
 from scripts.common import classify_input, krona_input, metaphlan_krona_string
-from scripts.common import get_kraken_index_url, get_centrifuge_index_url
 
 localrules:
     classify,
@@ -32,8 +31,7 @@ rule download_kraken_build:
         dir=lambda w, output: os.path.dirname(output[0]),
         tar="{temp}/{base}.tgz".format(temp=config["paths"]["temp"],
                                        base=config["kraken"]["prebuilt"]),
-        url=get_kraken_index_url(config["kraken"]["prebuilt"]),
-        db_version=get_kraken_index_url(config["kraken"]["prebuilt"], version=True),
+        url=config["kraken"]["prebuilt_url"],
         tmpdir = "{}/kraken_db".format(config["paths"]["temp"])
     shell:
          """
@@ -42,7 +40,6 @@ rule download_kraken_build:
          tar -C {params.tmpdir} -xf {params.tar}
          mv {params.tmpdir}/*/* {params.dir}
          rm -r {params.tar} {params.tmpdir}
-         echo {params.db_version} > {params.dir}/version
          """
 
 rule kraken_build_standard:
@@ -141,7 +138,7 @@ rule download_centrifuge_build:
         dir=config["centrifuge"]["dir"],
         tar="{centrifuge_dir}/{base}.tar.gz".format(base=config["centrifuge"]["base"],
                                                     centrifuge_dir=config["centrifuge"]["dir"]),
-        url=get_centrifuge_index_url(config)
+        url=config["centrifuge"]["prebuilt_url"]
     shell:
         """
         curl -o {params.tar} {params.url} > {log} 2>&1
