@@ -32,15 +32,18 @@ def parse_emapper(sm):
     df.rename(columns={'KEGG_ko': 'kos', 'KEGG_Pathway': 'pathways',
                           'KEGG_Module': 'modules', 'EC': 'enzymes'},
                inplace=True)
+    df.fillna("-", inplace=True)
     d = df.loc[df[db] != "-", db].to_dict()
+    how = "inner"
     try:
         info_df = pd.read_csv(sm.input.info, sep="\t", index_col=0)
     except EmptyDataError:
         info_df = pd.DataFrame()
+        how = "right"
     annot = orf2feat(d, val_name=db_att[db]["val_name"],
                      regex=db_att[db]["regex"])
     annot = pd.merge(info_df, annot, left_index=True,
-                     right_on=db_att[db]["val_name"])
+                     right_on=db_att[db]["val_name"], how=how)
     annot.to_csv(sm.output[0], sep="\t", index=True, header=True)
 
 
