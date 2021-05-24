@@ -63,6 +63,9 @@ jobs:
       run: |
         bash .test/scripts/prep_eggnog.sh
         bash .test/scripts/prep_taxonomy.sh
+        mkdir -p results/annotation/emapper-test
+        cp .test/data/emapper-out.tsv results/annotation/emapper-test/emapper-test.emapper.annotations
+        snakemake --config sample_list=.test/config/emapper-test.tsv --use-conda -j 2 --configfile .test/config/annotate.yaml -p results/annotation/emapper-test/{kos,modules,pathways,enzymes}.parsed.tsv
         snakemake --use-conda -j 2 --configfile .test/config/annotate.yaml -p annotate
         rm -r results/assembly examples/data/sample*
     # Test Metabat2 with Megahit (200k reads/sample)
