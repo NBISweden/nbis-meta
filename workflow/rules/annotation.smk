@@ -1,3 +1,4 @@
+import pandas as pd
 from scripts.common import annotation_input
 
 localrules:
@@ -10,7 +11,7 @@ localrules:
     parse_pfam,
     download_eggnog,
     get_kegg_info,
-    parse_ko_annotations,
+    parse_emapper,
     download_rgi_data,
     parse_rgi
 
@@ -230,14 +231,14 @@ rule parse_pfam:
 
 rule download_eggnog:
     output:
-        db=opj("resources","eggnog-mapper","eggnog.db"),
-        version=opj("resources","eggnog-mapper","eggnog.version")
+        db = "resources/eggnog-mapper/eggnog.db",
+        dmnd = "resources/eggnog-mapper/eggnog_proteins.dmnd",
+        version = "resources/eggnog-mapper/eggnog.version"
     log:
-        opj("resources","eggnog-mapper","download.log")
+        "resources/eggnog-mapper/download.log"
     conda:
         "../envs/annotation.yml"
     params:
-        dbs="none",
         data_dir=lambda wildcards, output: os.path.dirname(output.db)
     shell:
         """
@@ -248,10 +249,10 @@ rule download_eggnog:
 rule get_kegg_info:
     #TODO: Check which files are needed with new eggnog-mapper version
     output:
-        expand(opj("resources", "kegg", "{f}"),
-               f=["kegg_ec2pathways.tsv", "kegg_ko2ec.tsv",
-                  "kegg_ko2pathways.tsv", "kegg_kos.tsv", "kegg_modules.tsv",
-                  "kegg_pathways.tsv"])
+        kos = "resources/kegg/kegg_kos.tsv",
+        mods = "resources/kegg/kegg_modules.tsv",
+        pwys = "resources/kegg/kegg_pathways.tsv",
+        enzs = touch("resources/kegg/kegg_enzymes.tsv")
     log:
         opj("resources", "kegg", "download.log")
     params:
@@ -264,14 +265,15 @@ rule get_kegg_info:
 
 rule emapper_homology_search:
     input:
-        opj(config["paths"]["results"], "annotation", "{assembly}",
-            "final_contigs.faa"),
-        opj("resources", "eggnog-mapper", "eggnog.db")
+        expand("{results_path}/annotation/{{assembly}}/final_contigs.faa",
+            results_path = config["paths"]["results"]),
+        "resources/eggnog-mapper/eggnog.db",
+        "resources/eggnog-mapper/eggnog_proteins.dmnd",
     output:
         opj(config["paths"]["results"], "annotation", "{assembly}",
             "{assembly}.emapper.seed_orthologs")
     params:
-        resource_dir=opj("resources", "eggnog-mapper"),
+        resource_dir=lambda wildcards, input: os.path.dirname(input[1]),
         out="{assembly}",
         tmpdir=opj(config["paths"]["temp"], "{assembly}-eggnog"),
         tmp_out=opj(config["paths"]["temp"], "{assembly}-eggnog", "{assembly}"),
@@ -298,8 +300,10 @@ if config["runOnUppMax"]:
     rule emapper_annotate_hits_uppmax:
         """Copy EGGNOG db into memory before running annotations"""
         input:
-            opj(config["paths"]["results"], "annotation", "{assembly}",
-                "{assembly}.emapper.seed_orthologs")
+            expand("{results_path}/annotation/{{assembly}/{{assembly}}.emapper.seed_orthologs",
+                results_path = config["paths"]["results"]),
+            "resources/eggnog-mapper/eggnog.db",
+            "resources/eggnog-mapper/eggnog_proteins.dmnd"
         output:
             opj(config["paths"]["results"], "annotation", "{assembly}",
                 "{assembly}.emapper.annotations")
@@ -321,7 +325,8 @@ if config["runOnUppMax"]:
             """
             #Copy eggnog.db
             mkdir -p /dev/shm/$SLURM_JOB_ID
-            cp {params.resource_dir}/eggnog.db /dev/shm/$SLURM_JOB_ID
+            cp {params.resource_dir}/eggnog.db {params.resource_dir}/eggnog_proteins.dmnd /dev/shm/$SLURM_JOB_ID
+
             emapper.py {params.flags} --cpu {threads} -o {params.out} \
                 --annotate_hits_table {input[0]} --usemem \
                 --data_dir /dev/shm/$SLURM_JOB_ID >{log} 2>&1
@@ -355,29 +360,16 @@ else:
                 --data_dir {params.resource_dir} >{log} 2>&1
             """
 
-rule parse_ko_annotations:
+rule parse_emapper:
     input:
-        annotations=opj(config["paths"]["results"], "annotation", "{assembly}", "{assembly}.emapper.annotations"),
-        ko2ec=opj("resources", "kegg", "kegg_ko2ec.tsv"),
-        ko2path=opj("resources", "kegg", "kegg_ko2pathways.tsv"),
-        #ko2module=opj("resources", "kegg", "kegg_ko2modules.tsv"),
-        kos=opj("resources", "kegg", "kegg_kos.tsv"),
-        modules=opj("resources", "kegg", "kegg_modules.tsv"),
-        pathways=opj("resources", "kegg", "kegg_pathways.tsv")
+        annotations = expand("{results_path}/annotation/{{assembly}}/{{assembly}}.emapper.annotations",
+                             results_path=config["paths"]["results"]),
+        info = "resources/kegg/kegg_{db}.tsv"
     output:
-        expand(opj(config["paths"]["results"], "annotation", "{{assembly}}", "{db}.parsed.tsv"),
-            db=["enzymes", "pathways", "modules", "kos"])
-    log:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "eggnog-parser.log")
-    params:
-        outbase=opj(config["paths"]["results"], "annotation", "{assembly}"),
-        resource_dir=opj("resources", "kegg"),
-        src="workflow/scripts/eggnog-parser.py"
-    shell:
-        """
-        python {params.src} parse {params.resource_dir} {input.annotations} \
-            {params.outbase} > {log} 2>&1
-        """
+        expand("{results_path}/annotation/{{assembly}}/{{db}}.parsed.tsv",
+            results_path=config["paths"]["results"])
+    script:
+        "../scripts/annotation_utils.py"
 
 ##### resistance gene identifier #####
 
