@@ -15,6 +15,10 @@ if os.path.exists("config/config.yaml"):
     configfile: "config/config.yaml"
 validate(config, schema="../schemas/config.schema.yaml", set_default=True)
 
+# Set results and temp directories
+results = config["paths"]["results"]
+temppath = config["paths"]["temp"]
+
 ##### generate preprocess/postprocess strings #####
 from scripts.common import prepost_string
 PREPROCESS, POSTPROCESS, preprocess_suffices, config = prepost_string(config)

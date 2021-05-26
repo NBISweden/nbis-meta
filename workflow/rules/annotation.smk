@@ -28,13 +28,13 @@ rule prodigal:
     Runs the prodigal gene caller in metagenomic mode on the assembled contigs
     """
     input:
-        opj(config["paths"]["results"], "assembly", "{assembly}", "final_contigs.fa")
+        results+"/assembly/{assembly}/final_contigs.fa"
     output:
-        genes=opj(config["paths"]["results"], "annotation", "{assembly}", "final_contigs.ffn"),
-        faa=opj(config["paths"]["results"], "annotation", "{assembly}", "final_contigs.faa"),
-        gff=opj(config["paths"]["results"], "annotation", "{assembly}", "final_contigs.gff")
+        genes=results+"/annotation/{assembly}/final_contigs.ffn",
+        faa=results+"/annotation/{assembly}/final_contigs.faa",
+        gff=results+"/annotation/{assembly}/final_contigs.gff"
     log:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "prodigal.log")
+        results+"/annotation/{assembly}/prodigal.log"
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*2
     conda:
@@ -47,13 +47,13 @@ rule prodigal:
 
 rule trnascan:
     input:
-        opj(config["paths"]["results"], "assembly", "{assembly}", "final_contigs.fa")
+        results+"/assembly/{assembly}/final_contigs.fa"
     output:
-        file=opj(config["paths"]["results"], "annotation", "{assembly}", "tRNA.out"),
-        bed=opj(config["paths"]["results"], "annotation", "{assembly}", "tRNA.bed"),
-        fasta=opj(config["paths"]["results"], "annotation", "{assembly}", "tRNA.fasta")
+        file=results+"/annotation/{assembly}/tRNA.out",
+        bed=results+"/annotation/{assembly}/tRNA.bed",
+        fasta=results+"/annotation/{assembly}/tRNA.fasta"
     log:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "tRNA.log")
+        results+"/annotation/{assembly}/tRNA.log"
     threads: 4
     conda:
         "../envs/annotation.yml"
@@ -65,13 +65,13 @@ rule trnascan:
 
 rule download_rfams:
     output:
-        tar=temp(opj("resources", "infernal", "Rfam.tar.gz")),
-        cm=opj("resources", "infernal", "Rfam.rRNA.cm"),
-        readme=opj("resources", "infernal", "README"),
-        version=opj("resources", "infernal", "Rfam.version"),
-        clanin=opj("resources", "infernal", "Rfam.clanin")
+        tar=temp("resources/infernal/Rfam.tar.gz"),
+        cm="resources/infernal/Rfam.rRNA.cm",
+        readme="resources/infernal/README",
+        version="resources/infernal/Rfam.version",
+        clanin="resources/infernal/Rfam.clanin"
     log:
-        opj("resources", "infernal", "download.log")
+        "resources/infernal/download.log"
     params:
         url="ftp://ftp.ebi.ac.uk/pub/databases/Rfam/CURRENT",
         rfams=" ".join(["RF00001.cm", "RF00002.cm", "RF00177.cm",
@@ -98,12 +98,12 @@ rule download_rfams:
 
 rule press_rfams:
     input:
-        opj("resources", "infernal", "Rfam.rRNA.cm")
+        "resources/infernal/Rfam.rRNA.cm"
     output:
-        expand(opj("resources", "infernal", "Rfam.rRNA.cm.i1{suffix}"),
+        expand("resources/infernal/Rfam.rRNA.cm.i1{suffix}",
                suffix=["m", "i", "f", "p"])
     log:
-        opj("resources", "infernal", "cmpress.log")
+        "resources/infernal/cmpress.log"
     conda:
         "../envs/annotation.yml"
     shell:
@@ -113,20 +113,16 @@ rule press_rfams:
 
 rule infernal:
     input:
-        fastafile=opj(config["paths"]["results"], "assembly", "{assembly}",
-                      "final_contigs.fa"),
-        db=expand(opj("resources", "infernal",
-                      "Rfam.rRNA.cm.i1{suffix}"),
+        fastafile=results+"/assembly/{assembly}/final_contigs.fa",
+        db=expand("resources/infernal/Rfam.rRNA.cm.i1{suffix}",
                   suffix=["m", "i", "f", "p"]),
-        cl=opj("resources", "infernal", "Rfam.clanin")
+        cl="resources/infernal/Rfam.clanin"
     output:
-        opj(config["paths"]["results"], "annotation", "{assembly}",
-            "final_contigs.cmscan")
+        results+"/annotation/{assembly}/final_contigs.cmscan"
     log:
-        opj(config["paths"]["results"], "annotation", "{assembly}",
-            "infernal.log")
+        results+"/annotation/{assembly}/infernal.log"
     params:
-        db=opj("resources", "infernal", "Rfam.rRNA.cm")
+        db="resources/infernal/Rfam.rRNA.cm"
     threads: 4
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*10
@@ -143,11 +139,11 @@ rule infernal:
 
 rule download_pfam:
     output:
-        hmmfile=opj("resources", "pfam", "Pfam-A.hmm"),
-        datfile=opj("resources", "pfam", "Pfam-A.hmm.dat"),
-        versionfile=opj("resources", "pfam", "Pfam-A.version"),
+        hmmfile="resources/pfam/Pfam-A.hmm",
+        datfile="resources/pfam/Pfam-A.hmm.dat",
+        versionfile="resources/pfam/Pfam-A.version"
     log:
-        opj("resources", "pfam", "download.log")
+        "resources/pfam/download.log"
     params:
         ftp="ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release"
     shell:
@@ -163,10 +159,10 @@ rule download_pfam:
 
 rule download_pfam_info:
     output:
-        clanfile=opj("resources", "pfam", "clan.txt"),
-        info=opj("resources", "pfam", "Pfam-A.clans.tsv")
+        clanfile="resources/pfam/clan.txt",
+        info="resources/pfam/Pfam-A.clans.tsv"
     log:
-        opj("resources", "pfam", "info.log")
+        "resources/pfam/info.log"
     params:
         ftp="ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release"
     shell:
@@ -180,12 +176,12 @@ rule download_pfam_info:
 
 rule press_pfam:
     input:
-        hmmfile=opj("resources", "pfam", "Pfam-A.hmm")
+        hmmfile="resources/pfam/Pfam-A.hmm"
     output:
-        expand(opj("resources", "pfam", "Pfam-A.hmm.h3{suffix}"),
+        expand("resources/pfam/Pfam-A.hmm.h3{suffix}",
                suffix=["f", "i", "m", "p"])
     log:
-        opj("resources", "pfam", "hmmpress.log")
+        "resources/pfam/hmmpress.log"
     conda:
         "../envs/annotation.yml"
     shell:
@@ -195,18 +191,18 @@ rule press_pfam:
 
 rule pfam_scan:
     input:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "final_contigs.faa"),
-        expand(opj("resources", "pfam", "Pfam-A.hmm.h3{suffix}"),
+        results+"/annotation/{assembly}/final_contigs.faa",
+        expand("resources/pfam/Pfam-A.hmm.h3{suffix}",
                suffix=["f", "i", "m", "p"])
     output:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "{assembly}.pfam.out")
+        results+"/annotation/{assembly}/{assembly}.pfam.out"
     log:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "{assembly}.pfam.log")
+        results+"/annotation/{assembly}/{assembly}.pfam.log"
     conda:
         "../envs/annotation.yml"
     params:
-        dir=opj("resources", "pfam"),
-        tmp_out=opj(config["paths"]["temp"], "{assembly}.pfam.out")
+        dir="resources/pfam",
+        tmp_out=temppath+"/{assembly}.pfam.out"
     threads: 2
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*10
@@ -219,11 +215,11 @@ rule pfam_scan:
 
 rule parse_pfam:
     input:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "{assembly}.pfam.out"),
-        opj("resources", "pfam", "clan.txt"),
-        opj("resources", "pfam", "Pfam-A.clans.tsv")
+        results+"/annotation/{assembly}/{assembly}.pfam.out",
+        "resources/pfam/clan.txt",
+        "resources/pfam/Pfam-A.clans.tsv"
     output:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "pfam.parsed.tsv")
+        results+"/annotation/{assembly}/pfam.parsed.tsv"
     script:
         "../scripts/annotation_utils.py"
 
@@ -254,7 +250,7 @@ rule get_kegg_info:
         pwys = "resources/kegg/kegg_pathways.tsv",
         enzs = touch("resources/kegg/kegg_enzymes.tsv")
     log:
-        opj("resources", "kegg", "download.log")
+        "resources/kegg/download.log"
     params:
         outdir=lambda w, output: os.path.dirname(output[0]),
         src="workflow/scripts/eggnog-parser.py"
@@ -265,22 +261,19 @@ rule get_kegg_info:
 
 rule emapper_homology_search:
     input:
-        expand("{results_path}/annotation/{{assembly}}/final_contigs.faa",
-            results_path = config["paths"]["results"]),
+        results+"/annotation/{assembly}/final_contigs.faa",
         "resources/eggnog-mapper/eggnog.db",
         "resources/eggnog-mapper/eggnog_proteins.dmnd",
     output:
-        opj(config["paths"]["results"], "annotation", "{assembly}",
-            "{assembly}.emapper.seed_orthologs")
+        results+"/annotation/{assembly}/{assembly}.emapper.seed_orthologs"
     params:
         resource_dir=lambda wildcards, input: os.path.dirname(input[1]),
         out="{assembly}",
-        tmpdir=opj(config["paths"]["temp"], "{assembly}-eggnog"),
-        tmp_out=opj(config["paths"]["temp"], "{assembly}-eggnog", "{assembly}"),
+        tmpdir=temppath+"/{assembly}-eggnog",
+        tmp_out=temppath+"/{assembly}-eggnog/{assembly}",
         flags="-m diamond --no_annot --no_file_comments"
     log:
-        opj(config["paths"]["results"], "annotation", "{assembly}",
-            "{assembly}.emapper.seed_orthologs.log")
+        results+"/annotation/{assembly}/{assembly}.emapper.seed_orthologs.log"
     conda:
         "../envs/annotation.yml"
     threads: 10
@@ -300,21 +293,18 @@ if config["runOnUppMax"]:
     rule emapper_annotate_hits_uppmax:
         """Copy EGGNOG db into memory before running annotations"""
         input:
-            expand("{results_path}/annotation/{{assembly}/{{assembly}}.emapper.seed_orthologs",
-                results_path = config["paths"]["results"]),
+            results+"/annotation/{assembly}/{assembly}.emapper.seed_orthologs",
             "resources/eggnog-mapper/eggnog.db",
             "resources/eggnog-mapper/eggnog_proteins.dmnd"
         output:
-            opj(config["paths"]["results"], "annotation", "{assembly}",
-                "{assembly}.emapper.annotations")
+            results+"/annotation/{assembly}/{assembly}.emapper.annotations"
         params:
-            resource_dir=opj("resources", "eggnog-mapper"),
-            tmpdir=opj(config["paths"]["temp"], "{assembly}-eggnog"),
-            out=opj(config["paths"]["results"], "annotation", "{assembly}", "{assembly}"),
+            resource_dir=lambda wildcards, input: os.path.dirname(input[1]),
+            tmpdir=temppath+"/{assembly}-eggnog",
+            out=temppath+"/annotation/{assembly}/{assembly}",
             flags="--no_file_comments"
         log:
-            opj(config["paths"]["results"], "annotation", "{assembly}",
-                 "{assembly}.emapper.annotations.log")
+            results+"/annotation/{assembly}/{assembly}.emapper.annotations.log"
         conda:
             "../envs/annotation.yml"
         message: "Annotating hits table for {wildcards.assembly}"
@@ -335,18 +325,15 @@ if config["runOnUppMax"]:
 else:
     rule emapper_annotate_hits:
         input:
-            opj(config["paths"]["results"], "annotation", "{assembly}",
-                "{assembly}.emapper.seed_orthologs")
+            results+"/annotation/{assembly}/{assembly}.emapper.seed_orthologs"
         output:
-            opj(config["paths"]["results"], "annotation", "{assembly}",
-                "{assembly}.emapper.annotations")
+            results+"/annotation/{assembly}/{assembly}.emapper.annotations"
         log:
-            opj(config["paths"]["results"], "annotation", "{assembly}",
-                 "{assembly}.emapper.annotations.log")
+            results+"/annotation/{assembly}/{assembly}.emapper.annotations.log"
         params:
-            resource_dir=opj("resources", "eggnog-mapper"),
-            tmpdir=opj(config["paths"]["temp"], "{assembly}-eggnog"),
-            out=opj(config["paths"]["results"], "annotation", "{assembly}", "{assembly}"),
+            resource_dir="resources/eggnog-mapper",
+            tmpdir=temppath+"/{assembly}-eggnog",
+            out=temppath+"/annotation/{assembly}/{assembly}",
             flags="--no_file_comments"
         conda:
             "../envs/annotation.yml"
@@ -362,12 +349,10 @@ else:
 
 rule parse_emapper:
     input:
-        annotations = expand("{results_path}/annotation/{{assembly}}/{{assembly}}.emapper.annotations",
-                             results_path=config["paths"]["results"]),
+        annotations = results+"/annotation/{assembly}/{assembly}.emapper.annotations",
         info = "resources/kegg/kegg_{db}.tsv"
     output:
-        expand("{results_path}/annotation/{{assembly}}/{{db}}.parsed.tsv",
-            results_path=config["paths"]["results"])
+        results+"/annotation/{assembly}/{db}.parsed.tsv"
     script:
         "../scripts/annotation_utils.py"
 
@@ -375,12 +360,12 @@ rule parse_emapper:
 
 rule download_rgi_data:
     output:
-        json=opj("resources", "card", "card.json"),
-        version=opj("resources", "card", "card.version")
+        json="resources/card/card.json",
+        version="resources/card/card.version"
     log:
-        opj("resources", "card", "log")
+        "resources/card/log"
     params:
-        tar=opj("resources", "card", "data.tar.gz"),
+        tar="resources/card/data.tar.gz",
         dir=lambda w, output: os.path.dirname(output.json)
     shell:
          """
@@ -394,18 +379,18 @@ rule download_rgi_data:
 
 rule rgi:
     input:
-        faa=opj(config["paths"]["results"], "annotation", "{assembly}", "final_contigs.faa"),
-        db=opj("resources", "card", "card.json")
+        faa=results+"/annotation/{assembly}/final_contigs.faa",
+        db="resources/card/card.json"
     output:
-        json=opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.out.json"),
-        txt=opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.out.txt")
+        json=results+"/annotation/{assembly}/rgi.out.json",
+        txt=results+"/annotation/{assembly}/rgi.out.txt"
     log:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.log")
+        results+"/annotation/{assembly}/rgi.log"
     params:
-        out=opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.out"),
+        out=results+"/annotation/{assembly}/rgi.out",
         settings="-a diamond --local --clean --input_type protein",
-        faa=opj(config["paths"]["temp"], "{assembly}.rgi", "final_contig.faa"),
-        tmpdir=opj(config["paths"]["temp"], "{assembly}.rgi")
+        faa=temppath+"/{assembly}.rgi/final_contig.faa",
+        tmpdir=temppath+"/{assembly}.rgi"
     shadow: "minimal"
     conda:
         "../envs/rgi.yml"
@@ -424,8 +409,8 @@ rule rgi:
 
 rule parse_rgi:
     input:
-        txt=opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.out.txt")
+        txt=results+"/annotation/{assembly}/rgi.out.txt"
     output:
-        tsv=opj(config["paths"]["results"], "annotation", "{assembly}", "rgi.parsed.tsv")
+        tsv=results+"/annotation/{assembly}/rgi.parsed.tsv"
     script:
         "../scripts/annotation_utils.py"
