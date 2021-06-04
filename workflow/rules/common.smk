@@ -2,7 +2,6 @@ from snakemake.utils import validate
 import pandas as pd
 import platform
 import os
-from os.path import join as opj
 from scripts.common import get_all_files
 
 # this container defines the underlying OS for each job when using the workflow

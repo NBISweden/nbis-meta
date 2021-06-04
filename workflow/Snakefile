@@ -21,13 +21,11 @@ def all_input(wildcards):
     wanted_input = []
 
     if config["run_preprocessing"] or config["preprocessing"]["fastqc"]:
-        wanted_input.append(opj(config["paths"]["results"], "report",
-                                "samples_report.html"))
+        wanted_input.append(results+"/report/samples_report.html")
 
     if config["run_assembly"]:
         # add assembly stats
-        wanted_input.append(opj(config["paths"]["results"], "report",
-                                "assembly", "assembly_stats.pdf"))
+        wanted_input.append(results+"/report/assembly/assembly_stats.pdf")
         # get annotation input
         wanted_input += annotation_input(config, assemblies)
         # get binning input
