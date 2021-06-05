@@ -28,7 +28,7 @@ def parse_emapper(sm):
               'pathways': {'val_name': 'pathway', 'regex': "map\d{5}"},
               'modules': {'val_name': 'module', 'regex': ""},
               'enzymes': {'val_name': 'enzyme', 'regex': ""}}
-    df = pd.read_csv(sm.input.annotations[0], sep="\t", index_col=0)
+    df = pd.read_csv(sm.input.annotations, sep="\t", index_col=0)
     df.rename(columns={'KEGG_ko': 'kos', 'KEGG_Pathway': 'pathways',
                           'KEGG_Module': 'modules', 'EC': 'enzymes'},
                inplace=True)
