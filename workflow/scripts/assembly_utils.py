@@ -160,8 +160,8 @@ def metaspades_input(sm):
                 files[pair].append(
                     assembly_dict[sample][unit][pair][0])
     # Rename and concatenate reads (required for Metaspades)
-    with open(sm.output.R1[0], 'w') as fh1, open(sm.output.R2[0], 'w') as fh2, open(
-        sm.output.se[0], 'w') as fhse:
+    with open(sm.output.R1, 'w') as fh1, open(sm.output.R2, 'w') as fh2, open(
+        sm.output.se, 'w') as fhse:
         i = 0
         for f in files["R1"]:
             f2 = files["R2"][i]
@@ -185,9 +185,9 @@ def megahit_input(sm):
         for unit in assembly_dict[sample]:
             for pair in assembly_dict[sample][unit].keys():
                 files[pair].append(assembly_dict[sample][unit][pair][0])
-    with open(sm.output.R1[0], 'w') as fh1, \
-        open(sm.output.R2[0], 'w') as fh2, \
-        open(sm.output.se[0], 'w') as fhse:
+    with open(sm.output.R1, 'w') as fh1, \
+        open(sm.output.R2, 'w') as fh2, \
+        open(sm.output.se, 'w') as fhse:
         fh1.write(",".join(files["R1"]))
         fh2.write(",".join(files["R2"]))
         fhse.write(",".join(files["se"]))
