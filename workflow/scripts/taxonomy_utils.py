@@ -33,7 +33,7 @@ def contigtax_mash(sm):
     stats = {'resolved': 0, 'transferred': 0, 'added': 0, 'total': 0}
     df1 = pd.read_csv(sm.input.smash, sep=",", header=0, index_col=0)
     stats['total'] = df1.shape[0]
-    df2 = pd.read_csv(sm.input.contigtax, sep="\t", header=0, index_col=0)
+    df2 = pd.read_csv(sm.input.contigtax[0], sep="\t", header=0, index_col=0)
     ranks = list(df2.columns)
     ranks.reverse()
     # Only use subset of contigs with matches
@@ -106,7 +106,7 @@ def contigtax_assign_orfs(sm):
     # Set index to ORF ids
     orf_tax_df.set_index("id", inplace=True)
     orf_tax_df.drop("contig", axis=1, inplace=True)
-    orf_tax_df.to_csv(sm.output.tax, sep="\t", index=True, header=True)
+    orf_tax_df.to_csv(sm.output.tax[0], sep="\t", index=True, header=True)
 
 
 def main(sm):
