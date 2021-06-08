@@ -333,7 +333,7 @@ else:
         params:
             resource_dir="resources/eggnog-mapper",
             tmpdir=temppath+"/{assembly}-eggnog",
-            out=temppath+"/annotation/{assembly}/{assembly}",
+            out=results+"/annotation/{assembly}/{assembly}",
             flags="--no_file_comments"
         conda:
             "../envs/annotation.yml"
