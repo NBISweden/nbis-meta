@@ -123,7 +123,7 @@ def sum_to_taxa(sm):
     """
     header = ["protein", "superkingdom", "phylum", "class", "order", "family",
               "genus", "species"]
-    df = pd.read_csv(sm.input.tax, sep="\t", index_col=0, header=None,
+    df = pd.read_csv(sm.input.tax[0], sep="\t", index_col=0, header=None,
                      names=header)
     abund_df = pd.read_csv(sm.input.abund, header=0, index_col=0, sep="\t")
     # Remove length column
