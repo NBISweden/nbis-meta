@@ -5,3 +5,4 @@ channels:
   - defaults
 dependencies:
   - metabat2=2.14
+  - libdeflate=1.0
