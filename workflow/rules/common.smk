@@ -2,18 +2,21 @@ from snakemake.utils import validate
 import pandas as pd
 import platform
 import os
-from os.path import join as opj
 from scripts.common import get_all_files
 
 # this container defines the underlying OS for each job when using the workflow
 # with --use-conda --use-singularity
-singularity: "docker://continuumio/miniconda3:4.8.2"
+container: "docker://continuumio/miniconda3:4.8.2"
 
 ##### load and validate config #####
 
 if os.path.exists("config/config.yaml"):
     configfile: "config/config.yaml"
 validate(config, schema="../schemas/config.schema.yaml", set_default=True)
+
+# Set results and temp directories
+results = config["paths"]["results"]
+temppath = config["paths"]["temp"]
 
 ##### generate preprocess/postprocess strings #####
 from scripts.common import prepost_string

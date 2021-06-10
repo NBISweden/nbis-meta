@@ -11,9 +11,8 @@ localrules:
 
 rule assemble:
     input:
-        opj(config["paths"]["results"], "report", "assembly", "assembly_stats.pdf"),
-        opj(config["paths"]["results"], "report", "assembly", "assembly_size_dist.pdf"),
-        opj(config["paths"]["results"], "report", "assembly", "alignment_frequency.pdf")
+        expand(results+"/report/assembly/{f}.pdf",
+            f=["assembly_stats", "assembly_size_dist", "alignment_frequency"])
 
 if config["assembly"]["metaspades"]:
     localrules:
@@ -23,12 +22,9 @@ if config["assembly"]["metaspades"]:
         input:
             lambda wildcards: get_all_assembly_files(assemblies[wildcards.assembly])
         output:
-            R1=temp(opj(config["paths"]["results"],"assembly",
-                        "{assembly}","R1.fq")),
-            R2=temp(opj(config["paths"]["results"],"assembly",
-                        "{assembly}","R2.fq")),
-            se=touch(temp(opj(config["paths"]["results"],"assembly",
-                        "{assembly}","se.fq")))
+            R1=temp(results+"/assembly/{assembly}/R1.fq"),
+            R2=temp(results+"/assembly/{assembly}/R2.fq"),
+            se=touch(temp(results+"/assembly/{assembly}/se.fq")),
         params:
             assembly = lambda wildcards: assemblies[wildcards.assembly],
             assembler = "metaspades"
@@ -37,24 +33,19 @@ if config["assembly"]["metaspades"]:
 
     rule metaspades:
         input:
-            R1=opj(config["paths"]["results"],"assembly",
-                        "{assembly}","R1.fq"),
-            R2=opj(config["paths"]["results"],"assembly",
-                        "{assembly}","R2.fq"),
-            se=opj(config["paths"]["results"],"assembly",
-                        "{assembly}","se.fq")
+            R1=results+"/assembly/{assembly}/R1.fq",
+            R2=results+"/assembly/{assembly}/R2.fq",
+            se=results+"/assembly/{assembly}/se.fq",
         output:
-            opj(config["paths"]["results"],"assembly","{assembly}","final_contigs.fa")
+            results+"/assembly/{assembly}/final_contigs.fa",
         log:
-            opj(config["paths"]["results"],"assembly","{assembly}","spades.log")
+            results+"/assembly/{assembly}/spades.log",
         params:
-            intermediate_contigs=opj(config["paths"]["results"], "intermediate","assembly",
-                                     "{assembly}","intermediate_contigs"),
-            corrected=opj(config["paths"]["results"], "intermediate","assembly",
-                          "{assembly}","corrected"),
+            intermediate_contigs=results+"/intermediate/assembly/{assembly}/intermediate_contigs",
+            corrected=results+"/intermediate/assembly/{assembly}/corrected",
             additional_settings=config["metaspades"]["extra_settings"],
-            tmp=opj(config["paths"]["temp"],"{assembly}.metaspades"),
-            output_dir=opj(config["paths"]["results"],"assembly","{assembly}")
+            tmp=temppath+"/{assembly}.metaspades",
+            output_dir=lambda wildcards, output: os.path.dirname(output[0])
         threads: config["metaspades"]["threads"]
         resources:
             runtime=lambda wildcards, attempt: attempt**2*60*4
@@ -106,15 +97,11 @@ else:
         input:
             lambda wildcards: get_all_assembly_files(assemblies[wildcards.assembly])
         output:
-            R1=temp(opj(config["paths"]["results"],"assembly",
-                            "{assembly}","input_1")),
-            R2=temp(opj(config["paths"]["results"],"assembly",
-                            "{assembly}","input_2")),
-            se=temp(opj(config["paths"]["results"],"assembly",
-                            "{assembly}","input_se"))
+            R1=temp(results+"/assembly/{assembly}/input_1"),
+            R2=temp(results+"/assembly/{assembly}/input_2"),
+            se=temp(results+"/assembly/{assembly}/input_se"),
         log:
-            opj(config["paths"]["results"],"assembly",
-                            "{assembly}","input_list.log")
+            results+"/assembly/{assembly}/input_list.log",
         params:
             assembly = lambda wildcards: assemblies[wildcards.assembly]
         script:
@@ -122,22 +109,18 @@ else:
 
     rule megahit:
         input:
-            R1=opj(config["paths"]["results"],"assembly",
-                            "{assembly}","input_1"),
-            R2=opj(config["paths"]["results"],"assembly",
-                            "{assembly}","input_2"),
-            se=opj(config["paths"]["results"],"assembly",
-                            "{assembly}","input_se")
+            R1=results+"/assembly/{assembly}/input_1",
+            R2=results+"/assembly/{assembly}/input_2",
+            se=results+"/assembly/{assembly}/input_se",
         output:
-            opj(config["paths"]["results"],"assembly","{assembly}","final_contigs.fa")
+            results+"/assembly/{assembly}/final_contigs.fa",
         log:
-            opj(config["paths"]["results"],"assembly","{assembly}","log")
+            results+"/assembly/{assembly}/log",
         params:
-            intermediate_contigs=opj(config["paths"]["results"], "intermediate","assembly",
-                                     "{assembly}","intermediate_contigs"),
+            intermediate_contigs=results+"/intermediate/assembly/{assembly}/intermediate_contigs",
             additional_settings=config["megahit"]["extra_settings"],
-            tmp=opj(config["paths"]["temp"],"{assembly}.megahit"),
-            output_dir=opj(config["paths"]["results"],"assembly","{assembly}")
+            tmp=temppath+"/{assembly}.megahit",
+            output_dir=lambda wildcards, output: os.path.dirname(output[0])
         threads: config["megahit"]["threads"]
         resources:
             runtime=lambda wildcards, attempt: attempt**2*60*4
@@ -185,9 +168,9 @@ else:
 rule fasta2bed:
     """Creates bed-format file from assembly"""
     input:
-        opj(config["paths"]["results"],"assembly","{assembly}","final_contigs.fa")
+        results+"/assembly/{assembly}/final_contigs.fa",
     output:
-        opj(config["paths"]["results"],"assembly","{assembly}","final_contigs.bed")
+        results+"/assembly/{assembly}/final_contigs.bed",
     script:
         "../scripts/assembly_utils.py"
 
@@ -197,10 +180,10 @@ rule fasta2bed:
 
 rule bowtie_build:
     input:
-        opj(config["paths"]["results"],"assembly","{assembly}","final_contigs.fa")
+        results+"/assembly/{assembly}/final_contigs.fa"
     output:
-        expand(opj(config["paths"]["results"],"assembly","{{assembly}}","final_contigs.fa.{index}.bt2l"),index=range(1,5))
-    params: prefix=opj(config["paths"]["results"],"assembly","{assembly}","final_contigs.fa")
+        expand(results+"/assembly/{{assembly}}/final_contigs.fa.{index}.bt2l",index=range(1,5))
+    params: prefix=results+"/assembly/{assembly}/final_contigs.fa"
     threads: config["bowtie2"]["threads"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
@@ -217,25 +200,19 @@ rule bowtie_build:
 
 rule bowtie_map_pe:
     input:
-        bt_index=expand(opj(config["paths"]["results"],"assembly","{{assembly}}",
-                              "final_contigs.fa.{index}.bt2l"),
+        bt_index=expand(results+"/assembly/{{assembly}}/final_contigs.fa.{index}.bt2l",
                           index=range(1,5)),
-        R1=expand(opj(config["paths"]["results"], "intermediate", "preprocess",
-                        "{{sample}}_{{unit}}_R1{p}.fastq.gz"), p=PREPROCESS),
-        R2=expand(opj(config["paths"]["results"], "intermediate", "preprocess",
-                        "{{sample}}_{{unit}}_R2{p}.fastq.gz"), p=PREPROCESS)
+        R1=results+"/intermediate/preprocess/{sample}_{unit}_R1"+PREPROCESS+".fastq.gz",
+        R2=results+"/intermediate/preprocess/{sample}_{unit}_R2"+PREPROCESS+".fastq.gz",
     output:
-        bam=temp(opj(config["paths"]["results"],"assembly","{assembly}",
-                     "mapping","{sample}_{unit}_pe.bam")),
-        bai=temp(opj(config["paths"]["results"],"assembly","{assembly}",
-                     "mapping","{sample}_{unit}_pe.bam.bai")),
-        log=opj(config["paths"]["results"],"assembly","{assembly}",
-                "mapping","{sample}_{unit}_pe.bam.log")
+        bam=temp(results+"/assembly/{assembly}/mapping/{sample}_{unit}_pe.bam"),
+        bai=temp(results+"/assembly/{assembly}/mapping/{sample}_{unit}_pe.bam.bai"),
+    log:
+        results+"/assembly/{assembly}/mapping/{sample}_{unit}_pe.bam.log"
     params:
-        temp_bam=opj(config["paths"]["temp"],"{assembly}-mapping-{sample}_{unit}_pe.bam"),
+        temp_bam=temppath+"/{assembly}-mapping-{sample}_{unit}_pe.bam",
         setting=config["bowtie2"]["extra_settings"],
-        prefix=opj(config["paths"]["results"],"assembly","{assembly}",
-                     "final_contigs.fa")
+        prefix=results+"/assembly/{assembly}/final_contigs.fa"
     threads: config["bowtie2"]["threads"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
@@ -243,7 +220,7 @@ rule bowtie_map_pe:
         "../envs/quantify.yml"
     shell:
         """
-        bowtie2 {params.setting} -p {threads} -x {params.prefix} -1 {input.R1} -2 {input.R2} 2> {output.log} \
+        bowtie2 {params.setting} -p {threads} -x {params.prefix} -1 {input.R1} -2 {input.R2} 2> {log} \
             | samtools view -bh - | samtools sort - -o {params.temp_bam}
         samtools index {params.temp_bam}
         mv {params.temp_bam} {output.bam}
@@ -252,23 +229,18 @@ rule bowtie_map_pe:
 
 rule bowtie_map_se:
     input:
-        bt_index=expand(opj(config["paths"]["results"],"assembly","{{assembly}}",
-                              "final_contigs.fa.{index}.bt2l"),
+        bt_index=expand(results+"/assembly/{{assembly}}/final_contigs.fa.{index}.bt2l",
                           index=range(1,5)),
-        se=expand(opj(config["paths"]["results"], "intermediate", "preprocess",
-                        "{{sample}}_{{unit}}_se{p}.fastq.gz"), p=PREPROCESS)
+        se=results+"/intermediate/preprocess/{sample}_{unit}_se"+PREPROCESS+".fastq.gz"
     output:
-        bam=temp(opj(config["paths"]["results"],"assembly","{assembly}",
-                     "mapping","{sample}_{unit}_se.bam")),
-        bai=temp(opj(config["paths"]["results"],"assembly","{assembly}",
-                     "mapping","{sample}_{unit}_se.bam.bai")),
-        log=opj(config["paths"]["results"],"assembly","{assembly}",
-                "mapping","{sample}_{unit}_se.bam.log")
+        bam=temp(results+"/assembly/{assembly}/mapping/{sample}_{unit}_se.bam"),
+        bai=temp(results+"/assembly/{assembly}/mapping/{sample}_{unit}_se.bam.bai"),
+    log:
+        results+"/assembly/{assembly}/mapping/{sample}_{unit}_se.bam.log"
     params:
-        temp_bam=opj(config["paths"]["temp"],"{assembly}-mapping-{sample}_{unit}_se.bam"),
+        temp_bam=temppath+"/{assembly}-mapping-{sample}_{unit}_se.bam",
         setting=config["bowtie2"]["extra_settings"],
-        prefix=opj(config["paths"]["results"],"assembly","{assembly}",
-                     "final_contigs.fa")
+        prefix=results+"/assembly/{assembly}/final_contigs.fa"
     threads: config["bowtie2"]["threads"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
@@ -277,7 +249,7 @@ rule bowtie_map_se:
     shell:
         """
         bowtie2 {params.setting} -p {threads} -x {params.prefix} \
-            -U {input.se} 2>{output.log} | samtools view -bh - | samtools sort - -o {params.temp_bam}
+            -U {input.se} 2>{log} | samtools view -bh - | samtools sort - -o {params.temp_bam}
         samtools index {params.temp_bam}
         mv {params.temp_bam} {output.bam}
         mv {params.temp_bam}.bai {output.bai}
@@ -294,10 +266,9 @@ rule samtools_flagstat:
     input:
         lambda wildcards: get_bamfiles(wildcards.assembly,
                                        assemblies[wildcards.assembly],
-                                       config["paths"]["results"], POSTPROCESS)
+                                       results, POSTPROCESS)
     output:
-        opj(config["paths"]["results"],"assembly","{assembly}",
-                 "mapping","flagstat.tsv")
+        results+"/assembly/{assembly}/mapping/flagstat.tsv"
     params:
         post = POSTPROCESS
     conda:
@@ -316,33 +287,28 @@ rule samtools_flagstat:
 
 rule assembly_stats:
     input:
-        fa = expand(opj(config["paths"]["results"],"assembly","{assembly}",
-                   "final_contigs.fa"), assembly=assemblies.keys()),
-        flagstat = expand(opj(config["paths"]["results"],"assembly","{assembly}",
-                   "mapping","flagstat.tsv"), assembly = assemblies.keys())
+        fa = expand(results+"/assembly/{assembly}/final_contigs.fa", assembly=assemblies.keys()),
+        flagstat = expand(results+"/assembly/{assembly}/mapping/flagstat.tsv", assembly = assemblies.keys())
     output:
-        report(opj(config["paths"]["results"], "report", "assembly", "assembly_stats.tsv"),
+        report(results+"/report/assembly/assembly_stats.tsv",
                caption="../report/assembly.rst", category="Assembly"),
-        opj(config["paths"]["results"], "report", "assembly", "assembly_size_dist.tsv")
+        results+"/report/assembly/assembly_size_dist.tsv"
     script:
         "../scripts/assembly_utils.py"
 
 rule plot_assembly_stats:
     input:
-        stat = opj(config["paths"]["results"], "report", "assembly", "assembly_stats.tsv"),
-        dist = opj(config["paths"]["results"], "report", "assembly", "assembly_size_dist.tsv"),
-        maps = expand(opj(config["paths"]["results"],"assembly","{assembly}",
-                 "mapping","flagstat.tsv"), assembly = assemblies.keys())
+        stat = results+"/report/assembly/assembly_stats.tsv",
+        dist = results+"/report/assembly/assembly_size_dist.tsv",
+        maps = expand(results+"/assembly/{assembly}/mapping/flagstat.tsv",
+                        assembly = assemblies.keys())
     output:
-        report(opj(config["paths"]["results"], "report", "assembly",
-            "assembly_stats.pdf"), caption="../report/assembly.rst",
-               category="Assembly"),
-        report(opj(config["paths"]["results"], "report", "assembly",
-                   "assembly_size_dist.pdf"), caption="../report/assembly.rst",
-               category="Assembly"),
-        report(opj(config["paths"]["results"], "report", "assembly",
-                   "alignment_frequency.pdf"), caption="../report/assembly.rst",
-               category="Assembly")
+        report(results+"/report/assembly/assembly_stats.pdf",
+            caption="../report/assembly.rst", category="Assembly"),
+        report(results+"/report/assembly/assembly_size_dist.pdf",
+            caption="../report/assembly.rst", category="Assembly"),
+        report(results+"/report/assembly/alignment_frequency.pdf",
+            caption="../report/assembly.rst", category="Assembly")
     conda:
         "../envs/plotting.yml"
     notebook:

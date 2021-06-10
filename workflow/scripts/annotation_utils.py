@@ -3,6 +3,50 @@
 import pandas as pd
 
 
+def orf2feat(d, val_name="vals", regex=""):
+    import re
+    keys = []
+    vals = []
+    for key, val in d.items():
+        for item in val.split(","):
+            if regex != "":
+                m = re.search(regex, item)
+                if m == None:
+                    continue
+                item = m.group()
+            keys.append(key)
+            vals.append(item)
+    df = pd.DataFrame(data={"orf": keys, val_name: vals})
+    df.set_index("orf", inplace=True)
+    return df
+
+
+def parse_emapper(sm):
+    from pandas.errors import EmptyDataError
+    db = sm.wildcards.db
+    db_att = {'kos': {'val_name': 'ko', 'regex': "K\d{5}"},
+              'pathways': {'val_name': 'pathway', 'regex': "map\d{5}"},
+              'modules': {'val_name': 'module', 'regex': ""},
+              'enzymes': {'val_name': 'enzyme', 'regex': ""}}
+    df = pd.read_csv(sm.input.annotations, sep="\t", index_col=0)
+    df.rename(columns={'KEGG_ko': 'kos', 'KEGG_Pathway': 'pathways',
+                          'KEGG_Module': 'modules', 'EC': 'enzymes'},
+               inplace=True)
+    df.fillna("-", inplace=True)
+    d = df.loc[df[db] != "-", db].to_dict()
+    how = "inner"
+    try:
+        info_df = pd.read_csv(sm.input.info, sep="\t", index_col=0)
+    except EmptyDataError:
+        info_df = pd.DataFrame()
+        how = "right"
+    annot = orf2feat(d, val_name=db_att[db]["val_name"],
+                     regex=db_att[db]["regex"])
+    annot = pd.merge(info_df, annot, left_index=True,
+                     right_on=db_att[db]["val_name"], how=how)
+    annot.to_csv(sm.output[0], sep="\t", index=True, header=True)
+
+
 def parse_rgi(sm):
     annot = pd.read_csv(sm.input.txt, sep="\t", index_col=0)
     annot = annot.loc[:, ["Model_ID", "AMR Gene Family", "Resistance Mechanism"]]
@@ -37,6 +81,7 @@ def parse_pfam(sm):
 
 def main(sm):
     toolbox = {"parse_pfam": parse_pfam,
+               "parse_emapper": parse_emapper,
                "parse_rgi": parse_rgi}
     toolbox[sm.rule](sm)
 

@@ -134,7 +134,7 @@ def remove_checkm_zerocols(sm):
     zero_cols = df_sum.loc[df_sum == 0].index
     cols_to_drop = []
     # find suffix of zero cols
-    for c in list(zero_cols) + ["Mapped reads"]:
+    for c in list(zero_cols):
         suffix = ".{}".format(c.split(".")[-1])
         if suffix == ".Mapped reads":
             suffix = ""
@@ -157,8 +157,14 @@ def count_rrna(sm):
     :param sm:
     :return:
     """
-    df = pd.read_csv(sm.input, sep="\t", usecols=[0, 2, 8], header=None,
+    df = pd.read_csv(sm.input[0], sep="\t", usecols=[0, 2, 8], header=None,
                      names=["contig", "type", "fields"])
+    # If empty dataframe, just write an empty file
+    if df.shape[0] == 0:
+        table = pd.DataFrame(columns=["5S_rRNA", "16S_rRNA", "23S_rRNA"])
+        table.index.name = "Bin Id"
+        table.to_csv(sm.output[0], sep="\t", header=True)
+        return
     types = [x.split(";")[0].split("=")[-1] for x in df.fields]
     bins = [x.split(";")[-1].split("=")[-1] for x in df.fields]
     _df = pd.DataFrame(data={'rRNA_type': types, 'Bin_Id': bins})
@@ -174,7 +180,7 @@ def count_rrna(sm):
                          right_index=True)
     table = table.loc[:, ["5S_rRNA", "16S_rRNA", "23S_rRNA"]]
     table.index.name = "Bin_Id"
-    table.to_csv(sm.output, sep="\t", index=True)
+    table.to_csv(sm.output[0], sep="\t", index=True)
 
 
 def count_trna(sm):
@@ -183,7 +189,7 @@ def count_trna(sm):
     :param sm:
     :return:
     """
-    df = pd.read_csv(sm.input, sep="\t")
+    df = pd.read_csv(sm.input[0], sep="\t")
     dfc = df.groupby(["tRNA_type", "Bin_Id"]).count().reset_index().loc[:,
           ["tRNA_type", "tRNA#", "Bin_Id"]]
     table = dfc.pivot_table(columns="tRNA_type", index="Bin_Id")[

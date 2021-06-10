@@ -14,22 +14,20 @@ localrules:
 ##### taxonomy master rule #####
 rule taxonomy:
     input:
-        expand(opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
-                   "orfs.{db}.taxonomy.tsv"),
+        expand(results+"/annotation/{assembly}/taxonomy/orfs.{db}.taxonomy.tsv",
                assembly=assemblies.keys(), db=config["taxonomy"]["database"])
 
 ##### contigtax #####
 
 rule contigtax_download_taxonomy:
     output:
-        sqlite=opj("resources", "taxonomy", "taxonomy.sqlite"),
-        taxdump=opj("resources", "taxonomy", "taxdump.tar.gz"),
-        nodes=opj("resources", "taxonomy", "nodes.dmp"),
-        names=opj("resources", "taxonomy", "names.dmp"),
-        pkl=opj("resources", "taxonomy",
-                  "taxonomy.sqlite.traverse.pkl")
+        sqlite="resources/taxonomy/taxonomy.sqlite",
+        taxdump="resources/taxonomy/taxdump.tar.gz",
+        nodes="resources/taxonomy/nodes.dmp",
+        names="resources/taxonomy/names.dmp",
+        pkl="resources/taxonomy/taxonomy.sqlite.traverse.pkl"
     log:
-        opj("resources", "taxonomy", "contigtax.log")
+        "resources/taxonomy/contigtax.log"
     params:
         taxdir=lambda wildcards, output: os.path.dirname(output.sqlite)
     conda:
@@ -41,9 +39,9 @@ rule contigtax_download_taxonomy:
 
 rule contigtax_download:
     output:
-        fasta=temp(opj("resources", "{db}", "{db}.fasta.gz"))
+        fasta=temp("resources/{db}/{db}.fasta.gz")
     log:
-        opj("resources", "{db}", "contigtax_download.log")
+        "resources/{db}/contigtax_download.log"
     params:
         dldir=lambda wildcards, output: os.path.dirname(output.fasta),
         tmpdir="$TMPDIR"
@@ -57,9 +55,9 @@ rule contigtax_download:
 
 rule contigtax_download_nr_idmap:
     output:
-        idmap=opj("resources", "nr", "prot.accession2taxid.gz")
+        idmap="resources/nr/prot.accession2taxid.gz"
     log:
-        opj("resources", "nr", "contigtax_download_idmap.log")
+        "resources/nr/contigtax_download_idmap.log"
     params:
         dldir=lambda wildcards, output: os.path.dirname(output.idmap)
     conda:
@@ -71,14 +69,14 @@ rule contigtax_download_nr_idmap:
 
 rule contigtax_format_uniref:
     input:
-        fasta=opj("resources", "{db}", "{db}.fasta.gz")
+        fasta="resources/{db}/{db}.fasta.gz"
     output:
-        fasta=opj("resources", "{db}", "{db}.reformat.fasta.gz"),
-        idmap=opj("resources", "{db}", "prot.accession2taxid.gz")
+        fasta="resources/{db}/{db}.reformat.fasta.gz",
+        idmap="resources/{db}/prot.accession2taxid.gz"
     log:
-        opj("resources", "{db}", "contigtax_format.log")
+        "resources/{db}/contigtax_format.log"
     params:
-        tmpdir=config["paths"]["temp"]
+        tmpdir=temppath
     conda:
         "../envs/taxonomy.yml"
     shell:
@@ -89,13 +87,13 @@ rule contigtax_format_uniref:
 
 rule contigtax_format_nr:
     input:
-        fasta=opj("resources", "nr", "nr.fasta.gz")
+        fasta="resources/nr/nr.fasta.gz"
     output:
-        fasta=opj("resources", "nr", "nr.reformat.fasta.gz")
+        fasta="resources/nr/nr.reformat.fasta.gz"
     log:
-        opj("resources", "nr", "contigtax_format.log")
+        "resources/nr/contigtax_format.log"
     params:
-        tmpdir=config["paths"]["temp"]
+        tmpdir=temppath
     conda:
         "../envs/taxonomy.yml"
     shell:
@@ -106,11 +104,11 @@ rule contigtax_format_nr:
 
 rule contigtax_update:
     input:
-        idmap=opj("resources", "{db}", "prot.accession2taxid.gz")
+        idmap="resources/{db}/prot.accession2taxid.gz"
     output:
-        idmap=opj("resources", "{db}", "prot.accession2taxid.update.gz")
+        idmap="resources/{db}/prot.accession2taxid.update.gz"
     log:
-        opj("resources", "{db}", "contigtax_update.log")
+        "resources/{db}/contigtax_update.log"
     conda:
         "../envs/taxonomy.yml"
     params:
@@ -130,13 +128,13 @@ rule contigtax_update:
 
 rule contigtax_build:
     input:
-        fasta=opj("resources", "{db}", "{db}.reformat.fasta.gz"),
-        nodes=opj("resources", "taxonomy", "nodes.dmp"),
-        idmap=opj("resources", "{db}", "prot.accession2taxid.update.gz")
+        fasta="resources/{db}/{db}.reformat.fasta.gz",
+        nodes="resources/taxonomy/nodes.dmp",
+        idmap="resources/{db}/prot.accession2taxid.update.gz"
     output:
-        opj("resources", "{db}", "diamond.dmnd")
+        "resources/{db}/diamond.dmnd"
     log:
-        opj("resources", "{db}", "diamond.log")
+        "resources/{db}/diamond.log"
     threads: 20
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*10
@@ -150,16 +148,15 @@ rule contigtax_build:
 
 rule contigtax_search:
     input:
-        db=opj("resources", config["taxonomy"]["database"], "diamond.dmnd"),
-        fasta=opj(config["paths"]["results"], "assembly", "{assembly}",
-                  "final_contigs.fa")
+        db=expand("resources/{db}/diamond.dmnd", db=config["taxonomy"]["database"]),
+        fasta=results+"/assembly/{assembly}/final_contigs.fa"
     output:
-        opj(config["paths"]["results"], "annotation", "{assembly}",
-            "final_contigs.{db}.tsv.gz".format(db=config["taxonomy"]["database"]))
+        expand(results+"/annotation/{{assembly}}/final_contigs.{db}.tsv.gz",
+            db=config["taxonomy"]["database"])
     log:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "contigtax_search.log")
+        results+"/annotation/{assembly}/contigtax_search.log"
     params:
-        tmpdir=config["paths"]["temp"],
+        tmpdir=temppath,
         min_len=config["taxonomy"]["min_len"],
         settings=config["taxonomy"]["search_params"]
     threads: 20
@@ -176,18 +173,17 @@ rule contigtax_search:
 
 rule contigtax_assign:
     input:
-        tsv=opj(config["paths"]["results"], "annotation", "{assembly}",
-            "final_contigs.{db}.tsv.gz".format(db=config["taxonomy"]["database"])),
-        sql=ancient(opj("resources", "taxonomy", "taxonomy.sqlite"))
+        tsv=expand(results+"/annotation/{{assembly}}/final_contigs.{db}.tsv.gz",
+                    db=config["taxonomy"]["database"]),
+        sql=ancient("resources/taxonomy/taxonomy.sqlite")
     output:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
-            "contigtax.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"]))
+        expand(results+"/annotation/{{assembly}}/taxonomy/contigtax.{db}.taxonomy.tsv",
+            db=config["taxonomy"]["database"])
     log:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
-            "contigtax_assign.log")
+        results+"/annotation/{assembly}/taxonomy/contigtax_assign.log"
     params:
         taxonomy_ranks=" ".join(config["taxonomy"]["ranks"]),
-        taxdir=opj("resources", "taxonomy"),
+        taxdir="resources/taxonomy",
         settings=config["taxonomy"]["assign_params"]
     threads: 4
     resources:
@@ -205,9 +201,9 @@ rule contigtax_assign:
 
 rule download_sourmash_db:
     output:
-        opj("resources", "sourmash", "genbank-k31.lca.json")
+        "resources/sourmash/genbank-k31.lca.json"
     log:
-        opj("resources", "sourmash", "download.log")
+        "resources/sourmash/download.log"
     params:
         url="https://osf.io/4f8n3/download"
     shell:
@@ -218,11 +214,11 @@ rule download_sourmash_db:
 
 rule sourmash_compute:
     input:
-        opj(config["paths"]["results"], "assembly", "{assembly}", "final_contigs.fa")
+        results+"/assembly/{assembly}/final_contigs.fa"
     output:
-        opj(config["paths"]["results"], "assembly", "{assembly}", "final_contigs.fa.sig")
+        results+"/assembly/{assembly}/final_contigs.fa.sig"
     log:
-        opj(config["paths"]["results"], "assembly", "{assembly}", "sourmash_compute.log")
+        results+"/assembly/{assembly}/sourmash_compute.log"
     conda:
         "../envs/taxonomy.yml"
     params:
@@ -235,15 +231,12 @@ rule sourmash_compute:
 
 rule sourmash_classify:
     input:
-        sig=opj(config["paths"]["results"], "assembly", "{assembly}",
-                 "final_contigs.fa.sig"),
-        db=opj("resources", "sourmash", "genbank-k31.lca.json")
+        sig=results+"/assembly/{assembly}/final_contigs.fa.sig",
+        db="resources/sourmash/genbank-k31.lca.json"
     output:
-        csv=opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
-                  "sourmash.taxonomy.csv")
+        csv=results+"/annotation/{assembly}/taxonomy/sourmash.taxonomy.csv"
     log:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
-            "sourmash.log")
+        results+"/annotation/{assembly}/taxonomy/sourmash.log"
     params:
         frac=config["taxonomy"]["sourmash_fraction"]
     threads: 4
@@ -261,26 +254,22 @@ rule sourmash_classify:
 
 rule merge_contigtax_sourmash:
     input:
-        smash=opj(config["paths"]["results"], "annotation", "{assembly}",
-                    "taxonomy", "sourmash.taxonomy.csv"),
-        contigtax=opj(config["paths"]["results"], "annotation", "{assembly}",
-                    "taxonomy", "contigtax.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"]))
+        smash=results+"/annotation/{assembly}/taxonomy/sourmash.taxonomy.csv",
+        contigtax=expand(results+"/annotation/{{assembly}}/taxonomy/contigtax.{db}.taxonomy.tsv",
+                        db=config["taxonomy"]["database"])
     output:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
-        "final_contigs.taxonomy.tsv")
+        results+"/annotation/{assembly}/taxonomy/final_contigs.taxonomy.tsv"
     log:
-        opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy", "merge.log")
+        results+"/annotation/{assembly}/taxonomy/merge.log"
     script:
         "../scripts/taxonomy_utils.py"
 
 rule contigtax_assign_orfs:
     input:
-        tax=opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
-            "final_contigs.taxonomy.tsv"),
-        gff=opj(config["paths"]["results"], "annotation", "{assembly}",
-                "final_contigs.gff")
+        tax=results+"/annotation/{assembly}/taxonomy/final_contigs.taxonomy.tsv",
+        gff=results+"/annotation/{assembly}/final_contigs.gff"
     output:
-        tax=opj(config["paths"]["results"], "annotation", "{assembly}", "taxonomy",
-            "orfs.{db}.taxonomy.tsv".format(db=config["taxonomy"]["database"]))
+        tax=expand(results+"/annotation/{{assembly}}/taxonomy/orfs.{db}.taxonomy.tsv",
+                    db=config["taxonomy"]["database"])
     script:
         "../scripts/taxonomy_utils.py"
