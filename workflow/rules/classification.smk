@@ -37,8 +37,8 @@ rule download_kraken_build:
          """
          mkdir -p {params.tmpdir}
          curl -L -o {params.tar} {params.url} > {log} 2>&1
-         tar -C {params.tmpdir} -xf {params.tar}
-         mv {params.tmpdir}/*/* {params.dir}
+         tar --strip-components 1 -C {params.tmpdir} -xf {params.tar}
+         mv {params.tmpdir}/* {params.dir}
          rm -r {params.tar} {params.tmpdir}
          """
 
