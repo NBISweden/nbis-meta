@@ -38,7 +38,9 @@ rule download_kraken_build:
          mkdir -p {params.tmpdir}
          curl -L -o {params.tar} {params.url} > {log} 2>&1
          tar -C {params.tmpdir} -xf {params.tar}
-         mv {params.tmpdir}/*/* {params.dir}
+         hashfile=$(find {params.tmpdir}/ -name "hash.k2d")
+         hashdir=$(dirname $hashfile)
+         mv $hashdir/* {params.dir}
          rm -r {params.tar} {params.tmpdir}
          """
 

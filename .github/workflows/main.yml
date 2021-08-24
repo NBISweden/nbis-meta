@@ -1,6 +1,10 @@
 name: CI
 
 on:
+  workflow_dispatch:
+    branches:
+      - main
+      - develop
   push:
     paths-ignore:
       - 'README.md'
@@ -34,25 +38,11 @@ jobs:
     - name: Cutadapt
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/cutadapt.yaml -p --notemp qc
-        snakemake -j 1 --configfile .test/config/cutadapt.yaml --report report.html qc
-    # Upload sample report
-    - name: Upload cutadapt report
-      uses: actions/upload-artifact@v1
-      with:
-        name: ${{ runner.os }}-cutadapt.html
-        path: report.html
     # Test all other preprocessing software except cutadapt (10k reads/sample)
     - name: Preprocess
       run: |
         rm -rf results report.html
         snakemake --use-conda -j 4 --configfile .test/config/preprocess.yaml -p qc
-        snakemake --use-conda -j 4 --configfile .test/config/preprocess.yaml -p --report report.html qc
-    # Upload samples report
-    - name: Upload samples report
-      uses: actions/upload-artifact@v1
-      with:
-        name: ${{ runner.os }}-samples_report.html
-        path: report.html
     # Run kraken for sample1 (paired-end) and sample4 (single-end) (10k reads/sample)
     - name: Kraken
       run: |
@@ -72,13 +62,6 @@ jobs:
     - name: Metabat
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p bin assemble
-        snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p --report report.html bin assemble
-    # Upload report
-    - name: Upload snakemake report
-      uses: actions/upload-artifact@v1
-      with:
-        name: ${{ runner.os }}-test_report.html
-        path: report.html
 
   test_linux:
     runs-on: ubuntu-latest
@@ -106,13 +89,3 @@ jobs:
     - name: Binning
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/binning.yaml -p assemble bin
-    # Create report for assembly and binning
-    - name: Snakemake report
-      run: |
-        snakemake --use-conda -j 4 --configfile .test/config/binning.yaml -p --report report.html assemble bin
-    # Upload report
-    - name: Upload snakemake report
-      uses: actions/upload-artifact@v1
-      with:
-        name: ${{ runner.os }}-test_linux_report.html
-        path: report.html
