@@ -2,6 +2,7 @@ from scripts.common import classify_input, krona_input, metaphlan_krona_string
 
 localrules:
     classify,
+    krona_taxonomy,
     download_kraken_build,
     download_centrifuge_build,
     centrifuge_kreport,
