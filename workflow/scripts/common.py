@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import pandas as pd
+import sys
 import os
 from os.path import join as opj, basename as bn
 from snakemake.io import expand
@@ -402,6 +403,12 @@ def filter_metaspades_assemblies(d):
             se_only.append(assembly)
     for assembly in se_only:
         del d[assembly]
+    # Quit and warn if all assemblies have been removed
+    if len(d) == 0:
+        sys.exit("""
+WARNING: Metaspades requires paired-end data but all specified assemblies
+only contain single-end data. Exiting...
+        """)
     return d
 
 
