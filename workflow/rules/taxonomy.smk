@@ -201,15 +201,17 @@ rule contigtax_assign:
 
 rule download_sourmash_db:
     output:
-        "resources/sourmash/genbank-k31.lca.json"
+        lca="resources/sourmash/sourmash_db.lca.json",
+        version="resources/sourmash/version.txt"
     log:
         "resources/sourmash/download.log"
     params:
-        url="https://osf.io/4f8n3/download"
+        url=config["taxonomy"]["sourmash_database_url"]
     shell:
         """
-        curl -L -o {output}.gz {params.url} > {log} 2>&1
-        gunzip {output}.gz
+        curl -L -v -o {output.lca}.gz {params.url} > {log} 2>&1
+        grep filename {log} | cut -f2 -d ';' > {output.version}
+        gunzip {output.lca}.gz
         """
 
 rule sourmash_compute:
@@ -222,11 +224,12 @@ rule sourmash_compute:
     conda:
         "../envs/taxonomy.yml"
     params:
-        frac=config["taxonomy"]["sourmash_fraction"]
+        frac=config["taxonomy"]["sourmash_fraction"],
+        k=config["taxonomy"]["sourmash_kmer_size"]
     shell:
         """
         sourmash compute --singleton --scaled {params.frac} \
-            -k 31 -o {output} {input} > {log} 2>&1
+            -k {params.k} -o {output} {input} > {log} 2>&1
         """
 
 rule sourmash_classify:
