@@ -222,7 +222,7 @@ rule sourmash_compute:
     log:
         results+"/assembly/{assembly}/sourmash_compute.log"
     conda:
-        "../envs/taxonomy.yml"
+        "../envs/sourmash.yml"
     params:
         frac=config["taxonomy"]["sourmash_fraction"],
         k=config["taxonomy"]["sourmash_kmer_size"]
@@ -246,7 +246,7 @@ rule sourmash_classify:
     resources:
         runtime=lambda wildcards, attempt: attempt**2*30
     conda:
-        "../envs/taxonomy.yml"
+        "../envs/sourmash.yml"
     shell:
         """
         sourmash lca classify --db {input.db} --scaled {params.frac} \
