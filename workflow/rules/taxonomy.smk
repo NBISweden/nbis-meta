@@ -235,7 +235,7 @@ rule sourmash_compute:
 rule sourmash_classify:
     input:
         sig=results+"/assembly/{assembly}/final_contigs.fa.sig",
-        db="resources/sourmash/genbank-k31.lca.json"
+        db="resources/sourmash/sourmash_db.lca.json"
     output:
         csv=results+"/annotation/{assembly}/taxonomy/sourmash.taxonomy.csv"
     log:
