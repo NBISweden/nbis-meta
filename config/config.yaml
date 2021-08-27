@@ -139,7 +139,9 @@ taxonomy:
   # modify assignments without having to rerun the search step
   search_params: "--evalue 0.01 --top 10"
   # parameters for contigtax assign
-  assign_params: "--evalue 0.001 --top 5"
+  # by default the lowest common ancestor is assigned from the list of top hits
+  # to instead use a voting strategy set --mode rank_vote
+  assign_params: "--evalue 0.001 --top 5 --mode rank_lca"
   # hash fraction to use for sourmash when computing signatures for contigs
   # this is evaluated as 1/<sourmash_fraction>
   sourmash_fraction: 100
