@@ -140,6 +140,12 @@ taxonomy:
   # hash fraction to use for sourmash when computing signatures for contigs
   # this is evaluated as 1/<sourmash_fraction>
   sourmash_fraction: 100
+  # kmer size to use when computing signatures
+  sourmash_kmer_size: 31
+  # sourmash database to use
+  # see https://sourmash.readthedocs.io/en/latest/databases.html
+  # and choose an LCA database link matching the sourmash_kmer_size
+  sourmash_database_url: https://osf.io/ypsjq/download
   # ranks to report taxonomy for
   ranks:
     - "superkingdom"
