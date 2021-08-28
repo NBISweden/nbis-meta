@@ -351,6 +351,8 @@ rule parse_emapper:
     input:
         annotations = results+"/annotation/{assembly}/{assembly}.emapper.annotations",
         info = "resources/kegg/kegg_{db}.tsv"
+    wildcard_constraints:
+        db="enzymes|pathways|kos|modules"
     output:
         results+"/annotation/{assembly}/{db}.parsed.tsv"
     script:
