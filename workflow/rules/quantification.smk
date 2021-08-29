@@ -13,8 +13,9 @@ localrules:
 
 rule quantify:
     input:
-        expand(results+"/annotation/{assembly}/gene_{counts_type}.tsv",
-               assembly=assemblies.keys(), counts_type=["counts", "rpkm"])
+        expand("{results}/annotation/{assembly}/gene_{counts_type}.tsv",
+            results=[config["paths"]["results"]], assembly=assemblies.keys(),
+            counts_type=["counts", "rpkm"])
 
 
 rule write_featurefile:
