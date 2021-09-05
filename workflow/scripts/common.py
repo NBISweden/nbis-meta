@@ -3,7 +3,7 @@
 import pandas as pd
 import sys
 import os
-from os.path import join as opj, basename as bn
+from os.path import basename as bn
 from snakemake.io import expand
 
 
@@ -81,12 +81,9 @@ def parse_samples(df, config, PREPROCESS):
         r2 = False
 
         # Set preprocessed file paths
-        R1_p = opj(config["paths"]["results"], "intermediate", "preprocess",
-                   "{}_{}_R1{}.fastq.gz".format(sample, unit, PREPROCESS))
-        R2_p = opj(config["paths"]["results"], "intermediate", "preprocess",
-                   "{}_{}_R2{}.fastq.gz".format(sample, unit, PREPROCESS))
-        se_p = opj(config["paths"]["results"], "intermediate", "preprocess",
-                   "{}_{}_se{}.fastq.gz".format(sample, unit, PREPROCESS))
+        R1_p = config["paths"]["results"]+"/intermediate/preprocess/{}_{}_R1{}.fastq.gz".format(sample, unit, PREPROCESS)
+        R2_p = config["paths"]["results"]+"/intermediate/preprocess/{}_{}_R2{}.fastq.gz".format(sample, unit, PREPROCESS)
+        se_p = config["paths"]["results"]+"/intermediate/preprocess/{}_{}_se{}.fastq.gz".format(sample, unit, PREPROCESS)
 
         # Initiate keys for all assembly group values
         if "assembly" in df.columns:
@@ -205,8 +202,7 @@ def check_classifiers(config):
         # If not, use prebuilt default
         else:
             p = config["centrifuge"]["prebuilt"]
-            config["centrifuge"]["index_path"] = opj("resources", "centrifuge",
-                                                     p)
+            config["centrifuge"]["index_path"] = "resources/centrifuge/"+p
         # Set centrifuge index config variables
         index_path = config["centrifuge"]["index_path"]
         config["centrifuge"]["dir"] = os.path.dirname(index_path)
@@ -216,18 +212,15 @@ def check_classifiers(config):
     config["kraken"]["mem"] = ""
     if config["classification"]["kraken"]:
         # Check if custom database exists
-        custom = expand(opj(config["kraken"]["custom"], "{n}.k2d"),
+        custom = expand(config["kraken"]["custom"]+"/{n}.k2d",
                         n=["hash", "opts", "taxo"])
         if list(set(os.path.exists(x) for x in custom))[0]:
             config["kraken"]["index_path"] = config["kraken"]["custom"]
         # If not, use prebuilt or standard
         elif config["kraken"]["standard_db"]:
-            config["kraken"]["index_path"] = opj("resources", "kraken",
-                                                 "standard")
+            config["kraken"]["index_path"] = "resources/kraken/standard"
         else:
-            config["kraken"]["index_path"] = opj("resources", "kraken",
-                                                 "prebuilt",
-                                                 config["kraken"]["prebuilt"])
+            config["kraken"]["index_path"] = "resources/kraken/prebuilt/"+config["kraken"]["prebuilt"]
         if config["kraken"]["reduce_memory"]:
             config["kraken"]["mem"] += "--memory-mapping"
     return config
@@ -237,7 +230,7 @@ def check_classifiers(config):
 
 def preprocessing_input(config):
     if config["run_preprocessing"] or config["preprocessing"]["fastqc"]:
-        return opj(config["paths"]["results"], "report", "samples_report.html")
+        return config["paths"]["results"]+"/report/samples_report.html"
     return []
 
 
@@ -280,9 +273,9 @@ def get_all_files(samples, directory, suffix="", nested=False):
             else:
                 d = "{}".format(directory)
             if is_pe(samples[sample][unit]):
-                files.append(opj(d, "{}_{}_pe{}".format(sample, unit, suffix)))
+                files.append(d+"/{}_{}_pe{}".format(sample, unit, suffix))
             else:
-                files.append(opj(d, "{}_{}_se{}".format(sample, unit, suffix)))
+                files.append(d+"/{}_{}_se{}".format(sample, unit, suffix))
     return files
 
 
@@ -307,8 +300,7 @@ def multiqc_input(samples, config):
 def get_fastqc_files(sample, unit, pairs, config, pre):
     """Get all fastqc output"""
     if config["preprocessing"]["fastqc"]:
-        files = expand(opj(config["paths"]["results"], "intermediate", "fastqc",
-                           "{sample}_{unit}_{pair}{PREPROCESS}_fastqc.zip"),
+        files = expand(config["paths"]["results"]+"/intermediate/fastqc/{sample}_{unit}_{pair}{PREPROCESS}_fastqc.zip",
                        sample=sample, unit=unit, pair=pairs, PREPROCESS=pre)
         return files
     return []
@@ -322,8 +314,7 @@ def get_trim_logs(sample, unit, pairs, config, d):
         trimmer = "trimmomatic"
     else:
         trimmer = "cutadapt"
-    files = expand(opj(config["paths"]["results"], "intermediate", "preprocess",
-                       "{sample}_{unit}_{pair}{s}.{trimmer}.log"),
+    files = expand(config["paths"]["results"]+"/intermediate/preprocess/{sample}_{unit}_{pair}{s}.{trimmer}.log",
                    sample=sample, unit=unit, pair=pairs, s=d["trimming"],
                    trimmer=trimmer)
     return files
@@ -332,17 +323,15 @@ def get_trim_logs(sample, unit, pairs, config, d):
 def get_filt_logs(sample, unit, seq_type, config, d):
     if not config["preprocessing"]["phix_filter"]:
         return []
-    files = expand(opj(config["paths"]["results"], "intermediate", "preprocess",
-                       "{sample}_{unit}_PHIX_{seq_type}{s}.log"), sample=sample,
-                   unit=unit, seq_type=seq_type, s=d["phixfilt"])
+    files = expand(config["paths"]["results"]+"/intermediate/preprocess/{sample}_{unit}_PHIX_{seq_type}{s}.log",
+                   sample=sample, unit=unit, seq_type=seq_type, s=d["phixfilt"])
     return files
 
 
 def get_sortmerna_logs(sample, unit, seq_type, config):
     if not config["preprocessing"]["sortmerna"]:
         return []
-    files = expand(opj(config["paths"]["results"], "intermediate", "preprocess",
-                       "{sample}_{unit}_{seq_type}.sortmerna.log"),
+    files = expand(config["paths"]["results"]+"/intermediate/preprocess/{sample}_{unit}_{seq_type}.sortmerna.log",
                    sample=sample, unit=unit, seq_type=seq_type)
     return files
 
@@ -429,9 +418,7 @@ def get_bamfiles(g, assembly_dict, results_path, POSTPROCESS):
                 seq_type = "pe"
             else:
                 seq_type = "se"
-            files.append(opj(results_path, "assembly", g, "mapping",
-                             "{}_{}_{}{}.bam".format(sample, unit, seq_type,
-                                                     POSTPROCESS)))
+            files.append(results_path+"/assembly/{}/mapping/{}_{}_{}{}.bam".format(g, sample, unit, seq_type, POSTPROCESS))
     return files
 
 
@@ -464,28 +451,19 @@ def binning_input(config, report=False):
     """
     bin_input = []
     if len(get_binners(config)) > 0:
-        bin_input.append(opj(config["paths"]["results"], "report", "binning",
-                             "binning_summary.tsv"))
+        bin_input.append(config["paths"]["results"]+"/report/binning/binning_summary.tsv")
     if config["binning"]["checkm"]:
-        bin_input.append(opj(config["paths"]["results"], "report", "checkm",
-                             "checkm.stats.tsv"))
+        bin_input.append(config["paths"]["results"]+"/report/checkm/checkm.stats.tsv")
         # Don't include profile in report
         if not report:
-            bin_input.append(opj(config["paths"]["results"], "report", "checkm",
-                                 "checkm.profiles.tsv"))
+            bin_input.append(config["paths"]["results"]+"/report/checkm/checkm.profiles.tsv")
     if config["binning"]["gtdbtk"]:
-        bin_input.append(opj(config["paths"]["results"], "report", "gtdbtk",
-                             "gtdbtk.summary.tsv"))
-        bin_input.append(
-            opj(config["paths"]["results"], "report", "bin_annotation",
-                "tRNA.total.tsv"))
-        bin_input.append(
-            opj(config["paths"]["results"], "report", "bin_annotation",
-                "rRNA.types.tsv"))
+        bin_input.append(config["paths"]["results"]+"/report/gtdbtk/gtdbtk.summary.tsv")
+        bin_input.append(config["paths"]["results"]+"/report/bin_annotation/tRNA.total.tsv")
+        bin_input.append(config["paths"]["results"]+"/report/bin_annotation/rRNA.types.tsv")
     config["fastani"]["ref_genomes"] = {}
     if config["binning"]["fastani"]:
-        bin_input.append(opj(config["paths"]["results"], "report", "binning",
-                             "genome_clusters.tsv"))
+        bin_input.append(config["paths"]["results"]+"/report/binning/genome_clusters.tsv")
         # read list of genome references if path exists
         if os.path.exists(config["fastani"]["ref_list"]):
             _ = pd.read_csv(config["fastani"]["ref_list"], index_col=0,
@@ -508,15 +486,11 @@ def get_fw_reads(config, samples, p):
     for sample in samples.keys():
         for unit in samples[sample].keys():
             if "R1" in samples[sample][unit].keys():
-                f = opj(config["paths"]["results"], "intermediate",
-                        "preprocess",
-                        "{sample}_{unit}_R1{p}.fastq.gz".format(sample=sample,
-                                                                unit=unit, p=p))
+                r="R1"
             else:
-                f = opj(config["paths"]["results"], "intermediate",
-                        "preprocess",
-                        "{sample}_{unit}_se{p}.fastq.gz".format(sample=sample,
-                                                                unit=unit, p=p))
+                r="se"
+            f = config["paths"]["results"]+"/intermediate/preprocess/{sample}_{unit}_{r}{p}.fastq.gz".format(sample=sample,
+                                                                unit=unit, r=r, p=p)
             files.append(f)
     reads_string = ""
     for i, f in enumerate(files, start=1):
@@ -605,39 +579,36 @@ def concatenate(input, index):
 
 def annotation_input(config, assemblies):
     input = []
+    results = config["paths"]["results"]
     if not config["assembly"]["megahit"] and not config["assembly"]["metaspades"]:
         return input
-    for group in assemblies.keys():
+    for assembly in assemblies.keys():
         # Add orfcalling results
-        input.append(opj(config["paths"]["results"], "annotation", group,
-                         "final_contigs.gff"))
+        input.append(f"{results}/annotation/{assembly}/final_contigs.gff")
         if config["annotation"]["infernal"]:
-            input.append(opj(config["paths"]["results"], "annotation", group,
-                             "final_contigs.cmscan"))
+            input.append(f"{results}/annotation/{assembly}/final_contigs.cmscan")
         if config["annotation"]["tRNAscan"]:
-            input.append(opj(config["paths"]["results"], "annotation", group,
-                             "tRNA.out"))
+            input.append(f"{results}/annotation/{assembly}/tRNA.out")
         # Add EGGNOG annotation
         if config["annotation"]["eggnog"]:
-            input += expand(opj(config["paths"]["results"], "annotation", group,
-                                "{db}.parsed.{norm_method}.tsv"),
+            input += expand("{results}/annotation/{assembly}/{db}.parsed.{norm_method}.tsv",
+                            results=[results], assembly=[assembly],
                             db=["enzymes", "pathways", "kos", "modules"],
                             norm_method=["counts", "TMM", "RLE", "CSS"])
         # Add PFAM annotation
         if config["annotation"]["pfam"]:
-            input += expand(opj(config["paths"]["results"], "annotation", group,
-                                "pfam.parsed.{norm_method}.tsv"),
+            input += expand("{results}/annotation/{assembly}/pfam.parsed.{norm_method}.tsv",
+                            results=[results], assembly=[assembly],
                             norm_method=["counts", "TMM", "RLE", "CSS"])
         # Add taxonomic annotation
         if config["annotation"]["taxonomy"]:
-            input += expand(
-                opj(config["paths"]["results"], "annotation", group, "taxonomy",
-                    "tax.{counts_type}.tsv"),
-                counts_type=["counts", "rpkm"])
+            input += expand("{results}/annotation/{assembly}/taxonomy/tax.{counts_type}.tsv",
+                            results=[results], assembly=[assembly],
+                            counts_type=["counts", "rpkm"])
         # Add Resistance Gene Identifier output
         if config["annotation"]["rgi"]:
-            input += expand(opj(config["paths"]["results"], "annotation", group,
-                                "rgi.parsed.{norm_method}.tsv"),
+            input += expand("{results}/annotation/{assembly}/rgi.parsed.{norm_method}.tsv",
+                            results=[results], assembly=[assembly],
                             norm_method=["counts", "TMM", "RLE", "CSS"])
     return input
 
@@ -672,50 +643,27 @@ def parse_cmout(f):
     return lines
 
 
-## Quantification functions
-
-def get_fc_files(wildcards, file_type):
-    g = wildcards.group
-    files = []
-    for sample in assemblies[g].keys():
-        for unit in assemblies[g][sample].keys():
-            if "se" in assemblies[g][sample][unit].keys():
-                files.append(
-                    opj(config["paths"]["results"], "assembly", g, "mapping",
-                        sample + "_" + unit + "_se.fc.{}.tsv".format(
-                            file_type)))
-            else:
-                files.append(
-                    opj(config["paths"]["results"], "assembly", g, "mapping",
-                        sample + "_" + unit + "_pe.fc.{}.tsv".format(
-                            file_type)))
-    return files
-
-
 # classification functions
 
 def classify_input(config):
     f = []
+    results = config["paths"]["results"]
     if config["classification"]["kraken"]:
-        f.append(opj(config["paths"]["results"], "report", "kraken",
-                     "kraken.krona.html"))
+        f.append(f"{results}/report/kraken/kraken.krona.html")
     if config["classification"]["metaphlan"]:
-        f.append(opj(config["paths"]["results"], "report", "metaphlan",
-                     "metaphlan.html"))
+        f.append(f"{results}/report/metaphlan/metaphlan.html")
     if config["classification"]["centrifuge"]:
-        f.append(opj(config["paths"]["results"], "report", "centrifuge",
-                     "centrifuge.krona.html"))
+        f.append(f"{results}/report/centrifuge/centrifuge.krona.html")
     return f
 
 
 def krona_input(config, samples, classifier):
     input_string = ""
-    files = get_all_files(samples, opj(config["paths"]["results"], classifier),
-                          ".kreport")
+    results = config["paths"]["results"]
+    files = get_all_files(samples, f"{results}/{classifier}", ".kreport")
     for f in files:
-        sample_unit = bn(f).replace("_pe.kreport", "").replace("_se.kreport",
-                                                               "")
-        input_string += " {},{}".format(f, sample_unit)
+        sample_unit = bn(f).replace("_pe.kreport", "").replace("_se.kreport", "")
+        input_string += f" {f},{sample_unit}"
     return input_string
 
 
@@ -728,5 +676,5 @@ def metaphlan_krona_string(input):
     s = []
     for f in input:
         name = bn(f).replace("_pe.krona", "").replace("_se.krona", "")
-        s.append("{},{}".format(f, name))
+        s.append(f"{f},{name}")
     return " ".join(s)
