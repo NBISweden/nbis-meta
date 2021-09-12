@@ -1,7 +1,7 @@
 $schema: "http://json-schema.org/draft-06/schema#"
 description: an entry in the sample sheet
 properties:
-  sample:
+  sample_name:
     type: string
     description: sample name/identifier
   unit:
@@ -18,6 +18,6 @@ properties:
     description: File path for the paired sequence file for paired-end samples
 
 required:
-  - sample
+  - sample_name
   - unit
   - fq1

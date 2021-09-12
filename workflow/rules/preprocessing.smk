@@ -570,7 +570,7 @@ rule fastqc:
 rule multiqc:
     """Summarize sample QC statistics in a report """
     input:
-        multiqc_input(samples, config)
+        multiqc_input(pep.sample_table, config)
     output:
         html=report(results+"/report/samples_report.html",
                     caption="../report/preprocessing.rst", category="Preprocessing"),

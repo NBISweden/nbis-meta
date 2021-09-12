@@ -1,4 +1,4 @@
-sample	unit	assembly	fq1	fq2
+sample_name	unit	assembly	fq1	fq2
 sample1	1	sample1,all	examples/data/sample1_1_R1.fastq.gz	examples/data/sample1_1_R2.fastq.gz
 sample2	1	sample2,all	examples/data/sample2_11_R1.fastq.gz	examples/data/sample2_11_R2.fastq.gz
 sample3	1		examples/data/sample3_21_R1.fastq.gz	examples/data/sample3_21_R2.fastq.gz

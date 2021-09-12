@@ -27,6 +27,7 @@ df = pd.read_csv(config["sample_list"], sep="\t")
 validate(df, schema="../schemas/samples.schema.yaml")
 
 ##### parse samples #####
+
 from scripts.common import parse_samples
 samples, assemblies = parse_samples(df, config, PREPROCESS)
 

@@ -69,7 +69,7 @@ def parse_samples(df, config, PREPROCESS):
 
     for i in list(df.index):
         # Add sample to dict
-        sample = df.iloc[i]["sample"]
+        sample = df.iloc[i]["sample_name"]
         if sample not in samples.keys():
             samples[sample] = {}
         # Add unit to dict
@@ -282,7 +282,7 @@ def get_all_files(samples, directory, suffix="", nested=False):
 def multiqc_input(samples, config):
     files = []
     pre, post, d, _ = prepost_string(config)
-    for sample in samples.keys():
+    for sample in samples["sample_name"]:
         for unit in samples[sample].keys():
             if is_pe(samples[sample][unit]):
                 pairs = ["R1", "R2"]

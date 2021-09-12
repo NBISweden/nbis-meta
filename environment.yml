@@ -9,6 +9,8 @@ dependencies:
   # core packages for workflow
   - python>=3.7
   - snakemake-minimal>=5.18
+  - peppy
+  - eido
   - mamba
   - pandas
   - biopython

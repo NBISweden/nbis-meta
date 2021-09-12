@@ -1,5 +1,9 @@
 # Snakemake workflow for various types of metagenomic analyses.
 
+pepfile: "config/pepfile.yaml"
+pepschema: "schemas/pep.schema.yaml"
+print(pep.sample_table)
+
 report: "report/workflow.rst"
 
 include: "rules/common.smk"
