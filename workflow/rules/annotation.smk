@@ -313,6 +313,7 @@ if config["runOnUppMax"]:
             runtime=lambda wildcards, attempt: attempt**2*60
         shell:
             """
+            if [ -z ${{SLURM_JOB_ID+x}} ]; then SLURM_JOB_ID="emapper_annotate_hits_uppmax"; fi
             #Copy eggnog.db
             mkdir -p /dev/shm/$SLURM_JOB_ID
             cp {params.resource_dir}/eggnog.db {params.resource_dir}/eggnog_proteins.dmnd /dev/shm/$SLURM_JOB_ID
