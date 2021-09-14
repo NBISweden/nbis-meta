@@ -10,10 +10,14 @@ source("workflow/scripts/common.R")
 method <- snakemake@params$method
 input <- snakemake@input[[1]]
 output <- snakemake@output[[1]]
+normalize <- TRUE
 # Read the counts
 x <- read.delim(input, row.names = 1, sep = "\t", header = TRUE)
 # Get sample names
 sample_names <- colnames(x)[unlist(lapply(x, is.numeric))]
+# Get info names
+info_names <- colnames(x)[unlist(lapply(x, is.character))]
+
 # Remove unclassified
 if ("Unclassified" %in% row.names(x)){
     x <- x[row.names(x)!="Unclassified", ]
@@ -21,6 +25,14 @@ if ("Unclassified" %in% row.names(x)){
 
 # Returns a vector in the case of 1 sample only
 x_num <- process_data(x, output)
+
+# If only one sample, set normalize=FALSE
+if (length(sample_names) == 1) {
+    print("ONLY ONE SAMPLE! WILL NOT RUN CSS")
+    normalize <- FALSE
+    x_num <- as.data.frame(x_num, row.names = rownames(x))
+    colnames(x_num) <- sample_names
+}
 
 # Turn data into new experimentobject
 obj <- newMRexperiment(x_num)
@@ -48,10 +60,14 @@ if (too_few_features == TRUE) {
 }
 
 # Normalize
-norm <- MRcounts(obj, norm = TRUE)
+norm <- MRcounts(obj, norm = normalize)
 
 # Add info columns back
 norm <- cbind(str_cols(x), norm)
+colnames(norm) <- append(info_names, sample_names)
+
+# Convert to numeric
+norm <- as.data.frame(norm)
 
 # Set sample names
 colnames(norm)[unlist(lapply(norm, is.numeric))] <- sample_names
