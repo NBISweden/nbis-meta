@@ -301,7 +301,7 @@ if config["runOnUppMax"]:
         params:
             resource_dir=lambda wildcards, input: os.path.dirname(input[1]),
             tmpdir=temppath+"/{assembly}-eggnog",
-            out=temppath+"/annotation/{assembly}/{assembly}",
+            out=results+"/annotation/{assembly}/{assembly}",
             flags="--no_file_comments"
         log:
             results+"/annotation/{assembly}/{assembly}.emapper.annotations.log"
