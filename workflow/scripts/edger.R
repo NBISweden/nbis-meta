@@ -48,7 +48,9 @@ if (method %in% c("TMM", "RLE")) {
 
 # Add info columns back
 norm <- cbind(str_cols(x), norm)
-colnames(norm) <- append(info_names, sample_names)
+if (length(info_names)>0) {
+    colnames(norm) <- append(info_names, sample_names)
+}
 # Convert to numeric
 norm <- as.data.frame(norm)
 row.names(norm) <- xrownames
