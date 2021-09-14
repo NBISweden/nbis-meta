@@ -15,6 +15,8 @@ normalize <- TRUE
 x <- read.delim(input, row.names = 1, sep = "\t", header = TRUE)
 # Get sample names
 sample_names <- colnames(x)[unlist(lapply(x, is.numeric))]
+# Extract row names
+xrownames <- row.names(x)[row.names(x)!="Unclassified"]
 # Get info names
 info_names <- colnames(x)[unlist(lapply(x, is.character))]
 
@@ -22,6 +24,9 @@ info_names <- colnames(x)[unlist(lapply(x, is.character))]
 if ("Unclassified" %in% row.names(x)){
     x <- x[row.names(x)!="Unclassified", ]
 }
+
+x <- as.data.frame(x, row.names=xrownames)
+colnames(x) <- append(info_names, sample_names)
 
 # Returns a vector in the case of 1 sample only
 x_num <- process_data(x, output)
