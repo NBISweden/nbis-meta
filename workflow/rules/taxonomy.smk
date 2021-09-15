@@ -201,15 +201,17 @@ rule contigtax_assign:
 
 rule download_sourmash_db:
     output:
-        "resources/sourmash/genbank-k31.lca.json"
+        lca="resources/sourmash/sourmash_db.lca.json",
+        version="resources/sourmash/version.txt"
     log:
         "resources/sourmash/download.log"
     params:
-        url="https://osf.io/4f8n3/download"
+        url=config["taxonomy"]["sourmash_database_url"]
     shell:
         """
-        curl -L -o {output}.gz {params.url} > {log} 2>&1
-        gunzip {output}.gz
+        curl -L -v -o {output.lca}.gz {params.url} > {log} 2>&1
+        grep filename {log} | cut -f2 -d ';' > {output.version}
+        gunzip {output.lca}.gz
         """
 
 rule sourmash_compute:
@@ -220,19 +222,20 @@ rule sourmash_compute:
     log:
         results+"/assembly/{assembly}/sourmash_compute.log"
     conda:
-        "../envs/taxonomy.yml"
+        "../envs/sourmash.yml"
     params:
-        frac=config["taxonomy"]["sourmash_fraction"]
+        frac=config["taxonomy"]["sourmash_fraction"],
+        k=config["taxonomy"]["sourmash_kmer_size"]
     shell:
         """
         sourmash compute --singleton --scaled {params.frac} \
-            -k 31 -o {output} {input} > {log} 2>&1
+            -k {params.k} -o {output} {input} > {log} 2>&1
         """
 
 rule sourmash_classify:
     input:
         sig=results+"/assembly/{assembly}/final_contigs.fa.sig",
-        db="resources/sourmash/genbank-k31.lca.json"
+        db="resources/sourmash/sourmash_db.lca.json"
     output:
         csv=results+"/annotation/{assembly}/taxonomy/sourmash.taxonomy.csv"
     log:
@@ -243,7 +246,7 @@ rule sourmash_classify:
     resources:
         runtime=lambda wildcards, attempt: attempt**2*30
     conda:
-        "../envs/taxonomy.yml"
+        "../envs/sourmash.yml"
     shell:
         """
         sourmash lca classify --db {input.db} --scaled {params.frac} \

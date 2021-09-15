@@ -301,7 +301,7 @@ if config["runOnUppMax"]:
         params:
             resource_dir=lambda wildcards, input: os.path.dirname(input[1]),
             tmpdir=temppath+"/{assembly}-eggnog",
-            out=temppath+"/annotation/{assembly}/{assembly}",
+            out=results+"/annotation/{assembly}/{assembly}",
             flags="--no_file_comments"
         log:
             results+"/annotation/{assembly}/{assembly}.emapper.annotations.log"
@@ -313,6 +313,7 @@ if config["runOnUppMax"]:
             runtime=lambda wildcards, attempt: attempt**2*60
         shell:
             """
+            if [ -z ${{SLURM_JOB_ID+x}} ]; then SLURM_JOB_ID="emapper_annotate_hits_uppmax"; fi
             #Copy eggnog.db
             mkdir -p /dev/shm/$SLURM_JOB_ID
             cp {params.resource_dir}/eggnog.db {params.resource_dir}/eggnog_proteins.dmnd /dev/shm/$SLURM_JOB_ID
@@ -351,6 +352,8 @@ rule parse_emapper:
     input:
         annotations = results+"/annotation/{assembly}/{assembly}.emapper.annotations",
         info = "resources/kegg/kegg_{db}.tsv"
+    wildcard_constraints:
+        db="enzymes|pathways|kos|modules"
     output:
         results+"/annotation/{assembly}/{db}.parsed.tsv"
     script:

@@ -1,9 +1,9 @@
+name: taxonomy
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
   - python=3.7.6
-  - contigtax=0.5.9
+  - contigtax=0.5.10
   - diamond=0.9.24
-  - sourmash=3.3.0
