@@ -128,7 +128,7 @@ else:
             "../envs/megahit.yml"
         shell:
             """
-            mkdir -p {config[paths][temp]}
+            mkdir -p {params.tmp}
             rm -rf {params.tmp}
             # Only use paired-end if present
             if [ -s {input.R1} ]; then
