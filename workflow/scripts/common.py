@@ -118,7 +118,7 @@ def parse_samples(df, config, PREPROCESS):
         # If there is no 'fq2' column, add the single file path as 'se'
         else:
             samples[sample][unit]["se"] = R1
-            for a in assemblies:
+            for a in assem_list:
                 if sample not in assemblies[a].keys():
                     assemblies[a][sample] = {unit: {}}
                 assemblies[a][sample][unit]["se"] = [se_p]
