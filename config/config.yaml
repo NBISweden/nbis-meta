@@ -244,6 +244,8 @@ bowtie2:
   threads: 10
   # extra params to pass to bowtie2
   extra_settings: "--very-sensitive"
+  # should all samples be mapped against all assemblies?
+  all-against-all: False
 
 # what type of read-based classification to do
 classification:
