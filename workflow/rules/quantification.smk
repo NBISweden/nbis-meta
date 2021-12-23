@@ -112,7 +112,6 @@ def get_fc_files(wildcards):
         s = samples
     else:
         s = {sample: samples[sample] for sample in assemblies[wildcards.assembly].keys()}
-    print(s)
     files = get_all_files(samples=s,
                   directory=results+f"/assembly/{wildcards.assembly}/mapping",
                   suffix=".fc.clean.tsv")
