@@ -105,12 +105,22 @@ rule clean_featurecount:
     script:
         "../scripts/quantification_utils.py"
 
+
+def get_fc_files(wildcards):
+    # If config setting is to map all samples
+    if config["bowtie2"]["all-against-all"]:
+        s = samples
+    else:
+        s = {sample: samples[sample] for sample in assemblies[wildcards.assembly].keys()}
+    files = get_all_files(samples=s,
+                  directory=results+f"/assembly/{wildcards.assembly}/mapping",
+                  suffix=".fc.clean.tsv")
+    return files
+
 rule aggregate_featurecount:
     """Aggregates all cleaned count files from featureCounts"""
     input:
-        get_all_files(samples=samples,
-                      directory=results+"/assembly/{assembly}/mapping",
-                      suffix=".fc.clean.tsv")
+        get_fc_files
     output:
         results+"/annotation/{assembly}/gene_counts.tsv"
     script:

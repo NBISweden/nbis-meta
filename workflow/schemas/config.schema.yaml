@@ -486,6 +486,7 @@ properties:
     default:
       threads: 10
       extra_settings: "--very-sensitive"
+      all-against-all: False
     properties:
       threads:
         type: integer
@@ -494,6 +495,9 @@ properties:
       extra_settings:
         type: string
         description: extra settings to pass to bowtie2
+      all-against-all:
+        type: boolean
+        description: Should all samples be mapped against all assemblies? If False, samples will only be mapped to their respective assemblies.
 
   example_dataset_size:
     type: integer
