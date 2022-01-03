@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3:4.8.2
+FROM continuumio/miniconda3:4.10.3
 
 LABEL maintainer="John Sundh" email=john.sundh@nbis.se
 LABEL description="Docker image for a snakemake workflow for metagenomics"
