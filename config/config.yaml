@@ -165,6 +165,14 @@ taxonomy:
   database: "uniref100"
 
 binning:
+  # should all samples be used to generate abundance profiles?
+  # if True, all samples are mapped to all assemblies regardless of what samples
+  # were used to create those assemblies
+  # if False, samples are only mapped to the assemblies that they were used in
+  # for large projects (several samples and several assemblies) it can be
+  # useful to set this parameter to False
+  # typically ~50 samples are more than sufficient to calculate good abundance profiles
+  all-against-all: False
   # minimum contig lengths to use for binning. binning will be run for every
   # length threshold with output under <results_path>/binning/{binner}/{contig_length}
   # typically shorter contig lengths will result in more a larger share of the
@@ -177,7 +185,7 @@ binning:
   # run Metabat2 binner?
   metabat: False
   # run CONCOCT binner?
-  concoct: False
+  concoct: True
   # run MaxBin2 binner?
   maxbin: False
   # maximum threads for binners
