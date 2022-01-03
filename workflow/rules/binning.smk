@@ -38,11 +38,23 @@ rule checkm:
     input:
         results+"/report/checkm/checkm.stats.tsv"
 
+def get_bam_files(wildcards):
+    # If config setting is to map all samples
+    if config["binning"]["all-against-all"]:
+        s = samples
+    else:
+        s = {sample: samples[sample] for sample in
+             assemblies[wildcards.assembly].keys()}
+    files = get_all_files(samples=s,
+        directory=results + f"/assembly/{wildcards.assembly}/mapping",
+        suffix=f"{POSTPROCESS}.bam")
+    return files
+
 ##### metabat2 #####
 
 rule metabat_coverage:
     input:
-        bam=get_all_files(samples, results+"/assembly/{assembly}/mapping", ".bam")
+        bam=get_bam_files
     output:
         depth=results+"/binning/metabat/{assembly}/cov/depth.txt"
     log:
@@ -128,8 +140,7 @@ rule maxbin:
 
 rule concoct_coverage_table:
     input:
-        bam=get_all_files(samples, results+"/assembly/{assembly}/mapping", ".bam"),
-        bai=get_all_files(samples, results+"/assembly/{assembly}/mapping", ".bam.bai"),
+        bam=get_bam_files,
         bed=results+"/assembly/{assembly}/final_contigs_cutup.bed"
     output:
         cov=results+"/binning/concoct/{assembly}/cov/concoct_inputtable.tsv"
