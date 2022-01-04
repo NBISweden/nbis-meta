@@ -287,6 +287,7 @@ properties:
   binning:
     type: object
     default:
+      all-against-all: True
       contig_lengths:
         - 1500
       metabat: False
@@ -297,6 +298,9 @@ properties:
       checkm: False
       gtdbtk: False
     properties:
+      all-against-all:
+        type: boolean
+        description: should all samples be mapped against all assemblies to calculate abundance profiles
       contig_lengths:
         type: array
         description: minimum contig lengths to use for binning
