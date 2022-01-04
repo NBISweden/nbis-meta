@@ -6,6 +6,7 @@ analysis/*
 .pyc
 resources
 resources/*
+!docs/*
 !analysis/README.md
 !config
 !config/*
