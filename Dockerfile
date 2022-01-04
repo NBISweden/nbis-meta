@@ -11,6 +11,7 @@ WORKDIR /analysis
 
 # Set tmpdir
 ENV TMPDIR="/scratch"
+RUN mkdir $TMPDIR
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl && apt-get clean
