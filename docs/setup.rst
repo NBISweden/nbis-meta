@@ -43,13 +43,13 @@ You are now ready to start using the workflow!
 * check out the :doc:`How-to page <howto>`_  or
 * consult the :doc:`Configuration parameters <config>`_
 
-##################
+################
 Workflow outline
-##################
+################
 
-*******************
+****************
 1. Preprocessing
-*******************
+****************
 This workflow can perform preprocessing of paired- and/or single-end whole-genome shotgun metagenomic data (in fastq-format) using *e.g.*:
 
 * Trimmomatic (adapter/quality trimming)
@@ -58,13 +58,13 @@ This workflow can perform preprocessing of paired- and/or single-end whole-genom
 * Fastuniq (de-duplication)
 * FastQC and MultiQC (read QC and report generation)
 
-*******************
+**********************
 2. Downstream analysis
-*******************
+**********************
 
--------------------
+-----------------------------
 2a. Read-based classification
--------------------
+-----------------------------
 Preprocessed reads can be used for taxonomic classification and profiling using tools such as:
 
 * Kraken2
@@ -73,9 +73,9 @@ Preprocessed reads can be used for taxonomic classification and profiling using 
 
 producing taxonomic profiles of the samples, as well as interactive krona plots.
 
-------------------------------
+---------------------------
 2b. Assembly-based analysis
-------------------------------
+---------------------------
 
 Preprocessed reads can also be assembled and analyzed further using tools such as:
 
