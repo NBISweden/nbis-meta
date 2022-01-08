@@ -27,8 +27,9 @@ author = 'John Sundh'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = [
-]
+#extensions = [
+#    'sphinx_rtd_theme'
+#]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -44,9 +45,30 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx-rtd-theme'
+html_theme = 'classic'
+html_logo = '_static/nbislogo-green-txt.png'
 
 html_theme_options = {
+    'rightsidebar': False,
+    'stickysidebar': True,
+    'collapsiblesidebar': True,
+    'textcolor': '#000000',
+    'linkcolor': '#f47d20',
+    # sidebar
+    'sidebarbgcolor': '#EBEBEB',
+    'sidebartextcolor': '#000000',
+    'sidebarbtncolor': '#D6D6D6',
+    'sidebarlinkcolor': '#f47d20',
+    'sidebarwidth': '25%',
+    # footer
+    'footerbgcolor': '#EBEBEB',
+    'footertextcolor': '#000000',
+    # relbar
+    'relbarbgcolor': '#EBEBEB',
+    'relbartextcolor': '#000000',
+    'relbarlinkcolor': '#f47d20',
+    # headers
+    'headbgcolor': '#FFFFFF',
 
 }
 
@@ -56,3 +78,9 @@ html_theme_options = {
 html_static_path = ['_static']
 
 root_doc = "index"
+
+html_sidebars = {
+   '**': ['globaltoc.html', 'sourcelink.html', 'searchbox.html'],
+    'index': ['globaltoc.html', 'localtoc.html', 'sourcelink.html', 'searchbox.html'],
+   'using/windows': ['windowssidebar.html', 'searchbox.html'],
+}
