@@ -1,16 +1,20 @@
+#######################
 How to run the workflow
 #######################
 
-Once you've created the sample list the most basic way to run the workflow is
-with the command::
+Once you've modified the :ref:`configuration file <config-file>` to your liking
+and created a :ref:`sample_list <sample-list>` for your samples the most basic way to run the
+workflow is with the command:
+
+.. code-block:: bash
 
     snakemake —-use-conda --configfile <myconfig.yaml> --cores 4
 
 Here ``--cores`` specifies how many CPU cores to use in parallell.
 
-########################
+************************
 Useful snakemake options
-########################
+************************
 
 Other useful options that you can specify to snakemake on the command line include:
 
@@ -23,13 +27,16 @@ Other useful options that you can specify to snakemake on the command line inclu
 
 For a full list of snakemake command line options, see `here <https://snakemake.readthedocs.io/en/stable/executing/cli.html#all-options>`_.
 
-#######
+*******
 Targets
-#######
+*******
 
 If you don't want to run the full workflow from start to finish in one go you
-may specify one or several 'targets' on the commandline. Some useful targets
-are:
+may specify one or several 'targets' on the commandline. These targets correspond
+to rules in the workflow that effectively work as intermediary checkpoints,
+allowing you to break up your workflow runs into smaller parts. This can be
+useful if you are trying out different parameters or want to get a better overview
+of the output. Useful targets are:
 
 
 * ``qc``: Runs preprocessing (as specified in the configuration file) and generates a ``sample_report.html``
@@ -41,23 +48,29 @@ are:
 * ``classify``: Read-based (*e.g.* Kraken/Centrifuge/MetaPhlAn) classification of preprocessed reads
 
 To use these targets add them to the snakemake command line call.
-For instance, to run only the preprocessing part::
+For instance, to run only the preprocessing part:
+
+.. code-block:: bash
 
     snakemake --use-conda --configfile config.yaml -j 4 qc
 
 Targets may also be combined, so if you want to generate assemblies **and** run
-read-based classification you can do::
+read-based classification you can do:
+
+.. code-block:: bash
 
     snakemake --use-conda --configfile config.yaml -j 4 assemble classify
 
-#######
+*******
 Reports
-#######
+*******
 
 After the workflow has completed you can generate a report with summarized
 statistics of the run. Depending on the run, the report will also include links
 to output files produced (_e.g._ tables, plots and html files). To produce a
-report, run::
+report, run:
+
+.. code-block:: bash
 
     snakemake --report report.html
 
@@ -68,22 +81,29 @@ report, run::
     ``WorkflowError:`` because the expected output is not present.
 
 As an example, say you have a config file ``config.yaml`` specifying to run
-preprocessing and assembly of your samples and you run the workflow as such::
+preprocessing and assembly of your samples and you run the workflow as such:
+
+.. code-block:: bash
 
     snakemake --use-conda -j 4 --configfile config.yaml
 
-When the workflow is finished you can then generate a report by running::
+When the workflow is finished you can then generate a report by running:
+
+.. code-block:: bash
 
     snakemake --use-conda -j 4 --configfile config.yaml --report report.html
 
-
-
-########
+********
 Examples
-########
+********
 
 Here are a few examples of how to run the workflow. They are written in a
-structure showing the relevant configuration parameters, the command(s) to run and the expected output. All examples assume you have a configuration file called `config.yaml` with the appropriate parameters, but you may of course use any config file name you want. A suggestion is to make a copy of the [default config](https://github.com/NBISweden/nbis-meta/blob/master/config/config.yaml) file and make your changes in the copy.
+structure showing the relevant configuration parameters, the command(s) to run
+and the expected output. All examples assume you have a configuration file
+called `config.yaml` with the appropriate parameters, but you may of course use
+any config file name you want. A suggestion is to make a copy of the
+`default config <https://github.com/NBISweden/nbis-meta/blob/main/config/config.yaml>`_
+file and make your changes in the copy.
 
 Assembly-based analysis
 =======================
@@ -109,7 +129,9 @@ Assemble reads with Megahit
       # extra settings passed to Megahit
       extra_settings: "--min-contig-len 300 --prune-level 3"
 
-**Command**::
+**Command**:
+
+.. code-block:: bash
 
     snakemake --use-conda --configfile config.yaml -j 4 -p assemble
 
@@ -162,12 +184,14 @@ protein sequences in your assemblies.
       # run Resistance gene identifier?
       rgi: True
 
-**Command**::
+**Command**:
+
+.. code-block:: bash
 
     snakemake --use-conda --configfile config.yaml -j 4 -p annotate
 
 Read-based analysis
-=======================
+===================
 
 Metaphlan
 ---------
@@ -183,7 +207,9 @@ taxonomic clades in your samples.
     classification:
         metaphlan: True
 
-**Command**::
+**Command**:
+
+.. code-block:: bash
 
     snakemake --use-conda --configfile config.yaml -j 4 -p classify
 
@@ -217,11 +243,12 @@ edit your config file to contain:
 
 **Configuration**
 
-.. code-block: yaml
-    classification:
-      kraken: True
+.. code-block:: yaml
 
-**Command**
+    classification:
+        kraken: True
+
+**Command**:
 
 .. code-block:: bash
 
@@ -230,6 +257,7 @@ edit your config file to contain:
 **Output**
 
 .. code-block:: bash
+
     results
     |- kraken/                  raw, per sample output from kraken2
     |

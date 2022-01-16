@@ -1,92 +1,93 @@
+###############
 Getting started
-=====================================
+###############
 
-###########
-From GitHub
-###########
-
-To start using the workflow either clone the latest version of the repo::
-
-
-    git clone https://github.com/NBISweden/nbis-meta.git
-
-or download the latest release from the `release page <https://github.com/NBISweden/nbis-meta/releases>`_
-and extract the archive.
-
-Then change directory into the ``nbis-meta`` folder and create the core conda
-environment::
-
-    cd nbis-meta
-    conda env create -f environment.yml
-
-.. tip:: mamba instead of conda
-
-    ``mamba`` is a faster replacement for conda. Give it a try by installing it from
-    the conda-forge channel:
-    ``conda install -c conda-forge mamba``
-
-##############
-From DockerHub
-##############
-
-You may also pull the latest Docker image::
-
-    docker pull nbisweden/nbis-meta
-
-
-############
-What's next?
-############
-
-You are now ready to start using the workflow!
-
-* check out the :doc:`How-to page <howto>`_  or
-* consult the :doc:`Configuration parameters <config>`_
-
-################
-Workflow outline
-################
-
-****************
-1. Preprocessing
-****************
-This workflow can perform preprocessing of paired- and/or single-end whole-genome shotgun metagenomic data (in fastq-format) using *e.g.*:
-
-* Trimmomatic (adapter/quality trimming)
-* Cutadapt (adapter trimming)
-* SortMeRNA (rRNA filtering)
-* Fastuniq (de-duplication)
-* FastQC and MultiQC (read QC and report generation)
+.. _config-file:
 
 **********************
-2. Downstream analysis
+The configuration file
 **********************
 
------------------------------
-2a. Read-based classification
------------------------------
-Preprocessed reads can be used for taxonomic classification and profiling using tools such as:
+The workflow comes with a configuration file ``config/config.yaml``. You can
+either modify this file directly or create a new config file and point snakemake
+to it with ``snakemake --configfile <your-config-file>.yaml``. The configuration
+is `validated <https://snakemake.readthedocs.io/en/stable/snakefiles/configuration.html#validation>`_
+with a schema found under ``workflow/schemas/config.schema.yaml`` which is also
+used to set default values. Specifying a configfile with ``--configfile`` extends
+and overwrites the default settings so that any configfile you specify only
+needs to contain the parameters you want to change.
 
-* Kraken2
-* Centrifuge
-* MetaPhlAn3
+For example, the default config file begins with:
 
-producing taxonomic profiles of the samples, as well as interactive krona plots.
+.. code-block:: yaml
 
----------------------------
-2b. Assembly-based analysis
----------------------------
+    sample_list: config/samples.tsv
 
-Preprocessed reads can also be assembled and analyzed further using tools such as:
+    paths:
+      results: "results"
 
-* Megahit/MetaSPADES (for metagenomic assembly)
-* prodigal (gene calling)
-* pfam_scan, eggnog-mapper, Resistance Gene Identifier (protein level annotations)
-* bowtie2 (mapping reads to contigs)
-* featureCounts (assigning and counting mapped reads)
-* edgeR + metagenomeSEQ (normalization of read counts for genes/features)
-* contigtax + sourmash (taxonomic assignments)
-* metabat2, CONCOCT, MaxBin2 (metagenomic binning)
-* checkm (genome bin QC)
-* GTDB-TK (genome bin phylogenetic assignments)
-* fastANI (genome bin clustering)
+A new config file, named *e.g.* ``conf_test.yaml``, and containing **only** the
+lines:
+
+.. code-block:: yaml
+
+    paths:
+        results: "test"
+
+will then use ``test/`` as output directory for results when the workflow is run
+as:
+
+.. code-block:: bash
+
+    snakemake --use-conda --configfile conf_test.yaml -j 4
+
+.. _sample-list:
+
+***************
+The sample list
+***************
+
+The workflow requires you to supply a file with some information on your
+samples. The path to this file is specified with the ``sample_list:`` parameter
+in the configuration file.
+
+As a minimum the file must contain the columns ``sample``, ``unit`` and ``fq1``.
+Paired-end samples also require the ``fq2`` column for the mate 2 read file.
+
+A very basic sample file may look like this:
+
++---------+------+----+--------------------------------+-------------------------------------+
+| sample  | unit | fq1                                 |    fq2                              |
++=========+======+=====================================+=====================================+
+| sample1 |  1   | examples/data/sample1_1_R1.fastq.gz | examples/data/sample1_1_R2.fastq.gz |
++---------+------+-------------------------------------+-------------------------------------+
+| sample2 |  1   | examples/data/sample2_11_R1.fastq.gz| examples/data/sample2_11_R2.fastq.gz|
++---------+------+-------------------------------------+-------------------------------------+
+| sample3 |  1   | examples/data/sample3_21_R1.fastq.gz|                                     |
++---------+------+-------------------------------------+-------------------------------------+
+
+The columns ``fq1`` and ``fq2`` (for paired-end data) specify the paths to fastq
+files which will be used as input to the workflow.
+
+Specifying assemblies
+=====================
+
+You may also include a column named ``assembly`` with names for assemblies to
+create. The assembly field can be comma-separated entries specifying several
+assemblies per sample/unit combination.
+
+For instance, with a sample file like this:
+
++---------+------+-------------+--------------------------------------+-------------------------------------+
+| sample  | unit | assembly    | fq1                                  |    fq2                              |
++=========+======+=============+======================================+=====================================+
+| sample1 |  1   | sample1,all | examples/data/sample1_1_R1.fastq.gz  | examples/data/sample1_1_R2.fastq.gz |
++---------+------+-------------+--------------------------------------+-------------------------------------+
+| sample2 |  1   | sample2,all | examples/data/sample2_11_R1.fastq.gz | examples/data/sample2_11_R2.fastq.gz|
++---------+------+-------------+--------------------------------------+-------------------------------------+
+| sample3 |  1   | sample3,all | examples/data/sample3_21_R1.fastq.gz |                                     |
++---------+------+-------------+--------------------------------------+-------------------------------------+
+
+a total of 4 assemblies will be generated:
+- ``sample1``, ``sample2`` and ``sample3`` with input only from each sample respectively, and
+- ``all`` with input from all samples
