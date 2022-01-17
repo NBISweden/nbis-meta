@@ -45,30 +45,30 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'classic'
+html_theme = 'sphinx_rtd_theme'
 html_logo = 'https://nbis.se/assets/img/logos/nbislogo-green-txt.svg'
 
 html_theme_options = {
-    'rightsidebar': False,
-    'stickysidebar': True,
-    'collapsiblesidebar': True,
-    'textcolor': '#000000',
-    'linkcolor': '#f47d20',
+    #'rightsidebar': False,
+    #'stickysidebar': True,
+    #'collapsiblesidebar': True,
+    #'textcolor': '#000000',
+    #'linkcolor': '#f47d20',
     # sidebar
-    'sidebarbgcolor': '#EBEBEB',
-    'sidebartextcolor': '#000000',
-    'sidebarbtncolor': '#D6D6D6',
-    'sidebarlinkcolor': '#f47d20',
+    #'sidebarbgcolor': '#EBEBEB',
+    #'sidebartextcolor': '#000000',
+    #'sidebarbtncolor': '#D6D6D6',
+    #'sidebarlinkcolor': '#f47d20',
     'sidebarwidth': '25%',
     # footer
-    'footerbgcolor': '#EBEBEB',
-    'footertextcolor': '#000000',
+    #'footerbgcolor': '#EBEBEB',
+    #'footertextcolor': '#000000',
     # relbar
-    'relbarbgcolor': '#EBEBEB',
-    'relbartextcolor': '#000000',
-    'relbarlinkcolor': '#f47d20',
+    #'relbarbgcolor': '#EBEBEB',
+    #'relbartextcolor': '#000000',
+    #'relbarlinkcolor': '#f47d20',
     # headers
-    'headbgcolor': '#FFFFFF',
+    #'headbgcolor': '#FFFFFF',
 
 }
 
