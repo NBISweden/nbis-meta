@@ -46,7 +46,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
-html_logo = 'https://nbis.se/assets/img/logos/nbislogo-green-txt.svg'
+html_logo = '_static/nbislogo-green-txt.png'
 
 html_theme_options = {
     #'rightsidebar': False,
