@@ -32,8 +32,8 @@ rule remove_mark_duplicates:
     input:
         results+"/assembly/{assembly}/mapping/{sample}_{unit}_{seq_type}.bam"
     output:
-        results+"/assembly/{assembly}/mapping/{sample}_{unit}_{seq_type}.markdup.bam",
-        results+"/assembly/{assembly}/mapping/{sample}_{unit}_{seq_type}.markdup.bam.bai",
+        temp(results+"/assembly/{assembly}/mapping/{sample}_{unit}_{seq_type}.markdup.bam"),
+        temp(results+"/assembly/{assembly}/mapping/{sample}_{unit}_{seq_type}.markdup.bam.bai"),
         results+"/assembly/{assembly}/mapping/{sample}_{unit}_{seq_type}.markdup.metrics"
     log:
         results+"/assembly/{assembly}/mapping/{sample}_{unit}_{seq_type}.markdup.log"
