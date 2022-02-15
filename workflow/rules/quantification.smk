@@ -44,6 +44,7 @@ rule remove_mark_duplicates:
         temp_sort_bam=temppath+"/{assembly}/{sample}_{unit}_{seq_type}.markdup.re_sort.bam",
         temp_dir=temppath+"/{assembly}"
     threads: 10
+    priority: 50
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
