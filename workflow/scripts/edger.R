@@ -9,9 +9,16 @@ library(edgeR)
 method <- snakemake@params$method
 input <- snakemake@input[[1]]
 output <- snakemake@output[[1]]
+db <- snakemake@wildcards$db
 
 # Read the counts
-x <- read.delim(input, row.names = 1, sep = "\t", header = TRUE)
+if (db == "modules") {
+    x <- read.delim(input, sep = "\t", header = TRUE)
+    rownames(x) <- x$module
+    x <- subset(x, select=-c(module))
+} else {
+    x <- read.delim(input, row.names = 1, sep = "\t", header = TRUE)
+}
 # Get sample names
 sample_names <- colnames(x)[unlist(lapply(x, is.numeric))]
 # Extract row names
