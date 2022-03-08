@@ -333,6 +333,13 @@ def get_sortmerna_logs(sample, unit, seq_type, config):
         return []
     files = expand(config["paths"]["results"]+"/intermediate/preprocess/{sample}_{unit}_{seq_type}.sortmerna.log",
                    sample=sample, unit=unit, seq_type=seq_type)
+    if not config["sortmerna"]["remove_filtered"]:
+        d = {"non_rRNA": "rRNA", "rRNA": "non_rRNA"}
+        filtered = d[config["sortmerna"]["keep"]]
+        if seq_type == "pe":
+            files.append(f"{config['paths']['results']}/intermediate/preprocess/{sample}_{unit}.sortmerna_unmerge.{filtered}.log")
+        else:
+            files.append(f"{config['paths']['results']}/intermediate/preprocess/{sample}_{unit}_se.sortmerna_zip_{filtered}.log")
     return files
 
 
