@@ -132,44 +132,18 @@ rule sortmerna_fastq_pe:
          mv {params.other_prefix}.fastq {output.other}
          """
 
-rule sortmerna_split_rRNA_fastq:
+rule sortmerna_split_fastq:
     input:
-        aligned=results+"/intermediate/preprocess/{sample}_{unit}_merged.rRNA.fastq"
+        other=results+"/intermediate/preprocess/{sample}_{unit}_merged.{RNA_type}.fastq"
     output:
-        R1=results+"/intermediate/preprocess/{sample}_{unit}_R1.rRNA.fastq.gz",
-        R2=results+"/intermediate/preprocess/{sample}_{unit}_R2.rRNA.fastq.gz"
+        R1=results+"/intermediate/preprocess/{sample}_{unit}_R1.{RNA_type}.fastq.gz",
+        R2=results+"/intermediate/preprocess/{sample}_{unit}_R2.{RNA_type}.fastq.gz"
     log:
-        results+"/intermediate/preprocess/{sample}_{unit}.sortmerna_unmerge.rRNA.log"
+        results+"/intermediate/preprocess/{sample}_{unit}.sortmerna_unmerge.{RNA_type}.log"
     params:
         tmpdir=temppath+"/{sample}_{unit}_sortmerna",
-        R1=temppath+"/{sample}_{unit}_sortmerna/{sample}_{unit}_R1.rRNA.fastq",
-        R2=temppath+"/{sample}_{unit}_sortmerna/{sample}_{unit}_R2.rRNA.fastq"
-    resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*6
-    conda:
-        "../envs/preprocess.yml"
-    shell:
-        """
-        mkdir -p {params.tmpdir}
-        unmerge-paired-reads.sh {input.aligned} {params.R1} {params.R2} >{log} 2>&1
-        gzip {params.R1}
-        gzip {params.R2}
-        mv {params.R1}.gz {output.R1}
-        mv {params.R2}.gz {output.R2}
-        """
-
-rule sortmerna_split_other_fastq:
-    input:
-        other=results+"/intermediate/preprocess/{sample}_{unit}_merged.non_rRNA.fastq"
-    output:
-        R1=results+"/intermediate/preprocess/{sample}_{unit}_R1.non_rRNA.fastq.gz",
-        R2=results+"/intermediate/preprocess/{sample}_{unit}_R2.non_rRNA.fastq.gz"
-    log:
-        results+"/intermediate/preprocess/{sample}_{unit}.sortmerna_unmerge.non_rRNA.log"
-    params:
-        tmpdir=temppath+"/{sample}_{unit}_sortmerna",
-        R1=temppath+"/{sample}_{unit}_sortmerna/{sample}_{unit}_R1.non_rRNA.fastq",
-        R2=temppath+"/{sample}_{unit}_sortmerna/{sample}_{unit}_R2.non_rRNA.fastq"
+        R1=temppath+"/{sample}_{unit}_sortmerna/{sample}_{unit}_R1.{RNA_type}.fastq",
+        R2=temppath+"/{sample}_{unit}_sortmerna/{sample}_{unit}_R2.{RNA_type}.fastq"
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*6
     conda:
