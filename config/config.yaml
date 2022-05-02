@@ -117,6 +117,9 @@ metaspades:
   extra_settings: "-k 21,31,41,51,61,71,81,91,101,111,121"
 
 annotation:
+  # split prodigal output into multiple files and run pfam_scan in parallel?
+  # set below to number of files to split into
+  splits: 0
   # run tRNAscan-SE?
   tRNAscan: False
   # run infernal for rRNA identification?

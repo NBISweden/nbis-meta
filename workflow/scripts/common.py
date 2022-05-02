@@ -604,6 +604,9 @@ def annotation_input(config, assemblies):
                             norm_method=["counts", "TMM", "RLE", "CSS"])
         # Add PFAM annotation
         if config["annotation"]["pfam"]:
+            if config["annotation"]["splits"] > 1:
+                input += expand("{results}/annotation/{assembly}/{assembly}.pfam.gathered",
+                                results=[results], assembly=[assembly])
             input += expand("{results}/annotation/{assembly}/pfam.parsed.{norm_method}.tsv",
                             results=[results], assembly=[assembly],
                             norm_method=["counts", "TMM", "RLE", "CSS"])
