@@ -17,7 +17,7 @@ rule split_fasta:
         outdir = lambda wildcards, output: os.path.dirname(output[0])
     log: "results/annotation/{assembly}/splits/splits.log"
     shell:
-        "python workflow/scripts/split_fasta_file.py {input} -n {params.n_files} -o {params.outdir}"
+        "python workflow/scripts/split_fasta_file.py {input} -n {params.n_files} -o {params.outdir} > {log} 2>&1"
 
 rule pfam_scan_split:
     input:
