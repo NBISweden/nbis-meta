@@ -29,7 +29,7 @@ def write_files(f, seqs_per_file, n_files, n_seqs, prefix="split", outdir="."):
             fhout.write(f">{record.description}\n{record.seq}\n")
             if j == n_seqs:
                 break
-            if j % n_files == 0:
+            if j % seqs_per_file == 0:
                 i+=1
                 fhout.close()
                 fhout = open(f"{outdir}/{prefix}_{i}-of-{n_files}.faa", 'w')
