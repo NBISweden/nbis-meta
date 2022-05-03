@@ -22,7 +22,7 @@ def count_seqs(f):
 
 def write_files(f, seqs_per_file, n_files, n_seqs, prefix="split", outdir="."):
     i = 1
-    fhout = open(f"{outdir}/{prefix}_{i}.fasta", 'w')
+    fhout = open(f"{outdir}/{prefix}_{i}-of-{n_files}.faa", 'w')
     sys.stderr.write(f"Writing to files under {outdir}:\n")
     with open(f, 'r') as fhin:
         for j, record in enumerate(parse(f, "fasta"), start=1):
