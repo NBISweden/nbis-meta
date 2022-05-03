@@ -20,7 +20,7 @@ def count_seqs(f):
     return int(p.stdout.decode().rstrip())
 
 
-def write_files(f, n_files, n_seqs, prefix="split", outdir="."):
+def write_files(f, seqs_per_file, n_files, n_seqs, prefix="split", outdir="."):
     i = 1
     fhout = open(f"{outdir}/{prefix}_{i}.fasta", 'w')
     sys.stderr.write(f"Writing to files under {outdir}:\n")
@@ -45,7 +45,7 @@ def main(args):
     sys.stderr.write(f"Files: {args.n_files}\n")
     sys.stderr.write(f"Sequences: {n_seqs}\n")
     sys.stderr.write(f"Sequences_per_file: {seqs_per_file}\n")
-    write_files(args.infile, seqs_per_file, n_seqs, prefix=args.prefix, outdir=args.outdir)
+    write_files(args.infile, seqs_per_file, args.n_files, n_seqs, prefix=args.prefix, outdir=args.outdir)
 
 
 if __name__ == "__main__":
