@@ -26,14 +26,16 @@ rule pfam_scan_split:
                suffix=["f", "i", "m", "p"])
     output:
         "results/annotation/{assembly}/splits/split_{scatteritem}.pfam.out"
+    log:
+        "results/annotation/{assembly}/splits/split_{scatteritem}.pfam.log"
     conda:
         "../envs/annotation.yml"
     params:
         dir="resources/pfam",
         tmp_out=temppath+"/{assembly}.pfam.out"
-    threads: 4
+    threads: 2
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*10
+        runtime=lambda wildcards, attempt: attempt**2*60*4
     shell:
         """
         pfam_scan.pl -fasta {input[0]} -dir {params.dir} -cpu {threads} \
