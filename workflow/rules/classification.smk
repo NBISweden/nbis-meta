@@ -131,12 +131,12 @@ rule kraken_contigs:
         expand("{results_path}/assembly/{{assembly}}/final_contigs.fa",
             results_path = config["paths"]["results"])
     output:
-        expand("{results_path}/assembly/{{assembly}}/final_contigs.kraken.out",
+        expand("{results_path}/annotation/{{assembly}}/final_contigs.kraken.out",
             results_path=config["paths"]["results"]),
-        expand("{results_path}/assembly/{{assembly}}/final_contigs.kraken.kreport",
+        expand("{results_path}/annotation/{{assembly}}/final_contigs.kraken.kreport",
            results_path=config["paths"]["results"])
     log:
-        expand("{results_path}/assembly/{{assembly}}.kraken.log",
+        expand("{results_path}/annotation/{{assembly}}.kraken.log",
             results_path=config["paths"]["results"])
     params:
         db=config["kraken"]["index_path"],
