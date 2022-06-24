@@ -149,10 +149,10 @@ rule count_features:
     Sums read counts for gene annotation features such as pfam, KOs etc.
     """
     input:
-        abund=results+"/annotation/{assembly}/gene_counts.tsv",
+        abund=results+"/annotation/{assembly}/gene_{counts_type}.tsv",
         annot=results+"/annotation/{assembly}/{db}.parsed.tsv"
     output:
-        results+"/annotation/{assembly}/{db}.parsed.counts.tsv"
+        results+"/annotation/{assembly}/{db}.parsed.{counts_type}.tsv"
     script:
         "../scripts/quantification_utils.py"
 

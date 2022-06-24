@@ -601,12 +601,12 @@ def annotation_input(config, assemblies):
             input += expand("{results}/annotation/{assembly}/{db}.parsed.{norm_method}.tsv",
                             results=[results], assembly=[assembly],
                             db=["enzymes", "pathways", "kos", "modules"],
-                            norm_method=["counts", "TMM", "RLE", "CSS"])
+                            norm_method=["counts", "rpkm", "TMM", "RLE", "CSS"])
         # Add PFAM annotation
         if config["annotation"]["pfam"]:
             input += expand("{results}/annotation/{assembly}/pfam.parsed.{norm_method}.tsv",
                             results=[results], assembly=[assembly],
-                            norm_method=["counts", "TMM", "RLE", "CSS"])
+                            norm_method=["counts", "rpkm", "TMM", "RLE", "CSS"])
         # Add taxonomic annotation
         if config["annotation"]["taxonomy"]:
             input += expand("{results}/annotation/{assembly}/taxonomy/tax.{counts_type}.tsv",
@@ -616,7 +616,7 @@ def annotation_input(config, assemblies):
         if config["annotation"]["rgi"]:
             input += expand("{results}/annotation/{assembly}/rgi.parsed.{norm_method}.tsv",
                             results=[results], assembly=[assembly],
-                            norm_method=["counts", "TMM", "RLE", "CSS"])
+                            norm_method=["counts", "rpkm", "TMM", "RLE", "CSS"])
     return input
 
 
