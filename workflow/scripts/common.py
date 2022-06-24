@@ -477,7 +477,7 @@ def binning_input(config, report=False):
                             sep="\t", header=None, names=["genome_id", "url"])
             # filter genome list
             _ = _.loc[(_["url"].str.contains("ftp")) | (
-                _["url"].str.contains("http"))].head()
+                _["url"].str.contains("http"))]
             config["fastani"]["ref_genomes"] = _.to_dict()["url"]
         else:
             config["fastani"]["ref_genomes"] = {}
