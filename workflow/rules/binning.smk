@@ -492,9 +492,9 @@ rule download_gtdb:
     log:
         "resources/gtdb/download.log"
     params:
-        url="https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/gtdbtk_r89_data.tar.gz",
-        tar=lambda wildcards, output: os.path.dirname(output.met)+"/gtdbtk_r89_data.tar.gz",
-        dir=lambda wildcards, output: os.path.dirname(output.met)
+        url=config["gtdbtk"]["url"],
+        tar=lambda wildcards, output: os.path.dirname(output.met) + "/" + os.path.basename(config["gtdbtk"]["url"]),
+        dir=lambda wildcards, output: os.path.dirname(os.path.dirname(output.met))
     shell:
         """
         curl -L -o {params.tar} {params.url} > {log} 2>&1
