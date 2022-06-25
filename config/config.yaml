@@ -197,6 +197,11 @@ binning:
   # calculate average nucleotide identity for binned genomes with fastANI?
   fastani: False
 
+# parameters for gtdbtk
+gtdbtk:
+  # url to data archive for GTDB-TK
+  url: "https://data.ace.uq.edu.au/public/gtdb/data/releases/release207/207.0/auxillary_files/gtdbtk_r207_v2_data.tar.gz"
+
 # parameters for MaxBin2
 maxbin:
   # maxbin2 uses marker gene identification on contigs to generate seed contigs
