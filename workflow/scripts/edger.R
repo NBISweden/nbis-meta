@@ -11,6 +11,12 @@ input <- snakemake@input[[1]]
 output <- snakemake@output[[1]]
 db <- snakemake@wildcards$db
 
+if (is.null(snakemake@wildcards$db)) {
+    db = ""
+} else {
+    db <- snakemake@wildcards$db
+}
+
 # Read the counts
 if (db == "modules") {
     x <- read.delim(input, sep = "\t", header = TRUE, check.names = FALSE)
