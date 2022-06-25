@@ -13,11 +13,11 @@ output <- snakemake@output[[1]]
 normalize <- TRUE
 # Read the counts
 if (db == "modules") {
-        x <- read.delim(input, sep = "\t", header = TRUE)
+        x <- read.delim(input, sep = "\t", header = TRUE, check.names = FALSE)
     rownames(x) <- x$module
         x <- subset(x, select=-c(module))
 } else {
-        x <- read.delim(input, row.names = 1, sep = "\t", header = TRUE)
+        x <- read.delim(input, row.names = 1, sep = "\t", header = TRUE, check.names = FALSE)
 }
 # Get sample names
 sample_names <- colnames(x)[unlist(lapply(x, is.numeric))]
