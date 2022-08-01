@@ -222,12 +222,16 @@ properties:
   annotation:
     type: object
     default:
+      splits: 0
       tRNAscan: False
       infernal: True
       eggnog: False
       pfam: True
       taxonomy: False
     properties:
+      splits:
+        type: integer
+        description: number of files to split prodigal output into prior to running pfam_scan
       tRNAscan:
         type: boolean
         description: run tRNAscan-SE to identify tRNAs on contigs?
