@@ -49,6 +49,10 @@ rule remove_mark_duplicates:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
         "../envs/quantify.yml"
+    envmodules:
+        "bioinfo-tools",
+        "picard/2.23.4",
+        "samtools/1.9"
     shell:
         """
         mkdir -p {params.temp_dir}
@@ -91,6 +95,9 @@ rule featurecount:
         runtime=lambda wildcards, attempt: attempt**2*30
     conda:
         "../envs/quantify.yml"
+    envmodules:
+        "bioinfo-tools",
+        "subread/2.0.0"
     shell:
         """
         mkdir -p {params.tmpdir}
