@@ -56,6 +56,9 @@ rule kraken_build_standard:
         dir=lambda w, output: os.path.dirname(output[0])
     conda:
         "../envs/kraken.yml"
+    envmodules:
+        "bioinfo-tools",
+        "Kraken2/2.1.1"
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*24
     shell:
@@ -89,6 +92,9 @@ rule kraken_pe:
         runtime=lambda wildcards, attempt: attempt**2*60*10
     conda:
         "../envs/kraken.yml"
+    envmodules:
+        "bioinfo-tools",
+        "Kraken2/2.1.1"
     shell:
         """
         kraken2 {params.mem} --db {params.db} --output {output[0]} \
@@ -119,6 +125,9 @@ rule kraken_se:
         runtime=lambda wildcards, attempt: attempt**2*60*10
     conda:
         "../envs/kraken.yml"
+    envmodules:
+        "bioinfo-tools",
+        "Kraken2/2.1.1"
     shell:
         """
         kraken2 {params.mem} --db {params.db} --output {output[0]} \
@@ -180,6 +189,9 @@ rule centrifuge_pe:
         runtime=lambda wildcards, attempt: attempt**2*60
     conda:
         "../envs/centrifuge.yml"
+    envmodules:
+        "bioinfo-tools",
+        "Centrifuge"
     shell:
         """
         mkdir -p {params.tmpdir}
@@ -219,6 +231,9 @@ rule centrifuge_se:
         runtime=lambda wildcards, attempt: attempt**2*60
     conda:
         "../envs/centrifuge.yml"
+    envmodules:
+        "bioinfo-tools",
+        "Centrifuge"
     shell:
         """
         mkdir -p {params.tmpdir}
@@ -245,6 +260,9 @@ rule centrifuge_kreport:
                                          base=config["centrifuge"]["base"])
     conda:
         "../envs/centrifuge.yml"
+    envmodules:
+        "bioinfo-tools",
+        "Centrifuge"
     shell:
         """
         centrifuge-kreport --min-score {params.min_score} -x {params.prefix} \
@@ -271,6 +289,9 @@ rule build_metaphlan:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
         "../envs/metaphlan.yml"
+    envmodules:
+        "bioinfo-tools",
+        "metaphlan2/2.0"
     shell:
         """
         metaphlan --install --bowtie2db {params.dir} \
@@ -298,6 +319,9 @@ rule metaphlan_pe:
         dir="resources/metaphlan"
     conda:
         "../envs/metaphlan.yml"
+    envmodules:
+        "bioinfo-tools",
+        "metaphlan2/2.0"
     threads: 10
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
@@ -327,6 +351,9 @@ rule metaphlan_se:
         dir = "resources/metaphlan"
     conda:
         "../envs/metaphlan.yml"
+    envmodules:
+        "bioinfo-tools",
+        "metaphlan2/2.0"
     threads: 10
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
@@ -344,6 +371,9 @@ rule merge_metaphlan:
         "{}/report/metaphlan/metaphlan.tsv".format(config["paths"]["results"])
     conda:
         "../envs/metaphlan.yml"
+    envmodules:
+        "bioinfo-tools",
+        "metaphlan2/2.0"
     shell:
         """
         merge_metaphlan_tables.py {input} > {output}
@@ -369,6 +399,9 @@ rule metaphlan2krona:
         "{}/report/metaphlan/krona.log".format(config["paths"]["results"])
     conda:
         "../envs/krona.yml"
+    envmodules:
+        "bioinfo-tools",
+        "Krona/2.7.1"
     params:
         input_string = lambda w, input: metaphlan_krona_string(input.files),
         dbdir = lambda w, input: os.path.dirname(input.db)
@@ -401,6 +434,9 @@ rule krona_taxonomy:
         taxdir=lambda w, output: os.path.dirname(output.tab)
     conda:
         "../envs/krona.yml"
+    envmodules:
+        "bioinfo-tools",
+        "Krona/2.7.1"
     container:
         "docker://biocontainers/krona:v2.7.1_cv1"
     shell:
@@ -423,6 +459,9 @@ rule classifier2krona:
         tax="resources/krona"
     conda:
         "../envs/krona.yml"
+    envmodules:
+        "bioinfo-tools",
+        "Krona/2.7.1"
     container:
         "docker://continuumio/miniconda3:4.8.2"
     shell:
@@ -451,6 +490,9 @@ rule all2krona:
         input_string=krona_input(config, samples, "{classifier}")
     conda:
         "../envs/krona.yml"
+    envmodules:
+        "bioinfo-tools",
+        "Krona/2.7.1"
     container:
         "docker://continuumio/miniconda3:4.8.2"
     shell:
