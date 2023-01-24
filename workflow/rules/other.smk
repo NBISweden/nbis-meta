@@ -32,6 +32,9 @@ rule generate_examples:
         "examples/data/{sample}_{s}_R{i}.log"
     conda:
         "../envs/examples.yml"
+    envmodules:
+        "bioinfo-tools",
+        "seqtk"
     params:
         example_dataset_size=config["example_dataset_size"]
     shell:
