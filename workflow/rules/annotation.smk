@@ -39,6 +39,9 @@ rule prodigal:
         runtime=lambda wildcards, attempt: attempt**2*60*2
     conda:
         "../envs/annotation.yml"
+    envmodules:
+        "bioinfo-tools",
+        "prodigal/2.6.3"
     shell:
         """
         prodigal -i {input} -d {output.genes} -a {output.faa} -o {output.gff} \
@@ -57,6 +60,9 @@ rule trnascan:
     threads: 4
     conda:
         "../envs/annotation.yml"
+    envmodules:
+        "bioinfo-tools",
+        "tRNAscan-SE/2.0.9"
     shell:
         """
         tRNAscan-SE -G -b {output.bed} -o {output.file} -a {output.fasta} \
@@ -106,6 +112,9 @@ rule press_rfams:
         "resources/infernal/cmpress.log"
     conda:
         "../envs/annotation.yml"
+    envmodules:
+        "bioinfo-tools",
+        "infernal/1.1.4"
     shell:
         """
         cmpress {input} > {log} 2>&1
@@ -128,6 +137,9 @@ rule infernal:
         runtime=lambda wildcards, attempt: attempt**2*60*10
     conda:
         "../envs/annotation.yml"
+    envmodules:
+        "bioinfo-tools",
+        "infernal/1.1.4"
     shell:
         """
         cmscan --cpu {threads} --oskip --rfam --cut_ga --nohmmonly \
@@ -184,6 +196,9 @@ rule press_pfam:
         "resources/pfam/hmmpress.log"
     conda:
         "../envs/annotation.yml"
+    envmodules:
+        "bioinfo-tools",
+        "infernal/1.1.4"
     shell:
         """
         hmmpress {input.hmmfile} > {log} 2>&1
@@ -200,6 +215,9 @@ rule pfam_scan:
         results+"/annotation/{assembly}/{assembly}.pfam.log"
     conda:
         "../envs/annotation.yml"
+    envmodules:
+        "bioinfo-tools",
+        "pfam_scan/1.6"
     params:
         dir="resources/pfam",
         tmp_out=temppath+"/{assembly}.pfam.out"
@@ -234,6 +252,9 @@ rule download_eggnog:
         "resources/eggnog-mapper/download.log"
     conda:
         "../envs/annotation.yml"
+    envmodules:
+        "bioinfo-tools",
+        "eggNOG-mapper/2.1.9"
     params:
         data_dir=lambda wildcards, output: os.path.dirname(output.db)
     shell:
@@ -276,6 +297,9 @@ rule emapper_homology_search:
         results+"/annotation/{assembly}/{assembly}.emapper.seed_orthologs.log"
     conda:
         "../envs/annotation.yml"
+    envmodules:
+        "bioinfo-tools",
+        "eggNOG-mapper/2.1.9"
     threads: 10
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
@@ -307,6 +331,9 @@ if config["runOnUppMax"]:
             results+"/annotation/{assembly}/{assembly}.emapper.annotations.log"
         conda:
             "../envs/annotation.yml"
+        envmodules:
+            "bioinfo-tools",
+            "eggNOG-mapper/2.1.9"
         message: "Annotating hits table for {wildcards.assembly}"
         threads: 10
         resources:
@@ -338,6 +365,9 @@ else:
             flags="--no_file_comments"
         conda:
             "../envs/annotation.yml"
+        envmodules:
+            "bioinfo-tools",
+            "eggNOG-mapper/2.1.9"
         threads: 10
         resources:
             runtime=lambda wildcards, attempt: attempt**2*60
