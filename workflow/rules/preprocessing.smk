@@ -56,6 +56,9 @@ rule index_db:
         runtime=lambda wildcards, attempt: attempt**2*60*5
     conda:
         "../envs/preprocess.yml"
+    envmodules:
+        "bioinfo-tools",
+        "SortMeRNA/2.1b"
     shell:
         """
         indexdb_rna --ref {input.fasta},{input.fasta} > {log} 2>&1
@@ -79,6 +82,9 @@ rule sortmerna_merge_fastq:
         runtime = lambda wildcards, attempt: attempt**2*60*6
     conda:
         "../envs/preprocess.yml"
+    envmodules:
+        "bioinfo-tools",
+        "SortMeRNA/2.1b"
     shell:
         """
         mkdir -p {params.scratch}
@@ -118,6 +124,9 @@ rule sortmerna_fastq_pe:
         runtime = lambda wildcards, attempt: attempt**2*60*4
     conda:
         "../envs/preprocess.yml"
+    envmodules:
+        "bioinfo-tools",
+        "SortMeRNA/2.1b"
     shell:
          """
          mkdir -p {params.scratch}
@@ -148,6 +157,9 @@ rule sortmerna_split_fastq:
         runtime=lambda wildcards, attempt: attempt**2*60*6
     conda:
         "../envs/preprocess.yml"
+    envmodules:
+        "bioinfo-tools",
+        "SortMeRNA/2.1b"
     shell:
         """
         mkdir -p {params.tmpdir}
@@ -192,6 +204,9 @@ rule sortmerna_fastq_se:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
         "../envs/preprocess.yml"
+    envmodules:
+        "bioinfo-tools",
+        "SortMeRNA/2.1b"
     shell:
         """
         mkdir -p {params.scratch}
@@ -272,6 +287,9 @@ rule trimmomatic_pe:
         runtime = lambda wildcards, attempt: attempt**2*60*4
     conda:
         "../envs/preprocess.yml"
+    envmodules:
+        "bioinfo-tools",
+        "trimmomatic/0.39"
     shell:
         """
         trimmomatic PE \
@@ -301,6 +319,9 @@ rule trimmomatic_se:
         runtime = lambda wildcards, attempt: attempt**2*60*4
     conda:
         "../envs/preprocess.yml"
+    envmodules:
+        "bioinfo-tools",
+        "trimmomatic/0.39"
     shell:
         """
         trimmomatic SE \
@@ -331,6 +352,9 @@ rule cutadapt_pe:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
         "../envs/preprocess.yml"
+    envmodules:
+        "bioinfo-tools",
+        "cutadapt/2.3"
     threads: 10
     shell:
         """
@@ -361,6 +385,9 @@ rule cutadapt_se:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
         "../envs/preprocess.yml"
+    envmodules:
+        "bioinfo-tools",
+        "cutadapt/2.3"
     threads: 10
     shell:
         """
@@ -404,6 +431,9 @@ rule bowtie_build_phix:
     threads: 1
     conda:
         "../envs/preprocess.yml"
+    envmodules:
+        "bioinfo-tools",
+        "bowtie2/2.4.5"
     shell:
         """
         bowtie2-build \
@@ -431,6 +461,9 @@ rule filter_phix_pe:
         runtime = lambda wildcards, attempt: attempt**2*60
     conda:
         "../envs/preprocess.yml"
+    envmodules:
+        "bioinfo-tools",
+        "bowtie2/2.4.5"
     shell:
         """
         mkdir -p {params.tmp_out}
@@ -464,6 +497,9 @@ rule filter_phix_se:
         runtime = lambda wildcards, attempt: attempt**2*60
     conda:
         "../envs/preprocess.yml"
+    envmodules:
+        "bioinfo-tools",
+        "bowtie2/2.4.5"
     shell:
         """
         mkdir -p {params.tmp_out}
@@ -536,6 +572,9 @@ rule fastqc:
         runtime=lambda wildcards, attempt: attempt**2*60
     conda:
         "../envs/preprocess.yml"
+    envmodules:
+        "bioinfo-tools",
+        "FastQC/0.11.9"
     shell:
         """
         fastqc -q --noextract -o {params.dir} {input} >{log} 2>&1
@@ -558,6 +597,9 @@ rule multiqc:
         output_dir=lambda w, output: os.path.dirname(output.html)
     conda:
         "../envs/preprocess.yml"
+    envmodules:
+        "bioinfo-tools",
+        "MultiQC/1.8"
     shell:
         """
         multiqc -f -c {params.config} -n samples_report.html \
