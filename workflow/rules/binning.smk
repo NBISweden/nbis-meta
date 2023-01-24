@@ -63,6 +63,9 @@ rule metabat_coverage:
         runtime=lambda wildcards, attempt: attempt**2*60*2
     conda:
         "../envs/metabat.yml"
+    envmodules:
+        "bioinfo-tools",
+        "MetaBat/2.12.1"
     shell:
         """
         jgi_summarize_bam_contig_depths \
@@ -81,6 +84,9 @@ rule metabat:
         n=results+"/binning/metabat/{assembly}/{l}/metabat"
     conda:
         "../envs/metabat.yml"
+    envmodules:
+        "bioinfo-tools",
+        "MetaBat/2.12.1"
     threads: config["binning"]["threads"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*4
@@ -109,6 +115,9 @@ rule maxbin:
         runtime=lambda wildcards, attempt: attempt**2*60*5
     conda:
         "../envs/maxbin.yml"
+    envmodules:
+        "bioinfo-tools",
+        "MaxBin/2.2.7"
     shell:
         """
         set +e
@@ -146,6 +155,9 @@ rule concoct_coverage_table:
         cov=results+"/binning/concoct/{assembly}/cov/concoct_inputtable.tsv"
     conda:
         "../envs/concoct.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CONCOCT/1.1.0"
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*2
     params:
@@ -175,6 +187,9 @@ rule concoct_cutup:
         results+"/assembly/{assembly}/final_contigs_cutup.log"
     conda:
         "../envs/concoct.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CONCOCT/1.1.0"
     shell:
         """
         cut_up_fasta.py -b {output.bed} -c 10000 -o 0 -m {input.fa} \
@@ -195,6 +210,9 @@ rule concoct:
     threads: config["binning"]["threads"]
     conda:
         "../envs/concoct.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CONCOCT/1.1.0"
     resources:
         runtime=lambda wildcards, attempt: attempt**2*60*2
     shell:
@@ -212,6 +230,9 @@ rule merge_cutup:
         results+"/binning/concoct/{assembly}/{l}/clustering_gt{l}_merged.log"
     conda:
         "../envs/concoct.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CONCOCT/1.1.0"
     shell:
         """
         merge_cutup_clustering.py {input[0]} > {output[0]} 2> {log}
@@ -230,6 +251,9 @@ rule extract_fasta:
         tmp_dir=temppath+"/concoct/{assembly}/{l}"
     conda:
         "../envs/concoct.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CONCOCT/1.1.0"
     shell:
         """
         mkdir -p {params.tmp_dir}
@@ -292,6 +316,9 @@ rule download_checkm:
         dir=lambda wildcards, output: os.path.dirname(output.db)
     conda:
         "../envs/checkm.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CheckM/1.1.3"
     shell:
         """
         # Download
@@ -314,6 +341,9 @@ if config["checkm"]["taxonomy_wf"]:
             results+"/binning/{binner}/{assembly}/{l}/checkm/checkm.log"
         conda:
             "../envs/checkm.yml"
+        envmodules:
+            "bioinfo-tools",
+            "CheckM/1.1.3"
         threads: 10
         resources:
             runtime=lambda wildcards, attempt: attempt**2*60
@@ -349,6 +379,9 @@ else:
             results+"/binning/{binner}/{assembly}/{l}/checkm/checkm.log"
         conda:
             "../envs/checkm.yml"
+        envmodules:
+            "bioinfo-tools",
+            "CheckM/1.1.3"
         threads: 10
         resources:
             runtime=lambda wildcards, attempt: attempt**2*60
@@ -385,6 +418,9 @@ rule checkm_qa:
         results+"/binning/{binner}/{assembly}/{l}/checkm/qa.log"
     conda:
         "../envs/checkm.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CheckM/1.1.3"
     params:
         dir=lambda wildcards, output: os.path.dirname(output.tsv)
     shell:
@@ -414,6 +450,9 @@ rule checkm_coverage:
         runtime=lambda wildcards, attempt: attempt**2*60*10
     conda:
         "../envs/checkm.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CheckM/1.1.3"
     shell:
         """
         lines=$(wc -l {input.tsv} | cut -f1 -d ' ')
@@ -447,6 +486,9 @@ rule checkm_profile:
         results+"/binning/{binner}/{assembly}/{l}/checkm/checkm_profile.log"
     conda:
         "../envs/checkm.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CheckM/1.1.3"
     shell:
         """
         lines=$(wc -l {input.stats} | cut -f1 -d ' ')
@@ -519,6 +561,9 @@ rule gtdbtk_classify:
         runtime=lambda wildcards, attempt: attempt**2*60
     conda:
         "../envs/gtdbtk.yml"
+    envmodules:
+        "bioinfo-tools",
+        "GTDB-Tk"
     shell:
         """
         bins=$(wc -l {input.tsv} | cut -f1 -d ' ')
@@ -571,6 +616,9 @@ rule barrnap:
         results+"/binning/{binner}/{assembly}/{l}/barrnap/log"
     conda:
         "../envs/barrnap.yml"
+    envmodules:
+        "bioinfo-tools",
+        "barrnap/0.9"
     params:
         indir=lambda wildcards, input: os.path.dirname(input.tsv),
         gtdbtk_dir=lambda wildcards, input: os.path.dirname(input.gtdbtk),
@@ -634,6 +682,9 @@ rule trnascan_bins:
     threads: 4
     conda:
         "../envs/annotation.yml"
+    envmodules:
+        "bioinfo-tools",
+        "tRNAscan-SE/2.0.9"
     shell:
         """
         bins=$(wc -l {input.tsv} | cut -f1 -d ' ')
@@ -731,6 +782,9 @@ rule fastANI:
         indir = lambda wildcards, input: os.path.dirname(input[0])
     conda:
         "../envs/fastani.yml"
+    envmodules:
+        "bioinfo-tools",
+        "FastANI/1.33"
     resources:
         runtime = lambda wildcards, attempt: attempt**2*60
     shell:
