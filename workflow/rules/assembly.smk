@@ -51,6 +51,9 @@ if config["assembly"]["metaspades"]:
             runtime=lambda wildcards, attempt: attempt**2*60*4
         conda:
             "../envs/metaspades.yml"
+        envmodules:
+            "bioinfo-tools",
+            "spades/3.14.1"
         shell:
             """
             # Create directories
@@ -126,6 +129,9 @@ else:
             runtime=lambda wildcards, attempt: attempt**2*60*4
         conda:
             "../envs/megahit.yml"
+        envmodules:
+            "bioinfo-tools",
+            "megahit/1.2.9"
         shell:
             """
             mkdir -p {params.tmp}
@@ -189,6 +195,9 @@ rule bowtie_build:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
         "../envs/quantify.yml"
+    envmodules:
+        "bioinfo-tools",
+        "bowtie2/2.4.5"
     shell:
         """
         bowtie2-build \
@@ -218,6 +227,10 @@ rule bowtie_map_pe:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
         "../envs/quantify.yml"
+    envmodules:
+        "bioinfo-tools",
+        "bowtie2/2.4.5",
+        "samtools/1.9"
     shell:
         """
         bowtie2 {params.setting} -p {threads} -x {params.prefix} -1 {input.R1} -2 {input.R2} 2> {log} \
@@ -246,6 +259,10 @@ rule bowtie_map_se:
         runtime=lambda wildcards, attempt: attempt**2*60*4
     conda:
         "../envs/quantify.yml"
+    envmodules:
+        "bioinfo-tools",
+        "bowtie2/2.4.5",
+        "samtools/1.9"
     shell:
         """
         bowtie2 {params.setting} -p {threads} -x {params.prefix} \
@@ -273,6 +290,9 @@ rule samtools_flagstat:
         post = POSTPROCESS
     conda:
         "../envs/quantify.yml"
+    envmodules:
+        "bioinfo-tools",
+        "samtools/1.9"
     shell:
         """
         for f in {input} ;

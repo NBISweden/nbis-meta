@@ -30,6 +30,9 @@ rule pfam_scan_split:
         "results/annotation/{assembly}/splits/split_{scatteritem}.pfam.log"
     conda:
         "../envs/annotation.yml"
+    envmodules:
+        "bioinfo-tools",
+        "pfam_scan/1.6"
     params:
         dir="resources/pfam",
         tmp_out=temppath+"/{assembly}.pfam.out"
