@@ -11,6 +11,8 @@ dependencies:
   - snakemake-minimal>=5.18
   - mamba
   - pandas
+  - seaborn
+  - jupyter
   - biopython
 
   # packages required to create snakemake reports
