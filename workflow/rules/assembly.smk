@@ -1,59 +1,64 @@
-from scripts.common import get_all_assembly_files, get_bamfiles
-
 localrules:
     assemble,
     fasta2bed,
     plot_assembly_stats,
     assembly_stats,
-    samtools_flagstat
+    samtools_flagstat,
+
 
 ##### master assembly rule #####
 
+
 rule assemble:
     input:
-        expand(results+"/report/assembly/{f}.pdf",
-            f=["assembly_stats", "assembly_size_dist", "alignment_frequency"])
+        expand(
+            results + "/report/assembly/{f}.pdf",
+            f=["assembly_stats", "assembly_size_dist", "alignment_frequency"],
+        ),
+
 
 if config["assembly"]["metaspades"]:
+
     localrules:
-        generate_metaspades_input
+        generate_metaspades_input,
+
     rule generate_metaspades_input:
-        """Generate input files for use with Metaspades"""
         input:
-            lambda wildcards: get_all_assembly_files(assemblies[wildcards.assembly])
+            lambda wildcards: get_all_assembly_files(assemblies[wildcards.assembly]),
         output:
-            R1=temp(results+"/assembly/{assembly}/R1.fq"),
-            R2=temp(results+"/assembly/{assembly}/R2.fq"),
-            se=touch(temp(results+"/assembly/{assembly}/se.fq")),
+            R1=temp(results + "/assembly/{assembly}/R1.fq"),
+            R2=temp(results + "/assembly/{assembly}/R2.fq"),
+            se=touch(temp(results + "/assembly/{assembly}/se.fq")),
         params:
-            assembly = lambda wildcards: assemblies[wildcards.assembly],
-            assembler = "metaspades"
+            assembly=lambda wildcards: assemblies[wildcards.assembly],
+            assembler="metaspades",
         script:
             "../scripts/assembly_utils.py"
 
     rule metaspades:
         input:
-            R1=results+"/assembly/{assembly}/R1.fq",
-            R2=results+"/assembly/{assembly}/R2.fq",
-            se=results+"/assembly/{assembly}/se.fq",
+            R1=results + "/assembly/{assembly}/R1.fq",
+            R2=results + "/assembly/{assembly}/R2.fq",
+            se=results + "/assembly/{assembly}/se.fq",
         output:
-            results+"/assembly/{assembly}/final_contigs.fa",
+            results + "/assembly/{assembly}/final_contigs.fa",
         log:
-            results+"/assembly/{assembly}/spades.log",
+            results + "/assembly/{assembly}/spades.log",
         params:
-            intermediate_contigs=results+"/intermediate/assembly/{assembly}/intermediate_contigs",
-            corrected=results+"/intermediate/assembly/{assembly}/corrected",
+            intermediate_contigs=results
+            + "/intermediate/assembly/{assembly}/intermediate_contigs",
+            corrected=results + "/intermediate/assembly/{assembly}/corrected",
             additional_settings=config["metaspades"]["extra_settings"],
-            tmp=temppath+"/{assembly}.metaspades",
-            output_dir=lambda wildcards, output: os.path.dirname(output[0])
+            tmp=temppath + "/{assembly}.metaspades",
+            output_dir=lambda wildcards, output: os.path.dirname(output[0]),
         threads: config["metaspades"]["threads"]
         resources:
-            runtime=lambda wildcards, attempt: attempt**2*60*4
+            runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
         conda:
             "../envs/metaspades.yml"
         envmodules:
             "bioinfo-tools",
-            "spades/3.14.1"
+            "spades/3.14.1",
         shell:
             """
             # Create directories
@@ -92,46 +97,49 @@ if config["assembly"]["metaspades"]:
             mv {params.output_dir}/scaffolds.fasta {params.output_dir}/final_contigs.fa
             """
 
+
 else:
+
     localrules:
-        generate_megahit_input
+        generate_megahit_input,
+
     rule generate_megahit_input:
-        """Generate input lists for Megahit"""
         input:
-            lambda wildcards: get_all_assembly_files(assemblies[wildcards.assembly])
+            lambda wildcards: get_all_assembly_files(assemblies[wildcards.assembly]),
         output:
-            R1=temp(results+"/assembly/{assembly}/input_1"),
-            R2=temp(results+"/assembly/{assembly}/input_2"),
-            se=temp(results+"/assembly/{assembly}/input_se"),
+            R1=temp(results + "/assembly/{assembly}/input_1"),
+            R2=temp(results + "/assembly/{assembly}/input_2"),
+            se=temp(results + "/assembly/{assembly}/input_se"),
         log:
-            results+"/assembly/{assembly}/input_list.log",
+            results + "/assembly/{assembly}/input_list.log",
         params:
-            assembly = lambda wildcards: assemblies[wildcards.assembly]
+            assembly=lambda wildcards: assemblies[wildcards.assembly],
         script:
             "../scripts/assembly_utils.py"
 
     rule megahit:
         input:
-            R1=results+"/assembly/{assembly}/input_1",
-            R2=results+"/assembly/{assembly}/input_2",
-            se=results+"/assembly/{assembly}/input_se",
+            R1=results + "/assembly/{assembly}/input_1",
+            R2=results + "/assembly/{assembly}/input_2",
+            se=results + "/assembly/{assembly}/input_se",
         output:
-            results+"/assembly/{assembly}/final_contigs.fa",
+            results + "/assembly/{assembly}/final_contigs.fa",
         log:
-            results+"/assembly/{assembly}/log",
+            results + "/assembly/{assembly}/log",
         params:
-            intermediate_contigs=results+"/intermediate/assembly/{assembly}/intermediate_contigs",
+            intermediate_contigs=results
+            + "/intermediate/assembly/{assembly}/intermediate_contigs",
             additional_settings=config["megahit"]["extra_settings"],
-            tmp=temppath+"/{assembly}.megahit",
-            output_dir=lambda wildcards, output: os.path.dirname(output[0])
+            tmp=temppath + "/{assembly}.megahit",
+            output_dir=lambda wildcards, output: os.path.dirname(output[0]),
         threads: config["megahit"]["threads"]
         resources:
-            runtime=lambda wildcards, attempt: attempt**2*60*4
+            runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
         conda:
             "../envs/megahit.yml"
         envmodules:
             "bioinfo-tools",
-            "megahit/1.2.9"
+            "megahit/1.2.9",
         shell:
             """
             mkdir -p {params.tmp}
@@ -171,33 +179,39 @@ else:
             mv {params.output_dir}/final.contigs.fa {params.output_dir}/final_contigs.fa
             """
 
+
 rule fasta2bed:
-    """Creates bed-format file from assembly"""
     input:
-        results+"/assembly/{assembly}/final_contigs.fa",
+        results + "/assembly/{assembly}/final_contigs.fa",
     output:
-        results+"/assembly/{assembly}/final_contigs.bed",
+        results + "/assembly/{assembly}/final_contigs.bed",
     script:
         "../scripts/assembly_utils.py"
+
 
 ###########
 # Mapping #
 ###########
 
+
 rule bowtie_build:
     input:
-        results+"/assembly/{assembly}/final_contigs.fa"
+        results + "/assembly/{assembly}/final_contigs.fa",
     output:
-        expand(results+"/assembly/{{assembly}}/final_contigs.fa.{index}.bt2l",index=range(1,5))
-    params: prefix=results+"/assembly/{assembly}/final_contigs.fa"
+        expand(
+            results + "/assembly/{{assembly}}/final_contigs.fa.{index}.bt2l",
+            index=range(1, 5),
+        ),
+    params:
+        prefix=results + "/assembly/{assembly}/final_contigs.fa",
     threads: config["bowtie2"]["threads"]
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*4
+        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
     conda:
         "../envs/quantify.yml"
     envmodules:
         "bioinfo-tools",
-        "bowtie2/2.4.5"
+        "bowtie2/2.4.5",
     shell:
         """
         bowtie2-build \
@@ -207,30 +221,39 @@ rule bowtie_build:
             {params.prefix} > /dev/null 2>&1
         """
 
+
 rule bowtie_map_pe:
     input:
-        bt_index=expand(results+"/assembly/{{assembly}}/final_contigs.fa.{index}.bt2l",
-                          index=range(1,5)),
-        R1=results+"/intermediate/preprocess/{sample}_{unit}_R1"+PREPROCESS+".fastq.gz",
-        R2=results+"/intermediate/preprocess/{sample}_{unit}_R2"+PREPROCESS+".fastq.gz",
+        bt_index=expand(
+            results + "/assembly/{{assembly}}/final_contigs.fa.{index}.bt2l",
+            index=range(1, 5),
+        ),
+        R1=results
+        + "/intermediate/preprocess/{sample}_{unit}_R1"
+        + PREPROCESS
+        + ".fastq.gz",
+        R2=results
+        + "/intermediate/preprocess/{sample}_{unit}_R2"
+        + PREPROCESS
+        + ".fastq.gz",
     output:
-        bam=temp(results+"/assembly/{assembly}/mapping/{sample}_{unit}_pe.bam"),
-        bai=temp(results+"/assembly/{assembly}/mapping/{sample}_{unit}_pe.bam.bai"),
+        bam=temp(results + "/assembly/{assembly}/mapping/{sample}_{unit}_pe.bam"),
+        bai=temp(results + "/assembly/{assembly}/mapping/{sample}_{unit}_pe.bam.bai"),
     log:
-        results+"/assembly/{assembly}/mapping/{sample}_{unit}_pe.bam.log"
+        results + "/assembly/{assembly}/mapping/{sample}_{unit}_pe.bam.log",
     params:
-        temp_bam=temppath+"/{assembly}-mapping-{sample}_{unit}_pe.bam",
+        temp_bam=temppath + "/{assembly}-mapping-{sample}_{unit}_pe.bam",
         setting=config["bowtie2"]["extra_settings"],
-        prefix=results+"/assembly/{assembly}/final_contigs.fa"
+        prefix=results + "/assembly/{assembly}/final_contigs.fa",
     threads: config["bowtie2"]["threads"]
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*4
+        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
     conda:
         "../envs/quantify.yml"
     envmodules:
         "bioinfo-tools",
         "bowtie2/2.4.5",
-        "samtools/1.9"
+        "samtools/1.9",
     shell:
         """
         bowtie2 {params.setting} -p {threads} -x {params.prefix} -1 {input.R1} -2 {input.R2} 2> {log} \
@@ -240,29 +263,35 @@ rule bowtie_map_pe:
         mv {params.temp_bam}.bai {output.bai}
         """
 
+
 rule bowtie_map_se:
     input:
-        bt_index=expand(results+"/assembly/{{assembly}}/final_contigs.fa.{index}.bt2l",
-                          index=range(1,5)),
-        se=results+"/intermediate/preprocess/{sample}_{unit}_se"+PREPROCESS+".fastq.gz"
+        bt_index=expand(
+            results + "/assembly/{{assembly}}/final_contigs.fa.{index}.bt2l",
+            index=range(1, 5),
+        ),
+        se=results
+        + "/intermediate/preprocess/{sample}_{unit}_se"
+        + PREPROCESS
+        + ".fastq.gz",
     output:
-        bam=temp(results+"/assembly/{assembly}/mapping/{sample}_{unit}_se.bam"),
-        bai=temp(results+"/assembly/{assembly}/mapping/{sample}_{unit}_se.bam.bai"),
+        bam=temp(results + "/assembly/{assembly}/mapping/{sample}_{unit}_se.bam"),
+        bai=temp(results + "/assembly/{assembly}/mapping/{sample}_{unit}_se.bam.bai"),
     log:
-        results+"/assembly/{assembly}/mapping/{sample}_{unit}_se.bam.log"
+        results + "/assembly/{assembly}/mapping/{sample}_{unit}_se.bam.log",
     params:
-        temp_bam=temppath+"/{assembly}-mapping-{sample}_{unit}_se.bam",
+        temp_bam=temppath + "/{assembly}-mapping-{sample}_{unit}_se.bam",
         setting=config["bowtie2"]["extra_settings"],
-        prefix=results+"/assembly/{assembly}/final_contigs.fa"
+        prefix=results + "/assembly/{assembly}/final_contigs.fa",
     threads: config["bowtie2"]["threads"]
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*4
+        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
     conda:
         "../envs/quantify.yml"
     envmodules:
         "bioinfo-tools",
         "bowtie2/2.4.5",
-        "samtools/1.9"
+        "samtools/1.9",
     shell:
         """
         bowtie2 {params.setting} -p {threads} -x {params.prefix} \
@@ -272,27 +301,29 @@ rule bowtie_map_se:
         mv {params.temp_bam}.bai {output.bai}
         """
 
+
 ##############
 # Statistics #
 ##############
+
 
 rule samtools_flagstat:
     """
     Generate mapping statistics
     """
     input:
-        lambda wildcards: get_bamfiles(wildcards.assembly,
-                                       assemblies[wildcards.assembly],
-                                       results, POSTPROCESS)
+        lambda wildcards: get_bamfiles(
+            wildcards.assembly, assemblies[wildcards.assembly], results, POSTPROCESS
+        ),
     output:
-        results+"/assembly/{assembly}/mapping/flagstat.tsv"
+        results + "/assembly/{assembly}/mapping/flagstat.tsv",
     params:
-        post = POSTPROCESS
+        post=POSTPROCESS,
     conda:
         "../envs/quantify.yml"
     envmodules:
         "bioinfo-tools",
-        "samtools/1.9"
+        "samtools/1.9",
     shell:
         """
         for f in {input} ;
@@ -305,30 +336,52 @@ rule samtools_flagstat:
         done
         """
 
+
 rule assembly_stats:
     input:
-        fa = expand(results+"/assembly/{assembly}/final_contigs.fa", assembly=assemblies.keys()),
-        flagstat = expand(results+"/assembly/{assembly}/mapping/flagstat.tsv", assembly = assemblies.keys())
+        fa=expand(
+            results + "/assembly/{assembly}/final_contigs.fa",
+            assembly=assemblies.keys(),
+        ),
+        flagstat=expand(
+            results + "/assembly/{assembly}/mapping/flagstat.tsv",
+            assembly=assemblies.keys(),
+        ),
     output:
-        report(results+"/report/assembly/assembly_stats.tsv",
-               caption="../report/assembly.rst", category="Assembly"),
-        results+"/report/assembly/assembly_size_dist.tsv"
+        report(
+            results + "/report/assembly/assembly_stats.tsv",
+            caption="../report/assembly.rst",
+            category="Assembly",
+        ),
+        results + "/report/assembly/assembly_size_dist.tsv",
     script:
         "../scripts/assembly_utils.py"
 
+
 rule plot_assembly_stats:
     input:
-        stat = results+"/report/assembly/assembly_stats.tsv",
-        dist = results+"/report/assembly/assembly_size_dist.tsv",
-        maps = expand(results+"/assembly/{assembly}/mapping/flagstat.tsv",
-                        assembly = assemblies.keys())
+        stat=results + "/report/assembly/assembly_stats.tsv",
+        dist=results + "/report/assembly/assembly_size_dist.tsv",
+        maps=expand(
+            results + "/assembly/{assembly}/mapping/flagstat.tsv",
+            assembly=assemblies.keys(),
+        ),
     output:
-        report(results+"/report/assembly/assembly_stats.pdf",
-            caption="../report/assembly.rst", category="Assembly"),
-        report(results+"/report/assembly/assembly_size_dist.pdf",
-            caption="../report/assembly.rst", category="Assembly"),
-        report(results+"/report/assembly/alignment_frequency.pdf",
-            caption="../report/assembly.rst", category="Assembly")
+        report(
+            results + "/report/assembly/assembly_stats.pdf",
+            caption="../report/assembly.rst",
+            category="Assembly",
+        ),
+        report(
+            results + "/report/assembly/assembly_size_dist.pdf",
+            caption="../report/assembly.rst",
+            category="Assembly",
+        ),
+        report(
+            results + "/report/assembly/alignment_frequency.pdf",
+            caption="../report/assembly.rst",
+            category="Assembly",
+        ),
     conda:
         "../envs/plotting.yml"
     notebook:

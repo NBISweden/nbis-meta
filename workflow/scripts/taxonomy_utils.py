@@ -3,6 +3,7 @@
 import sys
 import pandas as pd
 
+
 def add_lower(df, ranks):
     """
     Propagates assignments from higher to lower taxonomic ranks,
@@ -30,9 +31,9 @@ def contigtax_mash(sm):
     # transferred = cases where blast-based assignments were overwritten
     # added = cases where assignments from sourmash were added
     # total = total number of contigs
-    stats = {'resolved': 0, 'transferred': 0, 'added': 0, 'total': 0}
+    stats = {"resolved": 0, "transferred": 0, "added": 0, "total": 0}
     df1 = pd.read_csv(sm.input.smash, sep=",", header=0, index_col=0)
-    stats['total'] = df1.shape[0]
+    stats["total"] = df1.shape[0]
     df2 = pd.read_csv(sm.input.contigtax[0], sep="\t", header=0, index_col=0)
     ranks = list(df2.columns)
     ranks.reverse()
@@ -51,10 +52,10 @@ def contigtax_mash(sm):
                 # If blast-based contains 'Unclassified',
                 # mark contig as resolved
                 if "Unclassified" in b[rank]:
-                    stats['resolved'] += 1
+                    stats["resolved"] += 1
                 # Otherwise, mark contig as transferred
                 else:
-                    stats['transferred'] += 1
+                    stats["transferred"] += 1
                 # As soon as a contig has been transferred or resolved
                 # we can stop the merge
                 df2.loc[contig] = df1.loc[contig]
@@ -69,16 +70,16 @@ def contigtax_mash(sm):
     # Get contigs in sourmash missing from blast
     missing1 = set(df1.index).difference(set(df2.index))
     if len(missing1) > 0:
-        stats['added'] += len(missing1)
+        stats["added"] += len(missing1)
         df2 = pd.concat([df2, df1.loc[missing1]])
     df2 = add_lower(df2, df2.columns)
     df2.to_csv(sm.output[0], sep="\t")
     # Write to log
-    with open(sm.log[0], 'w') as fhout:
-        fhout.write("Total:       {}\n".format(stats['total']))
-        fhout.write("Resolved:    {}\n".format(stats['resolved']))
+    with open(sm.log[0], "w") as fhout:
+        fhout.write("Total:       {}\n".format(stats["total"]))
+        fhout.write("Resolved:    {}\n".format(stats["resolved"]))
         fhout.write("Transferred: {}\n".format(stats["transferred"]))
-        fhout.write("Added:       {}\n".format(stats['added']))
+        fhout.write("Added:       {}\n".format(stats["added"]))
 
 
 def contigtax_assign_orfs(sm):
@@ -87,20 +88,31 @@ def contigtax_assign_orfs(sm):
     :param sm: snakemake object
     :return:
     """
-    gff_df=pd.read_csv(sm.input.gff, header=None, sep="\t", comment="#",
-                           usecols=[0, 8], names=["contig", "id"])
+    gff_df = pd.read_csv(
+        sm.input.gff,
+        header=None,
+        sep="\t",
+        comment="#",
+        usecols=[0, 8],
+        names=["contig", "id"],
+    )
     # Extract ids
-    ids=["{}_{}".format(gff_df.loc[i, "contig"],
-                        gff_df.loc[i, "id"].split(";")[0].split("_")[-1]) for i in gff_df.index]
-    gff_df.loc[:, "id"]=ids
+    ids = [
+        "{}_{}".format(
+            gff_df.loc[i, "contig"], gff_df.loc[i, "id"].split(";")[0].split("_")[-1]
+        )
+        for i in gff_df.index
+    ]
+    gff_df.loc[:, "id"] = ids
     # Read taxonomy for contigs
-    tax_df=pd.read_csv(sm.input.tax, header=0, sep="\t", index_col=0)
+    tax_df = pd.read_csv(sm.input.tax, header=0, sep="\t", index_col=0)
     # Merge dataframes
-    orf_tax_df=pd.merge(gff_df, tax_df, left_on="contig",
-                        right_index=True, how="outer")
+    orf_tax_df = pd.merge(
+        gff_df, tax_df, left_on="contig", right_index=True, how="outer"
+    )
     # When using 'outer' merging there may be contigs with no called ORF
     # but with a tax assignment. Drop these contigs.
-    orf_tax_df=orf_tax_df.loc[orf_tax_df["id"]==orf_tax_df["id"]]
+    orf_tax_df = orf_tax_df.loc[orf_tax_df["id"] == orf_tax_df["id"]]
     # Set Unclassified for NA values
     orf_tax_df.fillna("Unclassified", inplace=True)
     # Set index to ORF ids
@@ -110,8 +122,10 @@ def contigtax_assign_orfs(sm):
 
 
 def main(sm):
-    toolbox = {"merge_contigtax_sourmash": contigtax_mash,
-               "contigtax_assign_orfs": contigtax_assign_orfs}
+    toolbox = {
+        "merge_contigtax_sourmash": contigtax_mash,
+        "contigtax_assign_orfs": contigtax_assign_orfs,
+    }
     toolbox[sm.rule](sm)
 
 

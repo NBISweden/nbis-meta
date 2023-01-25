@@ -7,13 +7,15 @@ from pathlib import Path
 
 # file io
 
+
 def fasta2bed(sm):
-    with open(sm.input[0], 'r') as fhin, open(sm.output[0], 'w') as fhout:
+    with open(sm.input[0], "r") as fhin, open(sm.output[0], "w") as fhout:
         for record in parse(fhin, "fasta"):
             fhout.write("{}\t{}\t{}\n".format(record.id, 0, len(record)))
 
 
 # statistics
+
 
 def store_lengths(f, minlen=False):
     """
@@ -45,9 +47,31 @@ def size_distribute(df, lengths=None):
     :return: pandas DataFrame
     """
     if lengths is None:
-        lengths = [0, 100, 250, 500, 1000, 2500, 5000, 10000, 15000, 20000,
-                   25000, 30000, 35000, 40000, 45000, 50000, 75000, 100000,
-                   125000, 150000, 200000, 250000, 500000]
+        lengths = [
+            0,
+            100,
+            250,
+            500,
+            1000,
+            2500,
+            5000,
+            10000,
+            15000,
+            20000,
+            25000,
+            30000,
+            35000,
+            40000,
+            45000,
+            50000,
+            75000,
+            100000,
+            125000,
+            150000,
+            200000,
+            250000,
+            500000,
+        ]
     size_dist = {}
     for i, l in enumerate(lengths):
         if len(df.loc[df.length >= l]) == 0:
@@ -55,11 +79,9 @@ def size_distribute(df, lengths=None):
         n = len(df.loc[df.length >= l])
         s = int(df.loc[df.length >= l].sum())
         p = int(df.loc[df.length >= l].sum()) / float(df.sum()) * 100
-        size_dist[i] = {"min_length": l, "num_contigs": n, "total_length": s,
-                        "%": p}
+        size_dist[i] = {"min_length": l, "num_contigs": n, "total_length": s, "%": p}
     size_dist_df = pd.DataFrame(size_dist).T
-    size_dist_df = size_dist_df[
-        ["min_length", "num_contigs", "total_length", "%"]]
+    size_dist_df = size_dist_df[["min_length", "num_contigs", "total_length", "%"]]
     return size_dist_df
 
 
@@ -104,13 +126,31 @@ def generate_stat_df(contig_lengths):
     :param contig_lengths: pandas DataFrame
     :return:
     """
-    index = ["contigs", "total_size_bp", "min_length", "max_length",
-             "avg_length", "median_length", "N50_length", "N90_length"]
+    index = [
+        "contigs",
+        "total_size_bp",
+        "min_length",
+        "max_length",
+        "avg_length",
+        "median_length",
+        "N50_length",
+        "N90_length",
+    ]
     stat_items = calculate_length_stats(contig_lengths)
     n50_length, n90_length = calculate_n_stats(contig_lengths)
-    stat_df = pd.DataFrame([stat_items[0], stat_items[1], stat_items[2],
-                            stat_items[3], stat_items[4], stat_items[5],
-                            n50_length, n90_length], index=index).T
+    stat_df = pd.DataFrame(
+        [
+            stat_items[0],
+            stat_items[1],
+            stat_items[2],
+            stat_items[3],
+            stat_items[4],
+            stat_items[5],
+            n50_length,
+            n90_length,
+        ],
+        index=index,
+    ).T
     return stat_df
 
 
@@ -129,19 +169,32 @@ def stats(sm):
         contig_lengths = store_lengths(f)
         stat_df = generate_stat_df(contig_lengths)
         size_dist = size_distribute(contig_lengths)
-        stat_df["assembly"] = [name]*len(stat_df)
-        size_dist["assembly"] = [name]*len(size_dist)
+        stat_df["assembly"] = [name] * len(stat_df)
+        size_dist["assembly"] = [name] * len(size_dist)
         stat_result = pd.concat([stat_result, stat_df])
-        sizedist_result = pd.concat([sizedist_result,size_dist])
-    stat_result = stat_result[["assembly", "contigs", "total_size_bp",
-                               "min_length", "max_length", "avg_length",
-                               "median_length", "N50_length", "N90_length"]]
+        sizedist_result = pd.concat([sizedist_result, size_dist])
+    stat_result = stat_result[
+        [
+            "assembly",
+            "contigs",
+            "total_size_bp",
+            "min_length",
+            "max_length",
+            "avg_length",
+            "median_length",
+            "N50_length",
+            "N90_length",
+        ]
+    ]
     stat_result.to_csv(sm.output[0], sep="\t", index=False)
-    sizedist_result = sizedist_result[["assembly", "min_length",
-                                       "num_contigs", "total_length", "%"]]
+    sizedist_result = sizedist_result[
+        ["assembly", "min_length", "num_contigs", "total_length", "%"]
+    ]
     sizedist_result.to_csv(sm.output[1], sep="\t", index=False)
 
+
 # assembly input
+
 
 def metaspades_input(sm):
     """
@@ -151,17 +204,18 @@ def metaspades_input(sm):
     :return:
     """
     from common import rename_records
+
     files = {"R1": [], "R2": [], "se": []}
     assembly_dict = sm.params.assembly
     # Collect all files belonging to the assembly group
     for sample in assembly_dict.keys():
         for unit in assembly_dict[sample]:
             for pair in assembly_dict[sample][unit].keys():
-                files[pair].append(
-                    assembly_dict[sample][unit][pair][0])
+                files[pair].append(assembly_dict[sample][unit][pair][0])
     # Rename and concatenate reads (required for Metaspades)
-    with open(sm.output.R1, 'w') as fh1, open(sm.output.R2, 'w') as fh2, open(
-        sm.output.se, 'w') as fhse:
+    with open(sm.output.R1, "w") as fh1, open(sm.output.R2, "w") as fh2, open(
+        sm.output.se, "w"
+    ) as fhse:
         i = 0
         for f in files["R1"]:
             f2 = files["R2"][i]
@@ -185,19 +239,21 @@ def megahit_input(sm):
         for unit in assembly_dict[sample]:
             for pair in assembly_dict[sample][unit].keys():
                 files[pair].append(assembly_dict[sample][unit][pair][0])
-    with open(sm.output.R1, 'w') as fh1, \
-        open(sm.output.R2, 'w') as fh2, \
-        open(sm.output.se, 'w') as fhse:
+    with open(sm.output.R1, "w") as fh1, open(sm.output.R2, "w") as fh2, open(
+        sm.output.se, "w"
+    ) as fhse:
         fh1.write(",".join(files["R1"]))
         fh2.write(",".join(files["R2"]))
         fhse.write(",".join(files["se"]))
 
 
 def main(sm):
-    toolbox = {"assembly_stats": stats,
-               "generate_megahit_input": megahit_input,
-               "generate_metaspades_input": metaspades_input,
-               "fasta2bed": fasta2bed}
+    toolbox = {
+        "assembly_stats": stats,
+        "generate_megahit_input": megahit_input,
+        "generate_metaspades_input": metaspades_input,
+        "fasta2bed": fasta2bed,
+    }
     toolbox[sm.rule](sm)
 
 

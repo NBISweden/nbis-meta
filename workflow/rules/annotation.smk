@@ -1,5 +1,3 @@
-import pandas as pd
-from scripts.common import annotation_input
 
 localrules:
     annotate,
@@ -13,61 +11,67 @@ localrules:
     get_kegg_info,
     parse_emapper,
     download_rgi_data,
-    parse_rgi
+    parse_rgi,
+
 
 ##### annotation master rule #####
 
+
 rule annotate:
     input:
-        annotation_input(config, assemblies)
+        annotation_input(config, assemblies),
+
 
 ##### gene calling #####
+
 
 rule prodigal:
     """
     Runs the prodigal gene caller in metagenomic mode on the assembled contigs
     """
     input:
-        results+"/assembly/{assembly}/final_contigs.fa"
+        results + "/assembly/{assembly}/final_contigs.fa",
     output:
-        genes=results+"/annotation/{assembly}/final_contigs.ffn",
-        faa=results+"/annotation/{assembly}/final_contigs.faa",
-        gff=results+"/annotation/{assembly}/final_contigs.gff"
+        genes=results + "/annotation/{assembly}/final_contigs.ffn",
+        faa=results + "/annotation/{assembly}/final_contigs.faa",
+        gff=results + "/annotation/{assembly}/final_contigs.gff",
     log:
-        results+"/annotation/{assembly}/prodigal.log"
+        results + "/annotation/{assembly}/prodigal.log",
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*2
+        runtime=lambda wildcards, attempt: attempt**2 * 60 * 2,
     conda:
         "../envs/annotation.yml"
     envmodules:
         "bioinfo-tools",
-        "prodigal/2.6.3"
+        "prodigal/2.6.3",
     shell:
         """
         prodigal -i {input} -d {output.genes} -a {output.faa} -o {output.gff} \
             -f gff -p meta 2>{log}
         """
 
+
 rule trnascan:
     input:
-        results+"/assembly/{assembly}/final_contigs.fa"
+        results + "/assembly/{assembly}/final_contigs.fa",
     output:
-        file=results+"/annotation/{assembly}/tRNA.out",
-        bed=results+"/annotation/{assembly}/tRNA.bed",
-        fasta=results+"/annotation/{assembly}/tRNA.fasta"
+        file=results + "/annotation/{assembly}/tRNA.out",
+        bed=results + "/annotation/{assembly}/tRNA.bed",
+        fasta=results + "/annotation/{assembly}/tRNA.fasta",
     log:
-        results+"/annotation/{assembly}/tRNA.log"
+        results + "/annotation/{assembly}/tRNA.log",
     threads: 4
     conda:
         "../envs/annotation.yml"
     envmodules:
         "bioinfo-tools",
-        "tRNAscan-SE/2.0.9"
+        "tRNAscan-SE/2.0.9",
     shell:
         """
         tRNAscan-SE -G -b {output.bed} -o {output.file} -a {output.fasta} \
             --thread {threads} {input} >{log} 2>&1
         """
+
 
 rule download_rfams:
     output:
@@ -75,16 +79,30 @@ rule download_rfams:
         cm="resources/infernal/Rfam.rRNA.cm",
         readme="resources/infernal/README",
         version="resources/infernal/Rfam.version",
-        clanin="resources/infernal/Rfam.clanin"
+        clanin="resources/infernal/Rfam.clanin",
     log:
-        "resources/infernal/download.log"
+        "resources/infernal/download.log",
     params:
         url="ftp://ftp.ebi.ac.uk/pub/databases/Rfam/CURRENT",
-        rfams=" ".join(["RF00001.cm", "RF00002.cm", "RF00177.cm",
-               "RF01959.cm", "RF01960.cm", "RF02540.cm", "RF02541.cm",
-               "RF02542.cm", "RF02543.cm", "RF02545.cm", "RF02546.cm",
-               "RF02547.cm", "RF02554.cm", "RF02555.cm"]),
-        dir=lambda w, output: os.path.dirname(output.cm)
+        rfams=" ".join(
+            [
+                "RF00001.cm",
+                "RF00002.cm",
+                "RF00177.cm",
+                "RF01959.cm",
+                "RF01960.cm",
+                "RF02540.cm",
+                "RF02541.cm",
+                "RF02542.cm",
+                "RF02543.cm",
+                "RF02545.cm",
+                "RF02546.cm",
+                "RF02547.cm",
+                "RF02554.cm",
+                "RF02555.cm",
+            ]
+        ),
+        dir=lambda w, output: os.path.dirname(output.cm),
     shell:
         """
         # Get the Rfam tarball
@@ -102,44 +120,48 @@ rule download_rfams:
             "CL0011[123]" > {output.clanin}
         """
 
+
 rule press_rfams:
     input:
-        "resources/infernal/Rfam.rRNA.cm"
+        "resources/infernal/Rfam.rRNA.cm",
     output:
-        expand("resources/infernal/Rfam.rRNA.cm.i1{suffix}",
-               suffix=["m", "i", "f", "p"])
+        expand(
+            "resources/infernal/Rfam.rRNA.cm.i1{suffix}", suffix=["m", "i", "f", "p"]
+        ),
     log:
-        "resources/infernal/cmpress.log"
+        "resources/infernal/cmpress.log",
     conda:
         "../envs/annotation.yml"
     envmodules:
         "bioinfo-tools",
-        "infernal/1.1.4"
+        "infernal/1.1.4",
     shell:
         """
         cmpress {input} > {log} 2>&1
         """
 
+
 rule infernal:
     input:
-        fastafile=results+"/assembly/{assembly}/final_contigs.fa",
-        db=expand("resources/infernal/Rfam.rRNA.cm.i1{suffix}",
-                  suffix=["m", "i", "f", "p"]),
-        cl="resources/infernal/Rfam.clanin"
+        fastafile=results + "/assembly/{assembly}/final_contigs.fa",
+        db=expand(
+            "resources/infernal/Rfam.rRNA.cm.i1{suffix}", suffix=["m", "i", "f", "p"]
+        ),
+        cl="resources/infernal/Rfam.clanin",
     output:
-        results+"/annotation/{assembly}/final_contigs.cmscan"
+        results + "/annotation/{assembly}/final_contigs.cmscan",
     log:
-        results+"/annotation/{assembly}/infernal.log"
+        results + "/annotation/{assembly}/infernal.log",
     params:
-        db="resources/infernal/Rfam.rRNA.cm"
+        db="resources/infernal/Rfam.rRNA.cm",
     threads: 4
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*10
+        runtime=lambda wildcards, attempt: attempt**2 * 60 * 10,
     conda:
         "../envs/annotation.yml"
     envmodules:
         "bioinfo-tools",
-        "infernal/1.1.4"
+        "infernal/1.1.4",
     shell:
         """
         cmscan --cpu {threads} --oskip --rfam --cut_ga --nohmmonly \
@@ -147,17 +169,19 @@ rule infernal:
             {input.fastafile} > /dev/null 2>{log}
         """
 
+
 ##### protein families #####
+
 
 rule download_pfam:
     output:
         hmmfile="resources/pfam/Pfam-A.hmm",
         datfile="resources/pfam/Pfam-A.hmm.dat",
-        versionfile="resources/pfam/Pfam-A.version"
+        versionfile="resources/pfam/Pfam-A.version",
     log:
-        "resources/pfam/download.log"
+        "resources/pfam/download.log",
     params:
-        ftp="ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release"
+        ftp="ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release",
     shell:
         """
         curl -s -L -o {output.hmmfile}.gz {params.ftp}/Pfam-A.hmm.gz
@@ -169,14 +193,15 @@ rule download_pfam:
         gunzip {output.versionfile}.gz
         """
 
+
 rule download_pfam_info:
     output:
         clanfile="resources/pfam/clan.txt",
-        info="resources/pfam/Pfam-A.clans.tsv"
+        info="resources/pfam/Pfam-A.clans.tsv",
     log:
-        "resources/pfam/info.log"
+        "resources/pfam/info.log",
     params:
-        ftp="ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release"
+        ftp="ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release",
     shell:
         """
         curl -s -L -o {output.clanfile}.gz {params.ftp}/database_files/clan.txt.gz
@@ -186,44 +211,44 @@ rule download_pfam_info:
         gunzip {output.info}.gz
         """
 
+
 rule press_pfam:
     input:
-        hmmfile="resources/pfam/Pfam-A.hmm"
+        hmmfile="resources/pfam/Pfam-A.hmm",
     output:
-        expand("resources/pfam/Pfam-A.hmm.h3{suffix}",
-               suffix=["f", "i", "m", "p"])
+        expand("resources/pfam/Pfam-A.hmm.h3{suffix}", suffix=["f", "i", "m", "p"]),
     log:
-        "resources/pfam/hmmpress.log"
+        "resources/pfam/hmmpress.log",
     conda:
         "../envs/annotation.yml"
     envmodules:
         "bioinfo-tools",
-        "infernal/1.1.4"
+        "infernal/1.1.4",
     shell:
         """
         hmmpress {input.hmmfile} > {log} 2>&1
         """
 
+
 rule pfam_scan:
     input:
-        results+"/annotation/{assembly}/final_contigs.faa",
-        expand("resources/pfam/Pfam-A.hmm.h3{suffix}",
-               suffix=["f", "i", "m", "p"])
+        results + "/annotation/{assembly}/final_contigs.faa",
+        expand("resources/pfam/Pfam-A.hmm.h3{suffix}", suffix=["f", "i", "m", "p"]),
     output:
-        results+"/annotation/{assembly}/{assembly}.pfam.out"
+        results + "/annotation/{assembly}/{assembly}.pfam.out",
     log:
-        results+"/annotation/{assembly}/{assembly}.pfam.log"
+        results + "/annotation/{assembly}/{assembly}.pfam.log",
     conda:
         "../envs/annotation.yml"
     envmodules:
         "bioinfo-tools",
-        "pfam_scan/1.6"
+        "pfam_scan/1.6",
     params:
         dir="resources/pfam",
-        tmp_out=temppath+"/{assembly}.pfam.out"
+        tmp_out=temppath + "/{assembly}.pfam.out",
     threads: 2
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*10
+        runtime=lambda wildcards, attempt: attempt**2 * 60 * 10,
     shell:
         """
         pfam_scan.pl -fasta {input[0]} -dir {params.dir} -cpu {threads} \
@@ -231,78 +256,83 @@ rule pfam_scan:
         mv {params.tmp_out} {output[0]}
         """
 
+
 rule parse_pfam:
     input:
-        results+"/annotation/{assembly}/{assembly}.pfam.out",
+        results + "/annotation/{assembly}/{assembly}.pfam.out",
         "resources/pfam/clan.txt",
-        "resources/pfam/Pfam-A.clans.tsv"
+        "resources/pfam/Pfam-A.clans.tsv",
     output:
-        results+"/annotation/{assembly}/pfam.parsed.tsv"
+        results + "/annotation/{assembly}/pfam.parsed.tsv",
     script:
         "../scripts/annotation_utils.py"
 
+
 ##### eggnog-mapper #####
+
 
 rule download_eggnog:
     output:
-        db = "resources/eggnog-mapper/eggnog.db",
-        dmnd = "resources/eggnog-mapper/eggnog_proteins.dmnd",
-        version = "resources/eggnog-mapper/eggnog.version"
+        db="resources/eggnog-mapper/eggnog.db",
+        dmnd="resources/eggnog-mapper/eggnog_proteins.dmnd",
+        version="resources/eggnog-mapper/eggnog.version",
     log:
-        "resources/eggnog-mapper/download.log"
+        "resources/eggnog-mapper/download.log",
     conda:
         "../envs/annotation.yml"
     envmodules:
         "bioinfo-tools",
-        "eggNOG-mapper/2.1.9"
+        "eggNOG-mapper/2.1.9",
     params:
-        data_dir=lambda wildcards, output: os.path.dirname(output.db)
+        data_dir=lambda wildcards, output: os.path.dirname(output.db),
     shell:
         """
         download_eggnog_data.py --data_dir {params.data_dir} -y > {log} 2>&1
         egrep -o "emapperdb-[0-9].[0-9].[0-9]" {log} > {output.version}
         """
 
+
 rule get_kegg_info:
-    #TODO: Check which files are needed with new eggnog-mapper version
+    # TODO: Check which files are needed with new eggnog-mapper version
     output:
-        kos = "resources/kegg/kegg_kos.tsv",
-        mods = "resources/kegg/kegg_modules.tsv",
-        pwys = "resources/kegg/kegg_pathways.tsv",
-        enzs = touch("resources/kegg/kegg_enzymes.tsv")
+        kos="resources/kegg/kegg_kos.tsv",
+        mods="resources/kegg/kegg_modules.tsv",
+        pwys="resources/kegg/kegg_pathways.tsv",
+        enzs=touch("resources/kegg/kegg_enzymes.tsv"),
     log:
-        "resources/kegg/download.log"
+        "resources/kegg/download.log",
     params:
         outdir=lambda w, output: os.path.dirname(output[0]),
-        src="workflow/scripts/eggnog-parser.py"
+        src="workflow/scripts/eggnog-parser.py",
     shell:
         """
         python {params.src} download {params.outdir} > {log} 2>&1
         """
 
+
 rule emapper_homology_search:
     input:
-        results+"/annotation/{assembly}/final_contigs.faa",
+        results + "/annotation/{assembly}/final_contigs.faa",
         "resources/eggnog-mapper/eggnog.db",
         "resources/eggnog-mapper/eggnog_proteins.dmnd",
     output:
-        results+"/annotation/{assembly}/{assembly}.emapper.seed_orthologs"
+        results + "/annotation/{assembly}/{assembly}.emapper.seed_orthologs",
     params:
         resource_dir=lambda wildcards, input: os.path.dirname(input[1]),
         out="{assembly}",
-        tmpdir=temppath+"/{assembly}-eggnog",
-        tmp_out=temppath+"/{assembly}-eggnog/{assembly}",
-        flags="-m diamond --no_annot --no_file_comments"
+        tmpdir=temppath + "/{assembly}-eggnog",
+        tmp_out=temppath + "/{assembly}-eggnog/{assembly}",
+        flags="-m diamond --no_annot --no_file_comments",
     log:
-        results+"/annotation/{assembly}/{assembly}.emapper.seed_orthologs.log"
+        results + "/annotation/{assembly}/{assembly}.emapper.seed_orthologs.log",
     conda:
         "../envs/annotation.yml"
     envmodules:
         "bioinfo-tools",
-        "eggNOG-mapper/2.1.9"
+        "eggNOG-mapper/2.1.9",
     threads: 10
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*4
+        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
     shell:
         """
         mkdir -p {params.tmpdir}
@@ -313,31 +343,33 @@ rule emapper_homology_search:
         rm -rf {params.tmpdir}
         """
 
+
 if config["runOnUppMax"]:
+
     rule emapper_annotate_hits_uppmax:
-        """Copy EGGNOG db into memory before running annotations"""
         input:
-            results+"/annotation/{assembly}/{assembly}.emapper.seed_orthologs",
+            results + "/annotation/{assembly}/{assembly}.emapper.seed_orthologs",
             "resources/eggnog-mapper/eggnog.db",
-            "resources/eggnog-mapper/eggnog_proteins.dmnd"
+            "resources/eggnog-mapper/eggnog_proteins.dmnd",
         output:
-            results+"/annotation/{assembly}/{assembly}.emapper.annotations"
+            results + "/annotation/{assembly}/{assembly}.emapper.annotations",
         params:
             resource_dir=lambda wildcards, input: os.path.dirname(input[1]),
-            tmpdir=temppath+"/{assembly}-eggnog",
-            out=results+"/annotation/{assembly}/{assembly}",
-            flags="--no_file_comments"
+            tmpdir=temppath + "/{assembly}-eggnog",
+            out=results + "/annotation/{assembly}/{assembly}",
+            flags="--no_file_comments",
         log:
-            results+"/annotation/{assembly}/{assembly}.emapper.annotations.log"
+            results + "/annotation/{assembly}/{assembly}.emapper.annotations.log",
         conda:
             "../envs/annotation.yml"
         envmodules:
             "bioinfo-tools",
-            "eggNOG-mapper/2.1.9"
-        message: "Annotating hits table for {wildcards.assembly}"
+            "eggNOG-mapper/2.1.9",
+        message:
+            "Annotating hits table for {wildcards.assembly}"
         threads: 10
         resources:
-            runtime=lambda wildcards, attempt: attempt**2*60
+            runtime=lambda wildcards, attempt: attempt**2 * 60,
         shell:
             """
             if [ -z ${{SLURM_JOB_ID+x}} ]; then SLURM_JOB_ID="emapper_annotate_hits_uppmax"; fi
@@ -350,27 +382,30 @@ if config["runOnUppMax"]:
                 --data_dir /dev/shm/$SLURM_JOB_ID >{log} 2>&1
             rm -rf /dev/shm/$SLURM_JOB_ID
             """
+
+
 else:
+
     rule emapper_annotate_hits:
         input:
-            results+"/annotation/{assembly}/{assembly}.emapper.seed_orthologs"
+            results + "/annotation/{assembly}/{assembly}.emapper.seed_orthologs",
         output:
-            results+"/annotation/{assembly}/{assembly}.emapper.annotations"
+            results + "/annotation/{assembly}/{assembly}.emapper.annotations",
         log:
-            results+"/annotation/{assembly}/{assembly}.emapper.annotations.log"
+            results + "/annotation/{assembly}/{assembly}.emapper.annotations.log",
         params:
             resource_dir="resources/eggnog-mapper",
-            tmpdir=temppath+"/{assembly}-eggnog",
-            out=results+"/annotation/{assembly}/{assembly}",
-            flags="--no_file_comments"
+            tmpdir=temppath + "/{assembly}-eggnog",
+            out=results + "/annotation/{assembly}/{assembly}",
+            flags="--no_file_comments",
         conda:
             "../envs/annotation.yml"
         envmodules:
             "bioinfo-tools",
-            "eggNOG-mapper/2.1.9"
+            "eggNOG-mapper/2.1.9",
         threads: 10
         resources:
-            runtime=lambda wildcards, attempt: attempt**2*60
+            runtime=lambda wildcards, attempt: attempt**2 * 60,
         shell:
             """
             emapper.py {params.flags} --cpu {threads} -o {params.out} \
@@ -378,30 +413,33 @@ else:
                 --data_dir {params.resource_dir} >{log} 2>&1
             """
 
+
 rule parse_emapper:
     input:
-        annotations = results+"/annotation/{assembly}/{assembly}.emapper.annotations",
-        info = "resources/kegg/kegg_{db}.tsv"
+        annotations=results + "/annotation/{assembly}/{assembly}.emapper.annotations",
+        info="resources/kegg/kegg_{db}.tsv",
     wildcard_constraints:
-        db="enzymes|pathways|kos|modules"
+        db="enzymes|pathways|kos|modules",
     output:
-        results+"/annotation/{assembly}/{db}.parsed.tsv"
+        results + "/annotation/{assembly}/{db}.parsed.tsv",
     script:
         "../scripts/annotation_utils.py"
 
+
 ##### resistance gene identifier #####
+
 
 rule download_rgi_data:
     output:
         json="resources/card/card.json",
-        version="resources/card/card.version"
+        version="resources/card/card.version",
     log:
-        "resources/card/log"
+        "resources/card/log",
     params:
         tar="resources/card/data.tar.gz",
-        dir=lambda w, output: os.path.dirname(output.json)
+        dir=lambda w, output: os.path.dirname(output.json),
     shell:
-         """
+        """
          curl -L -o {params.tar} \
             https://card.mcmaster.ca/latest/data >{log} 2>&1
          tar -C {params.dir} -xf {params.tar} ./card.json
@@ -410,26 +448,28 @@ rule download_rgi_data:
          rm {params.tar}
          """
 
+
 rule rgi:
     input:
-        faa=results+"/annotation/{assembly}/final_contigs.faa",
-        db="resources/card/card.json"
+        faa=results + "/annotation/{assembly}/final_contigs.faa",
+        db="resources/card/card.json",
     output:
-        json=results+"/annotation/{assembly}/rgi.out.json",
-        txt=results+"/annotation/{assembly}/rgi.out.txt"
+        json=results + "/annotation/{assembly}/rgi.out.json",
+        txt=results + "/annotation/{assembly}/rgi.out.txt",
     log:
-        results+"/annotation/{assembly}/rgi.log"
+        results + "/annotation/{assembly}/rgi.log",
     params:
-        out=results+"/annotation/{assembly}/rgi.out",
+        out=results + "/annotation/{assembly}/rgi.out",
         settings="-a diamond --local --clean --input_type protein",
-        faa=temppath+"/{assembly}.rgi/final_contig.faa",
-        tmpdir=temppath+"/{assembly}.rgi"
-    shadow: "minimal"
+        faa=temppath + "/{assembly}.rgi/final_contig.faa",
+        tmpdir=temppath + "/{assembly}.rgi",
+    shadow:
+        "minimal"
     conda:
         "../envs/rgi.yml"
     threads: 10
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60
+        runtime=lambda wildcards, attempt: attempt**2 * 60,
     shell:
         """
         mkdir -p {params.tmpdir}
@@ -440,10 +480,11 @@ rule rgi:
         rm -r {params.tmpdir}
         """
 
+
 rule parse_rgi:
     input:
-        txt=results+"/annotation/{assembly}/rgi.out.txt"
+        txt=results + "/annotation/{assembly}/rgi.out.txt",
     output:
-        tsv=results+"/annotation/{assembly}/rgi.parsed.tsv"
+        tsv=results + "/annotation/{assembly}/rgi.parsed.tsv",
     script:
         "../scripts/annotation_utils.py"
