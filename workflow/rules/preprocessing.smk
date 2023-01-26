@@ -305,8 +305,6 @@ rule sortmerna_link_se:
 
 ##### trimmomatic #####
 
-from scripts.common import get_trimmomatic_string
-
 
 rule trimmomatic_pe:
     input:
