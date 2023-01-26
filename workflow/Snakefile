@@ -37,7 +37,6 @@ include: "rules/taxonomy.smk"
 
 
 def all_input(wildcards):
-    from scripts.common import classify_input, annotation_input, binning_input
 
     """
     Function defining all requested inputs for the rule all (below).
