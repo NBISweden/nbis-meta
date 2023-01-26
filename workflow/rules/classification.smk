@@ -577,7 +577,8 @@ rule krona_taxonomy:
         "docker://biocontainers/krona:v2.7.1_cv1"
     shell:
         """
-        ktUpdateTaxonomy.sh {params.taxdir} >{log} 2>&1
+        export PATH=$PATH:$KRONA_UPDATE
+        updateTaxonomy.sh {params.taxdir} >{log} 2>&1
         """
 
 
