@@ -77,11 +77,13 @@ def parse_samples(df, config, PREPROCESS):
         if sample not in samples.keys():
             samples[sample] = {}
         # Add unit to dict
-        unit = str(df.iloc[i]["unit"])
+        if "unit" not in df.columns:
+            unit = "1"
+        else:
+            unit = str(df.iloc[i]["unit"])
         if unit not in samples[sample].keys():
             samples[sample][unit] = {}
         R1 = df.iloc[i]["fq1"]
-        groups = []
         r2 = False
 
         # Set preprocessed file paths
