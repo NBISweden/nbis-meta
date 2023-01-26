@@ -5,14 +5,19 @@ localrules:
     assembly_stats,
     samtools_flagstat,
     generate_metaspades_input,
-    generate_megahit_input
+    generate_megahit_input,
 
 
 ##### master assembly rule #####
 if config["assembly"]["megahit"]:
+
     ruleorder: megahit > metaspades
+
+
 elif config["assembly"]["metaspades"]:
+
     ruleorder: metaspades > megahit
+
 
 rule assemble:
     input:
@@ -20,7 +25,6 @@ rule assemble:
             results + "/report/assembly/{f}.pdf",
             f=["assembly_stats", "assembly_size_dist", "alignment_frequency"],
         ),
-
 
 
 rule generate_metaspades_input:
@@ -35,6 +39,7 @@ rule generate_metaspades_input:
         assembler="metaspades",
     script:
         "../scripts/assembly_utils.py"
+
 
 rule metaspades:
     input:
@@ -52,6 +57,8 @@ rule metaspades:
         additional_settings=config["metaspades"]["extra_settings"],
         tmp=temppath + "/{assembly}.metaspades",
         output_dir=lambda wildcards, output: os.path.dirname(output[0]),
+        keep_intermediate=config["metaspades"]["keep_intermediate"],
+        keep_corrected=config["metaspades"]["keep_corrected"],
     threads: config["metaspades"]["threads"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
@@ -79,11 +86,11 @@ rule metaspades:
             -o {params.tmp} > {log} 2>&1
 
         # If set to keep intermediate contigs, move to intermediate folder before deleting
-        if [ "{config[metaspades][keep_intermediate]}" == "True" ]; then
+        if [ "{params.keep_intermediate}" == "True" ]; then
             mkdir -p {params.intermediate_contigs}
             cp -r {params.tmp}/K* {params.intermediate_contigs}
         fi
-        if [ "{config[metaspades][keep_corrected]}" == "True" ]; then
+        if [ "{params.keep_corrected}" == "True" ]; then
             mkdir -p {params.corrected}
             cp -r {params.tmp}/corrected {params.corrected}
         fi
@@ -97,7 +104,6 @@ rule metaspades:
         rm -rf {params.tmp}
         mv {params.output_dir}/scaffolds.fasta {params.output_dir}/final_contigs.fa
         """
-
 
 
 rule generate_megahit_input:
@@ -114,6 +120,7 @@ rule generate_megahit_input:
     script:
         "../scripts/assembly_utils.py"
 
+
 rule megahit:
     input:
         R1=rules.generate_megahit_input.output.R1,
@@ -129,6 +136,7 @@ rule megahit:
         additional_settings=config["megahit"]["extra_settings"],
         tmp=temppath + "/{assembly}.megahit",
         output_dir=lambda wildcards, output: os.path.dirname(output[0]),
+        keep_intermediate=config["megahit"]["keep_intermediate"],
     threads: config["megahit"]["threads"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
@@ -162,7 +170,7 @@ rule megahit:
             {params.additional_settings} >{log} 2>&1
 
         # Sync intermediate contigs if asked for
-        if [ "{config[megahit][keep_intermediate]}" == "True" ]; then
+        if [ "{params.keep_intermediate}" == "True" ]; then
             mkdir -p {params.intermediate_contigs}
             cp -r {params.tmp}/intermediate_contigs/* {params.intermediate_contigs}
         fi
