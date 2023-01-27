@@ -9,6 +9,10 @@ from snakemake.io import expand
 
 # configuration
 
+def mem_allowed(wildcards, threads):
+    mem_per_core = config["mem_per_core"]
+    return max(threads * mem_per_core, mem_per_core)
+
 
 def prepost_string(config):
     """

@@ -9,7 +9,14 @@ properties:
     type: string
     description: path to a sample sheet
     default: "config/samples.tsv"
-
+  slurm_account:
+    type: string
+    description: account if running on a SLURM cluster
+    default: ""
+  mem_per_core:
+    type: integer
+    description: amount of RAM in MB per core
+    default: 6400
   paths:
     type: object
     properties:

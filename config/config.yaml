@@ -1,6 +1,12 @@
 # sample information sheet in TSV format (columns: sample, unit, fq1, fq2)
 sample_list: config/samples.tsv
 
+# project account number if running on a SLURM cluster
+slurm_account: ""
+
+# amount of memory per core (in MB)
+mem_per_core: 6400
+
 paths:
   # main base folder for results
   results: "results"
