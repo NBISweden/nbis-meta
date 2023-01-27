@@ -1,0 +1,10 @@
+latency-wait: "5"
+use-conda: "True"
+use-singularity: "False"
+use-envmodules: "False"
+printshellcmds: "True"
+keep-going: "True"
+rerun-triggers: "mtime"
+cores: 1
+rerun-incomplete: "True"
+reason: "True"
