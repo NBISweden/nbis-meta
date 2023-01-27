@@ -1,6 +1,3 @@
-from scripts.common import binning_input, get_fw_reads
-from scripts.common import get_binners, get_tree_settings, concatenate
-
 localrules:
     bin,
     concoct_cutup,
@@ -23,92 +20,114 @@ localrules:
     count_rRNA,
     count_tRNA,
     aggregate_bin_annot,
-    binning_report
+    binning_report,
+
 
 ##### master rule for binning #####
+
 
 rule bin:
     input:
         binning_input(config),
-        results+"/report/binning/bin_report.pdf"
+        results + "/report/binning/bin_report.pdf",
+
 
 ##### target rule for running checkm analysis #####
 
+
 rule checkm:
     input:
-        results+"/report/checkm/checkm.stats.tsv"
+        results + "/report/checkm/checkm.stats.tsv",
+
 
 def get_bam_files(wildcards):
     # If config setting is to map all samples
     if config["binning"]["all-against-all"]:
         s = samples
     else:
-        s = {sample: samples[sample] for sample in
-             assemblies[wildcards.assembly].keys()}
-    files = get_all_files(samples=s,
+        s = {
+            sample: samples[sample] for sample in assemblies[wildcards.assembly].keys()
+        }
+    files = get_all_files(
+        samples=s,
         directory=results + f"/assembly/{wildcards.assembly}/mapping",
-        suffix=f"{POSTPROCESS}.bam")
+        suffix=f"{POSTPROCESS}.bam",
+    )
     return files
+
 
 ##### metabat2 #####
 
+
 rule metabat_coverage:
     input:
-        bam=get_bam_files
+        bam=get_bam_files,
     output:
-        depth=results+"/binning/metabat/{assembly}/cov/depth.txt"
+        depth=results + "/binning/metabat/{assembly}/cov/depth.txt",
     log:
-        results+"/binning/metabat/{assembly}/cov/log"
+        results + "/binning/metabat/{assembly}/cov/log",
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*2
+        runtime=lambda wildcards, attempt: attempt**2 * 60 * 2,
     conda:
         "../envs/metabat.yml"
+    envmodules:
+        "bioinfo-tools",
+        "MetaBat/2.12.1",
     shell:
         """
         jgi_summarize_bam_contig_depths \
             --outputDepth {output.depth} {input.bam} >{log} 2>&1
         """
 
+
 rule metabat:
     input:
-        fa=results+"/assembly/{assembly}/final_contigs.fa",
-        depth=results+"/binning/metabat/{assembly}/cov/depth.txt"
+        fa=results + "/assembly/{assembly}/final_contigs.fa",
+        depth=results + "/binning/metabat/{assembly}/cov/depth.txt",
     output:
-        touch(results+"/binning/metabat/{assembly}/{l}/done")
+        touch(results + "/binning/metabat/{assembly}/{l}/done"),
     log:
-        results+"/binning/metabat/{assembly}/{l}/metabat.log"
+        results + "/binning/metabat/{assembly}/{l}/metabat.log",
     params:
-        n=results+"/binning/metabat/{assembly}/{l}/metabat"
+        n=results + "/binning/metabat/{assembly}/{l}/metabat",
     conda:
         "../envs/metabat.yml"
+    envmodules:
+        "bioinfo-tools",
+        "MetaBat/2.12.1",
     threads: config["binning"]["threads"]
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*4
+        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
     shell:
         """
         metabat2 -i {input.fa} -a {input.depth} -m {wildcards.l} -t {threads} \
             -o {params.n} > {log} 2>&1
         """
 
+
 ##### maxbin2 #####
+
 
 rule maxbin:
     input:
-        results+"/assembly/{assembly}/final_contigs.fa"
+        results + "/assembly/{assembly}/final_contigs.fa",
     output:
-        touch(results+"/binning/maxbin/{assembly}/{l}/done")
+        touch(results + "/binning/maxbin/{assembly}/{l}/done"),
     log:
-        results+"/binning/maxbin/{assembly}/{l}/maxbin.log"
+        results + "/binning/maxbin/{assembly}/{l}/maxbin.log",
     params:
-        dir=results+"/binning/maxbin/{assembly}/{l}",
-        tmp_dir=temppath+"/maxbin/{assembly}/{l}",
+        dir=results + "/binning/maxbin/{assembly}/{l}",
+        tmp_dir=temppath + "/maxbin/{assembly}/{l}",
         reads=get_fw_reads(config, samples, PREPROCESS),
-        markerset=config["maxbin"]["markerset"]
+        markerset=config["maxbin"]["markerset"],
     threads: config["binning"]["threads"]
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*5
+        runtime=lambda wildcards, attempt: attempt**2 * 60 * 5,
     conda:
         "../envs/maxbin.yml"
+    envmodules:
+        "bioinfo-tools",
+        "MaxBin/2.2.7",
     shell:
         """
         set +e
@@ -136,21 +155,26 @@ rule maxbin:
         rm -r {params.tmp_dir}
         """
 
+
 ##### concoct #####
+
 
 rule concoct_coverage_table:
     input:
         bam=get_bam_files,
-        bed=results+"/assembly/{assembly}/final_contigs_cutup.bed"
+        bed=results + "/assembly/{assembly}/final_contigs_cutup.bed",
     output:
-        cov=results+"/binning/concoct/{assembly}/cov/concoct_inputtable.tsv"
+        cov=results + "/binning/concoct/{assembly}/cov/concoct_inputtable.tsv",
     conda:
         "../envs/concoct.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CONCOCT/1.1.0",
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*2
+        runtime=lambda wildcards, attempt: attempt**2 * 60 * 2,
     params:
-        samplenames=results+"/binning/concoct/{assembly}/cov/samplenames",
-        p=POSTPROCESS
+        samplenames=results + "/binning/concoct/{assembly}/cov/samplenames",
+        p=POSTPROCESS,
     shell:
         """
         for f in {input.bam} ;
@@ -165,71 +189,87 @@ rule concoct_coverage_table:
         rm {params.samplenames}
         """
 
+
 rule concoct_cutup:
     input:
-        fa=results+"/assembly/{assembly}/final_contigs.fa"
+        fa=results + "/assembly/{assembly}/final_contigs.fa",
     output:
-        fa=results+"/assembly/{assembly}/final_contigs_cutup.fa",
-        bed=results+"/assembly/{assembly}/final_contigs_cutup.bed"
+        fa=results + "/assembly/{assembly}/final_contigs_cutup.fa",
+        bed=results + "/assembly/{assembly}/final_contigs_cutup.bed",
     log:
-        results+"/assembly/{assembly}/final_contigs_cutup.log"
+        results + "/assembly/{assembly}/final_contigs_cutup.log",
     conda:
         "../envs/concoct.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CONCOCT/1.1.0",
     shell:
         """
         cut_up_fasta.py -b {output.bed} -c 10000 -o 0 -m {input.fa} \
             > {output.fa} 2>{log}
         """
 
+
 rule concoct:
     input:
-        cov=results+"/binning/concoct/{assembly}/cov/concoct_inputtable.tsv",
-        fa=results+"/assembly/{assembly}/final_contigs_cutup.fa"
+        cov=results + "/binning/concoct/{assembly}/cov/concoct_inputtable.tsv",
+        fa=results + "/assembly/{assembly}/final_contigs_cutup.fa",
     output:
-        results+"/binning/concoct/{assembly}/{l}/clustering_gt{l}.csv"
+        results + "/binning/concoct/{assembly}/{l}/clustering_gt{l}.csv",
     log:
-        results+"/binning/concoct/{assembly}/{l}/log.txt"
+        results + "/binning/concoct/{assembly}/{l}/log.txt",
     params:
         basename=lambda wildcards, output: os.path.dirname(output[0]),
-        length="{l}"
+        length="{l}",
     threads: config["binning"]["threads"]
     conda:
         "../envs/concoct.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CONCOCT/1.1.0",
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*2
+        runtime=lambda wildcards, attempt: attempt**2 * 60 * 2,
     shell:
         """
         concoct -t {threads} --coverage_file {input.cov} -l {params.length} \
             --composition_file {input.fa} -b {params.basename}/ >/dev/null 2>&1
         """
 
+
 rule merge_cutup:
     input:
-        results+"/binning/concoct/{assembly}/{l}/clustering_gt{l}.csv"
+        results + "/binning/concoct/{assembly}/{l}/clustering_gt{l}.csv",
     output:
-        results+"/binning/concoct/{assembly}/{l}/clustering_gt{l}_merged.csv"
+        results + "/binning/concoct/{assembly}/{l}/clustering_gt{l}_merged.csv",
     log:
-        results+"/binning/concoct/{assembly}/{l}/clustering_gt{l}_merged.log"
+        results + "/binning/concoct/{assembly}/{l}/clustering_gt{l}_merged.log",
     conda:
         "../envs/concoct.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CONCOCT/1.1.0",
     shell:
         """
         merge_cutup_clustering.py {input[0]} > {output[0]} 2> {log}
         """
 
+
 rule extract_fasta:
     input:
-        results+"/assembly/{assembly}/final_contigs.fa",
-        results+"/binning/concoct/{assembly}/{l}/clustering_gt{l}_merged.csv"
+        results + "/assembly/{assembly}/final_contigs.fa",
+        results + "/binning/concoct/{assembly}/{l}/clustering_gt{l}_merged.csv",
     output:
-        touch(results+"/binning/concoct/{assembly}/{l}/done")
+        touch(results + "/binning/concoct/{assembly}/{l}/done"),
     log:
-        results+"/binning/concoct/{assembly}/{l}/extract_fasta.log"
+        results + "/binning/concoct/{assembly}/{l}/extract_fasta.log",
     params:
         dir=lambda wildcards, output: os.path.dirname(output[0]),
-        tmp_dir=temppath+"/concoct/{assembly}/{l}"
+        tmp_dir=temppath + "/concoct/{assembly}/{l}",
     conda:
         "../envs/concoct.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CONCOCT/1.1.0",
     shell:
         """
         mkdir -p {params.tmp_dir}
@@ -241,57 +281,72 @@ rule extract_fasta:
         done
         """
 
+
 ##### map contigs to bins #####
+
 
 rule contig_map:
     input:
-        results+"/binning/{binner}/{assembly}/{l}/done"
+        results + "/binning/{binner}/{assembly}/{l}/done",
     output:
-        results+"/binning/{binner}/{assembly}/{l}/contig_map.tsv"
+        results + "/binning/{binner}/{assembly}/{l}/contig_map.tsv",
     params:
-        dir=lambda wildcards, input: os.path.dirname(input[0])
+        dir=lambda wildcards, input: os.path.dirname(input[0]),
     script:
         "../scripts/binning_utils.py"
+
 
 ##### bin qc #####
 
+
 rule binning_stats:
     input:
-        results+"/binning/{binner}/{assembly}/{l}/contig_map.tsv"
+        results + "/binning/{binner}/{assembly}/{l}/contig_map.tsv",
     output:
-        results+"/binning/{binner}/{assembly}/{l}/summary_stats.tsv"
+        results + "/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
     params:
-        dir=lambda wildcards, output: os.path.dirname(output[0])
+        dir=lambda wildcards, output: os.path.dirname(output[0]),
     script:
         "../scripts/binning_utils.py"
 
+
 rule aggregate_binning_stats:
     input:
-        expand(results+"/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
-               assembly=assemblies.keys(),
-               l=config["binning"]["contig_lengths"],
-               binner=get_binners(config))
+        expand(
+            results + "/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
+            assembly=assemblies.keys(),
+            l=config["binning"]["contig_lengths"],
+            binner=get_binners(config),
+        ),
     message:
         "Aggregating statistics on binned genomes"
     output:
-        report(results+"/report/binning/binning_summary.tsv",
-               category="Binning", caption="../report/binning.rst")
+        report(
+            results + "/report/binning/binning_summary.tsv",
+            category="Binning",
+            caption="../report/binning.rst",
+        ),
     run:
-        df=concatenate(input, index=-2)
+        df = concatenate(input, index=-2)
         df.to_csv(output[0], sep="\t", index=True)
+
 
 ##### checkm #####
 
+
 rule download_checkm:
     output:
-        db="resources/checkm/.dmanifest"
+        db="resources/checkm/.dmanifest",
     log:
-        "resources/checkm/checkm.log"
+        "resources/checkm/checkm.log",
     params:
-        tar=lambda wildcards, output: os.path.dirname(output.db)+"/checkm_data.tar.gz",
-        dir=lambda wildcards, output: os.path.dirname(output.db)
+        tar=lambda wildcards, output: os.path.dirname(output.db) + "/checkm_data.tar.gz",
+        dir=lambda wildcards, output: os.path.dirname(output.db),
     conda:
         "../envs/checkm.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CheckM/1.1.3",
     shell:
         """
         # Download
@@ -302,27 +357,32 @@ rule download_checkm:
         checkm data setRoot {params.dir} > {log} 2>&1
         """
 
+
 if config["checkm"]["taxonomy_wf"]:
+
     rule checkm_taxonomy_wf:
         input:
             db="resources/checkm/.dmanifest",
-            tsv=results+"/binning/{binner}/{assembly}/{l}/summary_stats.tsv"
+            tsv=results + "/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
         output:
-            tsv=results+"/binning/{binner}/{assembly}/{l}/checkm/genome_stats.tsv",
-            ms=results+"/binning/{binner}/{assembly}/{l}/checkm/lineage.ms"
+            tsv=results + "/binning/{binner}/{assembly}/{l}/checkm/genome_stats.tsv",
+            ms=results + "/binning/{binner}/{assembly}/{l}/checkm/lineage.ms",
         log:
-            results+"/binning/{binner}/{assembly}/{l}/checkm/checkm.log"
+            results + "/binning/{binner}/{assembly}/{l}/checkm/checkm.log",
         conda:
             "../envs/checkm.yml"
+        envmodules:
+            "bioinfo-tools",
+            "CheckM/1.1.3",
         threads: 10
         resources:
-            runtime=lambda wildcards, attempt: attempt**2*60
+            runtime=lambda wildcards, attempt: attempt**2 * 60,
         params:
-            suff='fa',
+            suff="fa",
             indir=lambda wildcards, input: os.path.dirname(input.tsv),
             outdir=lambda wildcards, output: os.path.dirname(output.tsv),
             rank=config["checkm"]["rank"],
-            taxon=config["checkm"]["taxon"]
+            taxon=config["checkm"]["taxon"],
         shell:
             """
             lines=$(wc -l {input.tsv} | cut -f1 -d ' ')
@@ -337,26 +397,32 @@ if config["checkm"]["taxonomy_wf"]:
                 ln -s {params.taxon}.ms {output.ms}
             fi
             """
+
+
 else:
+
     rule checkm_lineage_wf:
         input:
             db="resources/checkm/.dmanifest",
-            tsv=results+"/binning/{binner}/{assembly}/{l}/summary_stats.tsv"
+            tsv=results + "/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
         output:
-            tsv=results+"/binning/{binner}/{assembly}/{l}/checkm/genome_stats.tsv",
-            ms=results+"/binning/{binner}/{assembly}/{l}/checkm/lineage.ms"
+            tsv=results + "/binning/{binner}/{assembly}/{l}/checkm/genome_stats.tsv",
+            ms=results + "/binning/{binner}/{assembly}/{l}/checkm/lineage.ms",
         log:
-            results+"/binning/{binner}/{assembly}/{l}/checkm/checkm.log"
+            results + "/binning/{binner}/{assembly}/{l}/checkm/checkm.log",
         conda:
             "../envs/checkm.yml"
+        envmodules:
+            "bioinfo-tools",
+            "CheckM/1.1.3",
         threads: 10
         resources:
-            runtime=lambda wildcards, attempt: attempt**2*60
+            runtime=lambda wildcards, attempt: attempt**2 * 60,
         params:
-            suff='fa',
+            suff="fa",
             indir=lambda wildcards, input: os.path.dirname(input.tsv),
             outdir=lambda wildcards, output: os.path.dirname(output.tsv),
-            tree=get_tree_settings(config)
+            tree=get_tree_settings(config),
         shell:
             """
             lines=$(wc -l {input.tsv} | cut -f1 -d ' ')
@@ -372,21 +438,23 @@ else:
             fi
             """
 
+
 rule checkm_qa:
-    """
-    Runs checkm qa to generate output format 2 with extended summaries of bins
-    """
     input:
-        tsv=results+"/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
-        ms=results+"/binning/{binner}/{assembly}/{l}/checkm/lineage.ms"
+        tsv=results + "/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
+        ms=results + "/binning/{binner}/{assembly}/{l}/checkm/lineage.ms",
     output:
-        tsv=results+"/binning/{binner}/{assembly}/{l}/checkm/genome_stats.extended.tsv"
+        tsv=results
+        + "/binning/{binner}/{assembly}/{l}/checkm/genome_stats.extended.tsv",
     log:
-        results+"/binning/{binner}/{assembly}/{l}/checkm/qa.log"
+        results + "/binning/{binner}/{assembly}/{l}/checkm/qa.log",
     conda:
         "../envs/checkm.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CheckM/1.1.3",
     params:
-        dir=lambda wildcards, output: os.path.dirname(output.tsv)
+        dir=lambda wildcards, output: os.path.dirname(output.tsv),
     shell:
         """
         lines=$(wc -l {input.tsv} | cut -f1 -d ' ')
@@ -398,22 +466,34 @@ rule checkm_qa:
         fi
         """
 
+
 rule checkm_coverage:
     input:
-        tsv=results+"/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
-        bam=get_all_files(samples, results+"/assembly/{assembly}/mapping", "{p}.bam".format(p=POSTPROCESS)),
-        bai=get_all_files(samples, results+"/assembly/{assembly}/mapping", "{p}.bam.bai".format(p=POSTPROCESS))
+        tsv=results + "/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
+        bam=get_all_files(
+            samples,
+            results + "/assembly/{assembly}/mapping",
+            "{p}.bam".format(p=POSTPROCESS),
+        ),
+        bai=get_all_files(
+            samples,
+            results + "/assembly/{assembly}/mapping",
+            "{p}.bam.bai".format(p=POSTPROCESS),
+        ),
     output:
-        cov=temp(results+"/binning/{binner}/{assembly}/{l}/checkm/coverage.tsv")
+        cov=temp(results + "/binning/{binner}/{assembly}/{l}/checkm/coverage.tsv"),
     log:
-        results+"/binning/{binner}/{assembly}/{l}/checkm/checkm_coverage.log"
+        results + "/binning/{binner}/{assembly}/{l}/checkm/checkm_coverage.log",
     params:
-        dir=lambda wildcards, input: os.path.dirname(input.tsv)
+        dir=lambda wildcards, input: os.path.dirname(input.tsv),
     threads: 20
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60*10
+        runtime=lambda wildcards, attempt: attempt**2 * 60 * 10,
     conda:
         "../envs/checkm.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CheckM/1.1.3",
     shell:
         """
         lines=$(wc -l {input.tsv} | cut -f1 -d ' ')
@@ -425,28 +505,29 @@ rule checkm_coverage:
         fi
         """
 
+
 rule remove_checkm_zerocols:
-    """
-    Pre-checks the checkm coverage file and removes zero count bam columns as
-    these can generate ZeroDivisionError in downstream rules.
-    """
     input:
-        cov=results+"/binning/{binner}/{assembly}/{l}/checkm/coverage.tsv"
+        cov=results + "/binning/{binner}/{assembly}/{l}/checkm/coverage.tsv",
     output:
-        cov=temp(results+"/binning/{binner}/{assembly}/{l}/checkm/_coverage.tsv")
+        cov=temp(results + "/binning/{binner}/{assembly}/{l}/checkm/_coverage.tsv"),
     script:
         "../scripts/binning_utils.py"
 
+
 rule checkm_profile:
     input:
-        cov=results+"/binning/{binner}/{assembly}/{l}/checkm/_coverage.tsv",
-        stats=results+"/binning/{binner}/{assembly}/{l}/summary_stats.tsv"
+        cov=results + "/binning/{binner}/{assembly}/{l}/checkm/_coverage.tsv",
+        stats=results + "/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
     output:
-        results+"/binning/{binner}/{assembly}/{l}/checkm/profile.tsv"
+        results + "/binning/{binner}/{assembly}/{l}/checkm/profile.tsv",
     log:
-        results+"/binning/{binner}/{assembly}/{l}/checkm/checkm_profile.log"
+        results + "/binning/{binner}/{assembly}/{l}/checkm/checkm_profile.log",
     conda:
         "../envs/checkm.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CheckM/1.1.3",
     shell:
         """
         lines=$(wc -l {input.stats} | cut -f1 -d ' ')
@@ -460,65 +541,82 @@ rule checkm_profile:
         fi
         """
 
+
 rule aggregate_checkm_profiles:
     input:
-        expand(results+"/binning/{binner}/{assembly}/{l}/checkm/profile.tsv",
-               assembly=assemblies.keys(),
-               l=config["binning"]["contig_lengths"],
-               binner=get_binners(config))
+        expand(
+            results + "/binning/{binner}/{assembly}/{l}/checkm/profile.tsv",
+            assembly=assemblies.keys(),
+            l=config["binning"]["contig_lengths"],
+            binner=get_binners(config),
+        ),
     output:
-        tsv=results+"/report/checkm/checkm.profiles.tsv"
+        tsv=results + "/report/checkm/checkm.profiles.tsv",
     run:
-        df=concatenate(input, index=-3)
+        df = concatenate(input, index=-3)
         df.to_csv(output.tsv, sep="\t", index=True)
+
 
 rule aggregate_checkm_stats:
     input:
-        expand(results+"/binning/{binner}/{assembly}/{l}/checkm/genome_stats.extended.tsv",
-               assembly=assemblies.keys(),
-               l=config["binning"]["contig_lengths"],
-               binner=get_binners(config))
+        expand(
+            results
+            + "/binning/{binner}/{assembly}/{l}/checkm/genome_stats.extended.tsv",
+            assembly=assemblies.keys(),
+            l=config["binning"]["contig_lengths"],
+            binner=get_binners(config),
+        ),
     output:
-        tsv=results+"/report/checkm/checkm.stats.tsv"
+        tsv=results + "/report/checkm/checkm.stats.tsv",
     run:
-        df=concatenate(input, index=-3)
+        df = concatenate(input, index=-3)
         df.to_csv(output.tsv, sep="\t", index=True)
+
 
 ##### classify bins with gtdb-tk #####
 
+
 rule download_gtdb:
     output:
-        met="resources/gtdb/metadata/metadata.txt"
+        met="resources/gtdb/metadata/metadata.txt",
     log:
-        "resources/gtdb/download.log"
+        "resources/gtdb/download.log",
     params:
-        url="https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/gtdbtk_r89_data.tar.gz",
-        tar=lambda wildcards, output: os.path.dirname(output.met)+"/gtdbtk_r89_data.tar.gz",
-        dir=lambda wildcards, output: os.path.dirname(output.met)
+        url=config["gtdbtk"]["url"],
+        tar=lambda wildcards, output: os.path.dirname(output.met)
+        + "/"
+        + os.path.basename(config["gtdbtk"]["url"]),
+        dir=lambda wildcards, output: os.path.dirname(os.path.dirname(output.met)),
     shell:
         """
         curl -L -o {params.tar} {params.url} > {log} 2>&1
         tar xzf {params.tar} -C {params.dir} --strip 1 > {log} 2>&1
         """
 
+
 rule gtdbtk_classify:
     input:
         met="resources/gtdb/metadata/metadata.txt",
-        tsv=results+"/binning/{binner}/{assembly}/{l}/summary_stats.tsv"
+        tsv=results + "/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
     output:
-        touch(results+"/binning/{binner}/{assembly}/{l}/gtdbtk/done")
+        touch(results + "/binning/{binner}/{assembly}/{l}/gtdbtk/done"),
     log:
-        results+"/binning/{binner}/{assembly}/{l}/gtdbtk/gtdbtk.log"
+        results + "/binning/{binner}/{assembly}/{l}/gtdbtk/gtdbtk.log",
     params:
-        suff='fa',
+        suff="fa",
         indir=lambda wildcards, input: os.path.dirname(input.tsv),
-        dbdir=lambda wildcards, input: os.path.abspath(os.path.dirname(os.path.dirname(input.met))),
-        outdir=lambda wildcards, output: os.path.dirname(output[0])
+        dbdir=lambda wildcards, input: os.path.abspath(
+            os.path.dirname(os.path.dirname(input.met))
+        ),
+        outdir=lambda wildcards, output: os.path.dirname(output[0]),
     threads: 20
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*60
+        runtime=lambda wildcards, attempt: attempt**2 * 60,
     conda:
         "../envs/gtdbtk.yml"
+    envmodules:
+        "bioinfo-tools",
+        "GTDB-Tk",
     shell:
         """
         bins=$(wc -l {input.tsv} | cut -f1 -d ' ')
@@ -533,50 +631,51 @@ rule gtdbtk_classify:
         fi
         """
 
+
 rule aggregate_gtdbtk:
-    """
-    Aggregates GTDB-TK phylogenetic results from several assemblies into a
-    single table.
-    """
     input:
-        expand(results+"/binning/{binner}/{assembly}/{l}/gtdbtk/done",
-               binner=get_binners(config),
-               assembly=assemblies.keys(),
-               l=config["binning"]["contig_lengths"])
+        expand(
+            results + "/binning/{binner}/{assembly}/{l}/gtdbtk/done",
+            binner=get_binners(config),
+            assembly=assemblies.keys(),
+            l=config["binning"]["contig_lengths"],
+        ),
     output:
-        summary=results+"/report/gtdbtk/gtdbtk.summary.tsv"
+        summary=results + "/report/gtdbtk/gtdbtk.summary.tsv",
     run:
-        summaries=[]
+        summaries = []
         for f in input:
-            gtdb_dir=os.path.dirname(f)
+            gtdb_dir = os.path.dirname(f)
             for m in ["bac120/ar122"]:
-                summary=gtdb_dir+"/gtdbtk.{}.summary.tsv".format(m)
+                summary = gtdb_dir + "/gtdbtk.{}.summary.tsv".format(m)
                 if os.path.exists(summary):
                     summaries.append(summary)
-        df=concatenate(summaries, index=-3)
+        df = concatenate(summaries, index=-3)
         df.to_csv(output.summary, sep="\t")
+
 
 ##### annotate bins #####
 
+
 rule barrnap:
-    """
-    Identify rRNA genes in genome bins
-    """
     input:
-        tsv=results+"/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
-        gtdbtk=results+"/binning/{binner}/{assembly}/{l}/gtdbtk/done"
+        tsv=results + "/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
+        gtdbtk=results + "/binning/{binner}/{assembly}/{l}/gtdbtk/done",
     output:
-        results+"/binning/{binner}/{assembly}/{l}/barrnap/rRNA.gff"
+        results + "/binning/{binner}/{assembly}/{l}/barrnap/rRNA.gff",
     log:
-        results+"/binning/{binner}/{assembly}/{l}/barrnap/log"
+        results + "/binning/{binner}/{assembly}/{l}/barrnap/log",
     conda:
         "../envs/barrnap.yml"
+    envmodules:
+        "bioinfo-tools",
+        "barrnap/0.9",
     params:
         indir=lambda wildcards, input: os.path.dirname(input.tsv),
         gtdbtk_dir=lambda wildcards, input: os.path.dirname(input.gtdbtk),
-        outdir=lambda wildcards, output: os.path.dirname(output[0])
+        outdir=lambda wildcards, output: os.path.dirname(output[0]),
     resources:
-        runtime=lambda wildcards, attempt: attempt**2*30
+        runtime=lambda wildcards, attempt: attempt**2 * 30,
     threads: 1
     shell:
         """
@@ -606,34 +705,36 @@ rule barrnap:
         fi
         """
 
+
 rule count_rRNA:
     input:
-        results+"/binning/{binner}/{assembly}/{l}/barrnap/rRNA.gff"
+        results + "/binning/{binner}/{assembly}/{l}/barrnap/rRNA.gff",
     output:
-        results+"/binning/{binner}/{assembly}/{l}/barrnap/rRNA.types.tsv"
+        results + "/binning/{binner}/{assembly}/{l}/barrnap/rRNA.types.tsv",
     script:
         "../scripts/binning_utils.py"
 
+
 rule trnascan_bins:
-    #TODO: Run with general model if neither bacteria nor archaea
-    """
-    Identify tRNA genes in genome bins
-    """
+    # TODO: Run with general model if neither bacteria nor archaea
     input:
-        tsv=results+"/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
-        gtdbtk=results+"/binning/{binner}/{assembly}/{l}/gtdbtk/done"
+        tsv=results + "/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
+        gtdbtk=results + "/binning/{binner}/{assembly}/{l}/gtdbtk/done",
     output:
-        results+"/binning/{binner}/{assembly}/{l}/tRNAscan/tRNA.tsv"
+        results + "/binning/{binner}/{assembly}/{l}/tRNAscan/tRNA.tsv",
     log:
-        results+"/binning/{binner}/{assembly}/{l}/tRNAscan/tRNA.log"
+        results + "/binning/{binner}/{assembly}/{l}/tRNAscan/tRNA.log",
     params:
         indir=lambda wildcards, input: os.path.dirname(input.tsv),
-        gtdbtk_dir=lambda wildcards, input: os.path.dirname(input.gtdbtk)
+        gtdbtk_dir=lambda wildcards, input: os.path.dirname(input.gtdbtk),
     resources:
-        runtime=lambda wildcards, attempt: attempt*30
+        runtime=lambda wildcards, attempt: attempt * 30,
     threads: 4
     conda:
         "../envs/annotation.yml"
+    envmodules:
+        "bioinfo-tools",
+        "tRNAscan-SE/2.0.9",
     shell:
         """
         bins=$(wc -l {input.tsv} | cut -f1 -d ' ')
@@ -657,82 +758,101 @@ rule trnascan_bins:
         fi
         """
 
+
 rule count_tRNA:
     input:
-        results+"/binning/{binner}/{assembly}/{l}/tRNAscan/tRNA.tsv"
+        results + "/binning/{binner}/{assembly}/{l}/tRNAscan/tRNA.tsv",
     output:
-        results+"/binning/{binner}/{assembly}/{l}/tRNAscan/tRNA.types.tsv",
-        results+"/binning/{binner}/{assembly}/{l}/tRNAscan/tRNA.total.tsv"
+        results + "/binning/{binner}/{assembly}/{l}/tRNAscan/tRNA.types.tsv",
+        results + "/binning/{binner}/{assembly}/{l}/tRNAscan/tRNA.total.tsv",
     script:
         "../scripts/binning_utils.py"
+
 
 rule aggregate_bin_annot:
     input:
-        trna=expand(results+"/binning/{binner}/{assembly}/{l}/tRNAscan/tRNA.total.tsv",
-                    binner=get_binners(config),
-                    assembly=assemblies.keys(),
-                    l=config["binning"]["contig_lengths"]),
-        rrna=expand(results+"/binning/{binner}/{assembly}/{l}/barrnap/rRNA.types.tsv",
-                    binner=get_binners(config),
-                    assembly=assemblies.keys(),
-                    l=config["binning"]["contig_lengths"])
+        trna=expand(
+            results + "/binning/{binner}/{assembly}/{l}/tRNAscan/tRNA.total.tsv",
+            binner=get_binners(config),
+            assembly=assemblies.keys(),
+            l=config["binning"]["contig_lengths"],
+        ),
+        rrna=expand(
+            results + "/binning/{binner}/{assembly}/{l}/barrnap/rRNA.types.tsv",
+            binner=get_binners(config),
+            assembly=assemblies.keys(),
+            l=config["binning"]["contig_lengths"],
+        ),
     output:
-        trna=results+"/report/bin_annotation/tRNA.total.tsv",
-        rrna=results+"/report/bin_annotation/rRNA.types.tsv"
+        trna=results + "/report/bin_annotation/tRNA.total.tsv",
+        rrna=results + "/report/bin_annotation/rRNA.types.tsv",
     run:
-        df=concatenate(input.trna, index=-3)
+        df = concatenate(input.trna, index=-3)
         df.to_csv(output.trna, sep="\t", index=True)
-        df=concatenate(input.rrna, index=-3)
+        df = concatenate(input.rrna, index=-3)
         df.to_csv(output.rrna, sep="\t", index=True)
+
 
 ##### genome clustering #####
 
+
 rule download_ref_genome:
     output:
-        "resources/ref_genomes/{genome_id}.fna"
+        "resources/ref_genomes/{genome_id}.fna",
     params:
-        ftp_base = lambda wildcards: config["fastani"]["ref_genomes"][wildcards.genome_id]
+        ftp_base=lambda wildcards: config["fastani"]["ref_genomes"][wildcards.genome_id],
     script:
         "../scripts/binning_utils.py"
 
+
 rule generate_fastANI_lists:
     input:
-        bins=expand(results+"/binning/{binner}/{assembly}/{l}/checkm/genome_stats.extended.tsv",
-                    binner = get_binners(config), assembly = assemblies.keys(),
-                    l = config["binning"]["contig_lengths"]),
-        refs=expand("resources/ref_genomes/{genome_id}.fna",
-                    genome_id = config["fastani"]["ref_genomes"].keys())
+        bins=expand(
+            results
+            + "/binning/{binner}/{assembly}/{l}/checkm/genome_stats.extended.tsv",
+            binner=get_binners(config),
+            assembly=assemblies.keys(),
+            l=config["binning"]["contig_lengths"],
+        ),
+        refs=expand(
+            "resources/ref_genomes/{genome_id}.fna",
+            genome_id=config["fastani"]["ref_genomes"].keys(),
+        ),
     output:
-        temp(results+"/binning/fastANI/refList"),
-        temp(results+"/binning/fastANI/queryList")
+        temp(results + "/binning/fastANI/refList"),
+        temp(results + "/binning/fastANI/queryList"),
     params:
-        outdir = lambda wildcards, output: os.path.abspath(os.path.dirname(output[0])),
-        completeness = config["fastani"]["min_completeness"],
-        contamination = config["fastani"]["max_contamination"]
+        outdir=lambda wildcards, output: os.path.abspath(os.path.dirname(output[0])),
+        completeness=config["fastani"]["min_completeness"],
+        contamination=config["fastani"]["max_contamination"],
     message:
         "Generating input lists for fastANI"
     script:
         "../scripts/binning_utils.py"
 
+
 rule fastANI:
     input:
-        results+"/binning/fastANI/refList",
-        results+"/binning/fastANI/queryList"
+        results + "/binning/fastANI/refList",
+        results + "/binning/fastANI/queryList",
     output:
-        results+"/binning/fastANI/out.txt",
-        results+"/binning/fastANI/out.txt.matrix"
+        results + "/binning/fastANI/out.txt",
+        results + "/binning/fastANI/out.txt.matrix",
     log:
-        results+"/binning/fastANI/log"
+        results + "/binning/fastANI/log",
     threads: 8
     params:
-        k = config["fastani"]["kmer_size"],
-        frag_len = config["fastani"]["frag_len"],
-        fraction = config["fastani"]["fraction"],
-        indir = lambda wildcards, input: os.path.dirname(input[0])
+        k=config["fastani"]["kmer_size"],
+        frag_len=config["fastani"]["frag_len"],
+        fraction=config["fastani"]["fraction"],
+        indir=lambda wildcards, input: os.path.dirname(input[0]),
     conda:
         "../envs/fastani.yml"
+    envmodules:
+        "bioinfo-tools",
+        "FastANI/1.33",
     resources:
-        runtime = lambda wildcards, attempt: attempt**2*60
+        runtime=lambda wildcards, attempt: attempt**2 * 60,
     shell:
         """
         fastANI --rl {input[0]} --ql {input[1]} -k {params.k} -t {threads} \
@@ -740,28 +860,34 @@ rule fastANI:
             --matrix -o {output[0]} > {log} 2>&1
         """
 
+
 rule cluster_genomes:
     input:
-        mat=results+"/binning/fastANI/out.txt.matrix",
-        txt=results+"/binning/fastANI/out.txt"
+        mat=results + "/binning/fastANI/out.txt.matrix",
+        txt=results + "/binning/fastANI/out.txt",
     output:
-        results+"/report/binning/genome_clusters.tsv"
+        results + "/report/binning/genome_clusters.tsv",
     conda:
         "../envs/fastani.yml"
     params:
-        thresh = config["fastani"]["threshold"],
-        minfrags = config["fastani"]["minfrags"]
+        thresh=config["fastani"]["threshold"],
+        minfrags=config["fastani"]["minfrags"],
     script:
         "../scripts/binning_utils.py"
 
+
 ##### rule to generate summary plots
+
 
 rule binning_report:
     input:
-        binning_input(config, report=True)
+        binning_input(config, report=True),
     output:
-        report(results+"/report/binning/bin_report.pdf",
-               category="Binning", caption="../report/binning.rst")
+        report(
+            results + "/report/binning/bin_report.pdf",
+            category="Binning",
+            caption="../report/binning.rst",
+        ),
     message:
         "Plot summary stats of binned genomes"
     conda:

@@ -9,6 +9,7 @@ import numpy as np
 
 # bin info
 
+
 def contig_map(sm):
     """
     Generates a map of bin->contig id
@@ -16,19 +17,21 @@ def contig_map(sm):
     :return:
     """
     from Bio.SeqIO import parse
+
     files = glob(opj(sm.params.dir, "*.fa"))
     if len(files) == 0:
-        with open(sm.output[0], 'w') as fhout:
+        with open(sm.output[0], "w") as fhout:
             pass
         return
     for f in files:
-        with open(f, 'r') as fhin, open(sm.output[0], 'w') as fhout:
+        with open(f, "r") as fhin, open(sm.output[0], "w") as fhout:
             genome, _ = splitext(basename(f))
             for record in parse(fhin, "fasta"):
                 fhout.write("{}\t{}\n".format(genome, record.id))
 
 
 # bin stats
+
 
 def n50(lengths):
     """
@@ -51,6 +54,7 @@ def bin_stats(f):
     :return:
     """
     from Bio.SeqIO import parse
+
     size = 0
     gc = 0
     contig_lengths = []
@@ -69,10 +73,17 @@ def bin_stats(f):
     min_l = np.min(contig_lengths)
     max_l = np.max(contig_lengths)
     n50_l = n50(contig_lengths)
-    return {'bp': size, 'GC': gc_f, 'Mbp': round(size_mb, 2),
-            'mean_contig': mean_l, 'median_contig': median_l,
-            'min_contig': min_l, 'max_contig': max_l, 'n50': n50_l,
-            'contigs': len(contig_lengths)}
+    return {
+        "bp": size,
+        "GC": gc_f,
+        "Mbp": round(size_mb, 2),
+        "mean_contig": mean_l,
+        "median_contig": median_l,
+        "min_contig": min_l,
+        "max_contig": max_l,
+        "n50": n50_l,
+        "contigs": len(contig_lengths),
+    }
 
 
 def calculate_bin_stats(files):
@@ -97,13 +108,22 @@ def binning_stats(sm):
     """
     files = glob(opj(sm.params.dir, "*.fa"))
     if len(files) == 0:
-        with open(sm.output[0], 'w') as fh:
+        with open(sm.output[0], "w") as fh:
             fh.write("No bins found\n")
         return
     else:
         stats = calculate_bin_stats(files)
-        cols = ["bp", "Mbp", "GC", "contigs", "n50", "mean_contig",
-                "median_contig", "min_contig", "max_contig"]
+        cols = [
+            "bp",
+            "Mbp",
+            "GC",
+            "contigs",
+            "n50",
+            "mean_contig",
+            "median_contig",
+            "min_contig",
+            "max_contig",
+        ]
         df = pd.DataFrame(stats).T[cols]
         df.index.name = "bin"
         df.sort_values("bp", ascending=False, inplace=True)
@@ -111,6 +131,7 @@ def binning_stats(sm):
 
 
 # checkm utils
+
 
 def remove_checkm_zerocols(sm):
     """
@@ -121,7 +142,7 @@ def remove_checkm_zerocols(sm):
     """
     df = pd.read_csv(sm.input[0], header=0, sep="\t")
     if df.shape[0] == 0:
-        with open(sm.output[0], 'w') as fh:
+        with open(sm.output[0], "w") as fh:
             fh.write("NO BINS FOUND\n")
         return
     # base columns are independent of samples
@@ -139,17 +160,20 @@ def remove_checkm_zerocols(sm):
         if suffix == ".Mapped reads":
             suffix = ""
         cols_to_drop += (
-            "Mapped reads{s},Bam Id{s},Coverage{s}".format(s=suffix)).split(",")
+            "Mapped reads{s},Bam Id{s},Coverage{s}".format(s=suffix)
+        ).split(",")
     df_checked = df.drop(cols_to_drop, axis=1)
     # check that there are remaining columns
     diff_cols = set(df_checked.columns).difference(base_columns)
     if len(diff_cols) > 0:
         df_checked.to_csv(sm.output[0], sep="\t", index=False, header=True)
     else:
-        with open(sm.output[0], 'w') as fhout:
+        with open(sm.output[0], "w") as fhout:
             pass
 
+
 # bin annotation
+
 
 def count_rrna(sm):
     """
@@ -157,8 +181,13 @@ def count_rrna(sm):
     :param sm:
     :return:
     """
-    df = pd.read_csv(sm.input[0], sep="\t", usecols=[0, 2, 8], header=None,
-                     names=["contig", "type", "fields"])
+    df = pd.read_csv(
+        sm.input[0],
+        sep="\t",
+        usecols=[0, 2, 8],
+        header=None,
+        names=["contig", "type", "fields"],
+    )
     # If empty dataframe, just write an empty file
     if df.shape[0] == 0:
         table = pd.DataFrame(columns=["5S_rRNA", "16S_rRNA", "23S_rRNA"])
@@ -167,17 +196,19 @@ def count_rrna(sm):
         return
     types = [x.split(";")[0].split("=")[-1] for x in df.fields]
     bins = [x.split(";")[-1].split("=")[-1] for x in df.fields]
-    _df = pd.DataFrame(data={'rRNA_type': types, 'Bin_Id': bins})
+    _df = pd.DataFrame(data={"rRNA_type": types, "Bin_Id": bins})
     dfc = _df.reset_index().groupby(["Bin_Id", "rRNA_type"]).count()
-    table = dfc.pivot_table(columns="rRNA_type", index="Bin_Id", fill_value=0)[
-        "index"]
+    table = dfc.pivot_table(columns="rRNA_type", index="Bin_Id", fill_value=0)["index"]
     table.index.name = table.columns.name = ""
 
     missing = set(["16S_rRNA", "23S_rRNA", "5S_rRNA"]).difference(table.columns)
     if len(missing) > 0:
-        table = pd.merge(table, pd.DataFrame(columns=missing, index=table.index,
-                                             data=0), left_index=True,
-                         right_index=True)
+        table = pd.merge(
+            table,
+            pd.DataFrame(columns=missing, index=table.index, data=0),
+            left_index=True,
+            right_index=True,
+        )
     table = table.loc[:, ["5S_rRNA", "16S_rRNA", "23S_rRNA"]]
     table.index.name = "Bin_Id"
     table.to_csv(sm.output[0], sep="\t", index=True)
@@ -190,10 +221,13 @@ def count_trna(sm):
     :return:
     """
     df = pd.read_csv(sm.input[0], sep="\t")
-    dfc = df.groupby(["tRNA_type", "Bin_Id"]).count().reset_index().loc[:,
-          ["tRNA_type", "tRNA#", "Bin_Id"]]
-    table = dfc.pivot_table(columns="tRNA_type", index="Bin_Id")[
-        "tRNA#"].fillna(0)
+    dfc = (
+        df.groupby(["tRNA_type", "Bin_Id"])
+        .count()
+        .reset_index()
+        .loc[:, ["tRNA_type", "tRNA#", "Bin_Id"]]
+    )
+    table = dfc.pivot_table(columns="tRNA_type", index="Bin_Id")["tRNA#"].fillna(0)
     table.index.name = table.columns.name = ""
     table.to_csv(sm.output[0], sep="\t", index=True)
 
@@ -208,6 +242,7 @@ def count_trna(sm):
 
 # genome clustering
 
+
 def fetch_genome(ftp_base, outfile):
     """
     Performs the ftp fetching
@@ -216,6 +251,7 @@ def fetch_genome(ftp_base, outfile):
     :return:
     """
     from urllib import request
+
     ftp_base = ftp_base.rstrip("/")
     n = os.path.basename(ftp_base)
     fna = opj(ftp_base, "{}_genomic.fna.gz".format(n))
@@ -231,7 +267,8 @@ def unzip(z, o):
     :return:
     """
     import gzip as gz
-    with gz.open(z, 'rt') as fhin, open(o, 'w') as fhout:
+
+    with gz.open(z, "rt") as fhin, open(o, "w") as fhout:
         fhout.write(fhin.read())
     os.remove(z)
 
@@ -258,7 +295,7 @@ def generate_bin_list(input, outdir, min_completeness, max_contamination):
     """
     genomes = []
     for f in input:
-        with open(f, 'r') as fh:
+        with open(f, "r") as fh:
             if fh.readline().rstrip() == "NO BINS FOUND":
                 continue
         items = f.split("/")
@@ -270,15 +307,18 @@ def generate_bin_list(input, outdir, min_completeness, max_contamination):
         # read the checkm summary file
         df = pd.read_csv(f, sep="\t", index_col=0)
         # filter to at least <min_completeness> and at most <max_contamination>
-        df = df.loc[(df.Completeness >= min_completeness) & (df.Contamination <= max_contamination)]
+        df = df.loc[
+            (df.Completeness >= min_completeness)
+            & (df.Contamination <= max_contamination)
+        ]
         if df.shape[0] == 0:
             continue
         # generate a unique suffix for each bin
         uniq_suffix = "{assembly}.{l}".format(assembly=assembly, l=l)
         # make a map of the bin id and the unique suffix
-        idmap = dict(zip(df.index,
-                         ["{x}.{s}".format(x=x, s=uniq_suffix) for x in
-                          df.index]))
+        idmap = dict(
+            zip(df.index, ["{x}.{s}".format(x=x, s=uniq_suffix) for x in df.index])
+        )
         # create symlink in the output path for each bin id that points
         # to the original fasta file
         for bin_id, uniq_id in idmap.items():
@@ -319,7 +359,7 @@ def write_list(genomes, output):
     :param output:
     :return:
     """
-    with open(output, 'w') as fh:
+    with open(output, "w") as fh:
         for g in genomes:
             fh.write("{}\n".format(g))
     return genomes
@@ -331,9 +371,9 @@ def generate_fastANI_lists(sm):
     :param sm:
     :return:
     """
-    bins = generate_bin_list(sm.input.bins, sm.params.outdir,
-                             sm.params.completeness,
-                             sm.params.contamination)
+    bins = generate_bin_list(
+        sm.input.bins, sm.params.outdir, sm.params.completeness, sm.params.contamination
+    )
     refs = generate_ref_list(sm.input.refs, sm.params.outdir)
     genomes = bins + refs
     write_list(genomes, sm.output[0])
@@ -364,18 +404,22 @@ def fastani2dist(mat, txt, min_frags):
     :return:
     """
     # read the pairwise table
-    pairs = pd.read_csv(txt, header=None,
-                        sep="\t",
-                        names=["query", "ref", "ANI", "aligned", "total"])
+    pairs = pd.read_csv(
+        txt, header=None, sep="\t", names=["query", "ref", "ANI", "aligned", "total"]
+    )
     for key in ["query", "ref"]:
-        pairs[key] = [x.split("/")[-1].replace(".fna", "").replace(".fa", "")
-                      for x in pairs[key]]
+        pairs[key] = [
+            x.split("/")[-1].replace(".fna", "").replace(".fa", "") for x in pairs[key]
+        ]
     allowed_pairs = check_pairs(pairs, min_frags)
-    genomes = list(pd.read_table(mat, index_col=0, skiprows=1, sep="\t",
-                                 header=None, usecols=[0]).index)
+    genomes = list(
+        pd.read_table(
+            mat, index_col=0, skiprows=1, sep="\t", header=None, usecols=[0]
+        ).index
+    )
     genomes = [os.path.splitext(os.path.basename(g))[0] for g in genomes]
     r = {}
-    with open(mat, 'r') as fh:
+    with open(mat, "r") as fh:
         for i, line in enumerate(fh):
             if i == 0:
                 continue
@@ -386,14 +430,18 @@ def fastani2dist(mat, txt, min_frags):
             for j, item in enumerate(items[1:]):
                 genome2 = genomes[j]
                 # check that the pairing is allowed
-                if item == "NA" or genome not in allowed_pairs[genome2] or genome2 not in allowed_pairs[genome]:
+                if (
+                    item == "NA"
+                    or genome not in allowed_pairs[genome2]
+                    or genome2 not in allowed_pairs[genome]
+                ):
                     item = np.nan
                 else:
                     item = float(item)
                 r[genome][genome2] = item
     df = pd.DataFrame(r)
     df.fillna(0, inplace=True)
-    return 1-df.div(100)
+    return 1 - df.div(100)
 
 
 def cluster(linkage):
@@ -404,13 +452,15 @@ def cluster(linkage):
     :return: A dictionary with cluster index and list of genomes
     """
     import networkx as nx
+
     g = nx.from_dict_of_dicts(linkage)
     clustered = []
     clusters = {}
     clust_num = 1
     for n in g.nodes():
         c = [n]
-        if n in clustered: continue
+        if n in clustered:
+            continue
         edges = list(nx.dfs_edges(g, n))
         for e in edges:
             n1, n2 = e
@@ -468,15 +518,17 @@ def write_clusters(clusters, outfile):
     :return:
     """
     import operator
+
     # Calculate cluster sizes
     cluster_sizes = {}
     for clust_num, l in clusters.items():
         cluster_sizes[clust_num] = len(l)
     # Sort clusters by sizes
-    sorted_clusters = sorted(cluster_sizes.items(), key=operator.itemgetter(1),
-                             reverse=True)
+    sorted_clusters = sorted(
+        cluster_sizes.items(), key=operator.itemgetter(1), reverse=True
+    )
     # Write table
-    with open(outfile, 'w') as fh:
+    with open(outfile, "w") as fh:
         for i, item in enumerate(sorted_clusters, start=1):
             old_num = item[0]
             for g in clusters[old_num]:
@@ -484,12 +536,16 @@ def write_clusters(clusters, outfile):
 
 
 def main(sm):
-    toolbox = {"contig_map": contig_map, "count_tRNA": count_trna,
-               "remove_checkm_zerocols": remove_checkm_zerocols,
-               "count_rRNA": count_rrna, "binning_stats": binning_stats,
-               "download_ref_genome": download_ref_genome,
-               "generate_fastANI_lists": generate_fastANI_lists,
-               "cluster_genomes": cluster_genomes}
+    toolbox = {
+        "contig_map": contig_map,
+        "count_tRNA": count_trna,
+        "remove_checkm_zerocols": remove_checkm_zerocols,
+        "count_rRNA": count_rrna,
+        "binning_stats": binning_stats,
+        "download_ref_genome": download_ref_genome,
+        "generate_fastANI_lists": generate_fastANI_lists,
+        "cluster_genomes": cluster_genomes,
+    }
     toolbox[sm.rule](sm)
 
 

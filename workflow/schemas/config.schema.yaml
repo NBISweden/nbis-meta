@@ -222,12 +222,16 @@ properties:
   annotation:
     type: object
     default:
+      splits: 0
       tRNAscan: False
       infernal: True
       eggnog: False
       pfam: True
       taxonomy: False
     properties:
+      splits:
+        type: integer
+        description: number of files to split prodigal output into prior to running pfam_scan
       tRNAscan:
         type: boolean
         description: run tRNAscan-SE to identify tRNAs on contigs?
@@ -329,7 +333,15 @@ properties:
       gtdbtk:
         type: boolean
         description: run gtdbtk to classify bins?
-
+  gtdbtk:
+    type: object
+    default:
+      url: "https://data.ace.uq.edu.au/public/gtdb/data/releases/release207/207.0/auxillary_files/gtdbtk_r207_v2_data.tar.gz"
+    properties:
+      url:
+        type: string
+        default: "https://data.ace.uq.edu.au/public/gtdb/data/releases/release207/207.0/auxillary_files/gtdbtk_r207_v2_data.tar.gz"
+        description: "URL to *_data.tar.gz archive at GTDB"
   maxbin:
     type: object
     default:

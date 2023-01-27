@@ -9,9 +9,15 @@ def metaphlan2krona(sm):
     :param sm: snakemake object
     :return:
     """
-    df = pd.read_csv(sm.input[0], sep="\t", header=None, comment="#",
-                     index_col=0, usecols=[0, 1, 2],
-                     names=["lineage", "taxids", "%"])
+    df = pd.read_csv(
+        sm.input[0],
+        sep="\t",
+        header=None,
+        comment="#",
+        index_col=0,
+        usecols=[0, 1, 2],
+        names=["lineage", "taxids", "%"],
+    )
     # Extract species level
     df_sp = df.loc[df.index.str.contains("s__")]
     # Create new dataframe with taxids \t %

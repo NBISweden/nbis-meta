@@ -13,7 +13,7 @@ def write_featurefile(sm, score=".", group="gene_id", phase="."):
     :param phase: dummy phase column
     :return:
     """
-    with open(sm.input[0], 'r') as fhin, open(sm.output[0], 'w') as fhout:
+    with open(sm.input[0], "r") as fhin, open(sm.output[0], "w") as fhout:
         for line in fhin:
             line = line.rstrip()
             if line.startswith("#"):
@@ -26,13 +26,16 @@ def write_featurefile(sm, score=".", group="gene_id", phase="."):
             stop = items[4]
             _strand = items[6]
             geneid = items[8]
-            if _strand in ['+1', '1', '+']:
-                strand = '+'
+            if _strand in ["+1", "1", "+"]:
+                strand = "+"
             else:
-                strand = '-'
+                strand = "-"
             gene_id = "{} {}\n".format(group, geneid.split(";")[0].split("=")[-1])
-            fhout.write("\t".join([contig, source, method, start, stop, score,
-                                   strand, phase, gene_id]))
+            fhout.write(
+                "\t".join(
+                    [contig, source, method, start, stop, score, strand, phase, gene_id]
+                )
+            )
     return
 
 
@@ -54,10 +57,11 @@ def clean_featurecount(sm):
     df["gene_num"] = [x[1] for x in df.Geneid.str.split("_")]
     df.set_index(df.Chr.map(str) + "_" + df.gene_num, inplace=True)
     df.drop("gene_num", axis=1, inplace=True)
-    df.index.name = 'gene_id'
+    df.index.name = "gene_id"
     # Set sample and unit name from wildcards
-    sample_unit = "{sample}_{unit}".format(sample=sm.wildcards.sample,
-                                           unit=sm.wildcards.unit)
+    sample_unit = "{sample}_{unit}".format(
+        sample=sm.wildcards.sample, unit=sm.wildcards.unit
+    )
     df.columns = list(df.columns)[0:-1] + [sample_unit]
     # Extract length and counts
     df = df.loc[:, ["Length", sample_unit]]
@@ -78,16 +82,18 @@ def aggregate_featurecount(sm):
         lmap.update(_df.to_dict()["Length"])
         _df.drop("Length", axis=1, inplace=True)
         df = pd.merge(df, _df, right_index=True, left_index=True, how="outer")
-    counts = pd.merge(df, pd.DataFrame(lmap, index=["Length"]).T,
-                      left_index=True, right_index=True)
+    counts = pd.merge(
+        df, pd.DataFrame(lmap, index=["Length"]).T, left_index=True, right_index=True
+    )
     counts.to_csv(sm.output[0], sep="\t")
 
 
 def process_and_sum(q_df, annot_df):
     # Merge annotations and abundance
     # keep ORFs without annotation as "Unclassified"
-    annot_q_df = pd.merge(annot_df, q_df, left_index=True, right_index=True,
-                          how="right")
+    annot_q_df = pd.merge(
+        annot_df, q_df, left_index=True, right_index=True, how="right"
+    )
     annot_q_df.fillna("Unclassified", inplace=True)
     feature_cols = annot_df.columns
     annot_q_sum = annot_q_df.groupby(list(feature_cols)).sum().reset_index()
@@ -113,6 +119,7 @@ def count_features(sm):
     feature_sum = sum_to_features(sm.input.abund, sm.input.annot)
     feature_sum.to_csv(sm.output[0], sep="\t")
 
+
 def sum_to_taxa(sm):
     """
     Takes taxonomic assignments per orf and abundance values (tpm or raw) and
@@ -121,10 +128,17 @@ def sum_to_taxa(sm):
     :param sm: snakemake object
     :return:
     """
-    header = ["protein", "superkingdom", "phylum", "class", "order", "family",
-              "genus", "species"]
-    df = pd.read_csv(sm.input.tax[0], sep="\t", index_col=0, header=None,
-                     names=header)
+    header = [
+        "protein",
+        "superkingdom",
+        "phylum",
+        "class",
+        "order",
+        "family",
+        "genus",
+        "species",
+    ]
+    df = pd.read_csv(sm.input.tax[0], sep="\t", index_col=0, header=None, names=header)
     abund_df = pd.read_csv(sm.input.abund, header=0, index_col=0, sep="\t")
     # Remove length column
     abund_df.drop("Length", axis=1, inplace=True, errors="ignore")
@@ -134,11 +148,13 @@ def sum_to_taxa(sm):
 
 
 def main(sm):
-    toolbox = {"write_featurefile": write_featurefile,
-               "clean_featurecount": clean_featurecount,
-               "aggregate_featurecount": aggregate_featurecount,
-               "count_features": count_features,
-               "sum_to_taxa": sum_to_taxa}
+    toolbox = {
+        "write_featurefile": write_featurefile,
+        "clean_featurecount": clean_featurecount,
+        "aggregate_featurecount": aggregate_featurecount,
+        "count_features": count_features,
+        "sum_to_taxa": sum_to_taxa,
+    }
 
     toolbox[sm.rule](sm)
 

@@ -4,9 +4,6 @@ properties:
   sample:
     type: string
     description: sample name/identifier
-  unit:
-    type: integer
-    description: run identifier
   assembly:
     type: string
     description: Assembly group(s) separated by comma
@@ -19,5 +16,4 @@ properties:
 
 required:
   - sample
-  - unit
   - fq1

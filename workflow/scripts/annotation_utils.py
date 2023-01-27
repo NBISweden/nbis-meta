@@ -5,6 +5,7 @@ import pandas as pd
 
 def orf2feat(d, val_name="vals", regex=""):
     import re
+
     keys = []
     vals = []
     for key, val in d.items():
@@ -23,15 +24,24 @@ def orf2feat(d, val_name="vals", regex=""):
 
 def parse_emapper(sm):
     from pandas.errors import EmptyDataError
+
     db = sm.wildcards.db
-    db_att = {'kos': {'val_name': 'ko', 'regex': "K\d{5}"},
-              'pathways': {'val_name': 'pathway', 'regex': "map\d{5}"},
-              'modules': {'val_name': 'module', 'regex': ""},
-              'enzymes': {'val_name': 'enzyme', 'regex': ""}}
+    db_att = {
+        "kos": {"val_name": "ko", "regex": "K\d{5}"},
+        "pathways": {"val_name": "pathway", "regex": "map\d{5}"},
+        "modules": {"val_name": "module", "regex": ""},
+        "enzymes": {"val_name": "enzyme", "regex": ""},
+    }
     df = pd.read_csv(sm.input.annotations, sep="\t", index_col=0)
-    df.rename(columns={'KEGG_ko': 'kos', 'KEGG_Pathway': 'pathways',
-                          'KEGG_Module': 'modules', 'EC': 'enzymes'},
-               inplace=True)
+    df.rename(
+        columns={
+            "KEGG_ko": "kos",
+            "KEGG_Pathway": "pathways",
+            "KEGG_Module": "modules",
+            "EC": "enzymes",
+        },
+        inplace=True,
+    )
     df.fillna("-", inplace=True)
     d = df.loc[df[db] != "-", db].to_dict()
     how = "inner"
@@ -40,10 +50,10 @@ def parse_emapper(sm):
     except EmptyDataError:
         info_df = pd.DataFrame()
         how = "right"
-    annot = orf2feat(d, val_name=db_att[db]["val_name"],
-                     regex=db_att[db]["regex"])
-    annot = pd.merge(info_df, annot, left_index=True,
-                     right_on=db_att[db]["val_name"], how=how)
+    annot = orf2feat(d, val_name=db_att[db]["val_name"], regex=db_att[db]["regex"])
+    annot = pd.merge(
+        info_df, annot, left_index=True, right_on=db_att[db]["val_name"], how=how
+    )
     annot.to_csv(sm.output[0], sep="\t", index=True, header=True)
 
 
@@ -56,14 +66,25 @@ def parse_rgi(sm):
 
 
 def parse_pfam(sm):
-    annot = pd.read_csv(sm.input[0], comment="#", header=None, sep=" +",
-                        usecols=[0, 5, 7, 14], engine="python",
-                        names=["orf", "pfam", "pfam_type", "pfam_clan"])
-    clans = pd.read_csv(sm.input[1], header=None, names=["clan", "clan_name"],
-                        usecols=[0, 3], sep="\t")
-    info = pd.read_csv(sm.input[2], header=None,
-                       names=["pfam", "clan", "pfam_name"], usecols=[0, 1, 4],
-                       sep="\t")
+    annot = pd.read_csv(
+        sm.input[0],
+        comment="#",
+        header=None,
+        sep=" +",
+        usecols=[0, 5, 7, 14],
+        engine="python",
+        names=["orf", "pfam", "pfam_type", "pfam_clan"],
+    )
+    clans = pd.read_csv(
+        sm.input[1], header=None, names=["clan", "clan_name"], usecols=[0, 3], sep="\t"
+    )
+    info = pd.read_csv(
+        sm.input[2],
+        header=None,
+        names=["pfam", "clan", "pfam_name"],
+        usecols=[0, 1, 4],
+        sep="\t",
+    )
     # Strip suffix for pfams
     annot.loc[:, "pfam"] = [x.split(".")[0] for x in annot.pfam]
     # Select unique orf->pfam mappings
@@ -80,9 +101,11 @@ def parse_pfam(sm):
 
 
 def main(sm):
-    toolbox = {"parse_pfam": parse_pfam,
-               "parse_emapper": parse_emapper,
-               "parse_rgi": parse_rgi}
+    toolbox = {
+        "parse_pfam": parse_pfam,
+        "parse_emapper": parse_emapper,
+        "parse_rgi": parse_rgi,
+    }
     toolbox[sm.rule](sm)
 
 
