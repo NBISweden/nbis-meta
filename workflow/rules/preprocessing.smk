@@ -346,7 +346,9 @@ rule trimmomatic_pe:
         trim_string=get_trimmomatic_string("pe", config),
     threads: 10
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        runtime=240,
+        mem_mib=mem_allowed,
+        slurm_account=config['slurm_account'],
     conda:
         "../envs/preprocess.yml"
     envmodules:
