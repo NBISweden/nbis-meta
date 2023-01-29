@@ -37,6 +37,9 @@ rule generate_metaspades_input:
     params:
         assembly=lambda wildcards: assemblies[wildcards.assembly],
         assembler="metaspades",
+    envmodules:
+        "bioinfo-tools",
+        "biopython"
     script:
         "../scripts/assembly_utils.py"
 
@@ -115,6 +118,9 @@ rule generate_megahit_input:
         se=temp(results + "/assembly/{assembly}/input_se"),
     log:
         results + "/assembly/{assembly}/input_list.log",
+    envmodules:
+        "bioinfo-tools",
+        "biopython"
     params:
         assembly=lambda wildcards: assemblies[wildcards.assembly],
     script:
@@ -140,6 +146,7 @@ rule megahit:
     threads: config["megahit"]["threads"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        slurm_account=config["slurm_account"],
     conda:
         "../envs/megahit.yml"
     envmodules:
