@@ -146,7 +146,7 @@ rule megahit:
     threads: config["megahit"]["threads"]
     resources:
         runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
-        slurm_account=config["slurm_account"],
+        slurm_account=lambda wildcards: config["slurm_account"] if config["slurm_account"] else None
     conda:
         "../envs/megahit.yml"
     envmodules:
