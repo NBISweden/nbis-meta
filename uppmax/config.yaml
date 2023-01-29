@@ -1,4 +1,4 @@
-cluster-sidecar: "cluster-sidecar.py"
+cluster-sidecar: "slurm-sidecar.py"
 cluster-cancel: "scancel"
 restart-times: "0"
 jobscript: "slurm-jobscript.sh"
