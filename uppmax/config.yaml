@@ -1,15 +1,19 @@
-cluster-sidecar: "cluster-sidecar.py"
+## UPDATE <your-account> below to your slurm acount id
+## then uncomment the line
+
+#default_resources: "slurm_account=<your-account>"
+
+## PROFILE-SPECIFIC COMMAND LINE OPTIONS (DO NOT CHANGE)
+cluster-sidecar: "../workflow/scripts/cluster-sidecar.py"
 cluster-cancel: "scancel"
+slurm: "True"
 restart-times: "0"
-jobscript: "slurm-jobscript.sh"
-cluster: "slurm-submit.py"
-cluster-status: "slurm-status.py"
 max-jobs-per-second: "10"
 max-status-checks-per-second: "10"
 local-cores: 1
 latency-wait: "5"
 use-conda: "False"
-use-singularity: "True"
+use-singularity: "False"
 use-envmodules: "True"
 jobs: "500"
 printshellcmds: "True"

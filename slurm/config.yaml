@@ -1,4 +1,10 @@
-cluster-sidecar: "slurm-sidecar.py"
+## UPDATE <your-account> below to your slurm acount id
+## then uncomment the line
+
+#default_resources: "slurm_account=<your-account>"
+
+## PROFILE-SPECIFIC COMMAND LINE OPTIONS (DO NOT CHANGE)
+cluster-sidecar: "../workflow/scripts/cluster-sidecar.py"
 cluster-cancel: "scancel"
 slurm: "True"
 restart-times: "0"
