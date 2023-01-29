@@ -38,7 +38,8 @@ rule prodigal:
     log:
         results + "/annotation/{assembly}/prodigal.log",
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 2,
+        runtime=120,
+        mem_mib=mem_allowed,
     conda:
         "../envs/annotation.yml"
     envmodules:

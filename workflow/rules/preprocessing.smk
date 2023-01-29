@@ -348,7 +348,6 @@ rule trimmomatic_pe:
     resources:
         runtime=240,
         mem_mib=mem_allowed,
-        slurm_account=config['slurm_account'],
     conda:
         "../envs/preprocess.yml"
     envmodules:

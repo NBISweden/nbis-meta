@@ -1,7 +1,8 @@
 ##### download example files #####
 localrules:
     download_synthetic,
-    generate_examples
+    generate_examples,
+
 
 rule download_synthetic:
     """
