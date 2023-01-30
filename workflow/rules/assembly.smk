@@ -64,7 +64,8 @@ rule metaspades:
         keep_corrected=config["metaspades"]["keep_corrected"],
     threads: config["metaspades"]["threads"]
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        runtime=240,
+        slurm_account=lambda wildcards: config["slurm_account"] if config["slurm_account"] else None,
     conda:
         "../envs/metaspades.yml"
     envmodules:
@@ -145,7 +146,7 @@ rule megahit:
         keep_intermediate=config["megahit"]["keep_intermediate"],
     threads: config["megahit"]["threads"]
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        runtime=240,
         slurm_account=lambda wildcards: config["slurm_account"] if config["slurm_account"] else None
     conda:
         "../envs/megahit.yml"
@@ -197,6 +198,9 @@ rule fasta2bed:
         results + "/assembly/{assembly}/final_contigs.fa",
     output:
         results + "/assembly/{assembly}/final_contigs.bed",
+    envmodules:
+        "bioinfo-tools",
+        "biopython"
     script:
         "../scripts/assembly_utils.py"
 
@@ -218,7 +222,8 @@ rule bowtie_build:
         prefix=results + "/assembly/{assembly}/final_contigs.fa",
     threads: config["bowtie2"]["threads"]
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        runtime=240,
+        slurm_account= lambda wildcards: config["slurm_account"] if config["slurm_account"] else None,
     conda:
         "../envs/quantify.yml"
     envmodules:
@@ -259,7 +264,8 @@ rule bowtie_map_pe:
         prefix=results + "/assembly/{assembly}/final_contigs.fa",
     threads: config["bowtie2"]["threads"]
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        runtime=240,
+        slurm_account= lambda wildcards: config["slurm_account"] if config["slurm_account"] else None,
     conda:
         "../envs/quantify.yml"
     envmodules:
@@ -297,7 +303,8 @@ rule bowtie_map_se:
         prefix=results + "/assembly/{assembly}/final_contigs.fa",
     threads: config["bowtie2"]["threads"]
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        runtime=240,
+        slurm_account= lambda wildcards: config["slurm_account"] if config["slurm_account"] else None,
     conda:
         "../envs/quantify.yml"
     envmodules:
@@ -366,6 +373,9 @@ rule assembly_stats:
             category="Assembly",
         ),
         results + "/report/assembly/assembly_size_dist.tsv",
+    envmodules:
+        "biointo-tools",
+        "biopython"
     script:
         "../scripts/assembly_utils.py"
 
