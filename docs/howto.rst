@@ -8,24 +8,47 @@ workflow is with the command:
 
 .. code-block:: bash
 
-    snakemake —-use-conda --configfile <myconfig.yaml> --cores 4
+    snakemake --profile local --configfile <myconfig.yaml> -c 4
 
-Here ``--cores`` specifies how many CPU cores to use in parallell.
+This will run the workflow on your current computer, using 4 CPU cores. Several
+command-line settings are defined by the ``local`` profile (defined by the ``local/config.yaml``
+configuration file) (run ``snakemake --help`` to see the full list of options).
 
-************************
-Useful snakemake options
-************************
 
-Other useful options that you can specify to snakemake on the command line include:
+****************************************************
+Running the workflow with the SLURM Workload Manager
+****************************************************
 
-* ``-r`` or ``--reason``: print the reason for execution of each rule
-* ``-p`` or ``--printshellcmds``: print shell commands that will be executed
-* ``--nolock``: do not lock the working directory
-* ``--unlock``: unlock working directory
-* ``--ri`` or ``--rerun-incomplete``: re-run all jobs where output may be incomplete
-* ``--jobs [N]`` or ``-j [N]``: Use at most N CPU cores/jobs in parallel. If `-j` is used with the SLURM profile to submit jobs in a compute cluster infrastructure, `-j` specifies the maximum number of jobs to submit to the queue.
+The workflow uses built-in Snakemake support for the SLURM workload manager.
+To set it up to submit jobs with your SLURM account, set ``slurm_account``
+in your configuration file, like so:
 
-For a full list of snakemake command line options, see `here <https://snakemake.readthedocs.io/en/stable/executing/cli.html#all-options>`_.
+.. code-block:: yaml
+
+    slurm_account: 'my-slurm-account'
+
+Then you can run the workflow with ``--profile slurm`` from the root of the
+workflow directory, *e.g.*:
+
+.. code-block:: bash
+
+    snakemake --profile slurm -j 100 --configfile myconfig.yaml
+
+Here the ``-j 100`` flag means that snakemake can have at most 100 jobs in the
+queue at the same time for this run.
+
+You may also supply your slurm account directly on the command line with the
+``--config`` flag, like so:
+
+.. code-block:: bash
+
+    snakemake --profile slurm -j 100 --config slurm_account=my-slurm-account --configfile myconfig.yaml
+
+.. tip::
+
+    If you will be running the workflow on the Uppmax compute cluster, see
+    the :doc:`Running the workflow on Uppmax <uppmax>` documentation, which also
+    includes instructions for making use of centrally installed resources.
 
 *******
 Targets
@@ -52,14 +75,14 @@ For instance, to run only the preprocessing part:
 
 .. code-block:: bash
 
-    snakemake --use-conda --configfile config.yaml -j 4 qc
+    snakemake --profile local --configfile config.yaml -c 4 qc
 
 Targets may also be combined, so if you want to generate assemblies **and** run
 read-based classification you can do:
 
 .. code-block:: bash
 
-    snakemake --use-conda --configfile config.yaml -j 4 assemble classify
+    snakemake --profile local --configfile config.yaml -c 4 assemble classify
 
 *******
 Reports
@@ -85,13 +108,13 @@ preprocessing and assembly of your samples and you run the workflow as such:
 
 .. code-block:: bash
 
-    snakemake --use-conda -j 4 --configfile config.yaml
+    snakemake --profile local -c 4 --configfile config.yaml
 
 When the workflow is finished you can then generate a report by running:
 
 .. code-block:: bash
 
-    snakemake --use-conda -j 4 --configfile config.yaml --report report.html
+    snakemake --profile local -c 4 --configfile config.yaml --report report.html
 
 ********
 Examples
@@ -133,7 +156,7 @@ Assemble reads with Megahit
 
 .. code-block:: bash
 
-    snakemake --use-conda --configfile config.yaml -j 4 -p assemble
+    snakemake --profile local --configfile config.yaml -c 4 -p assemble
 
 **Output**
 
@@ -188,7 +211,7 @@ protein sequences in your assemblies.
 
 .. code-block:: bash
 
-    snakemake --use-conda --configfile config.yaml -j 4 -p annotate
+    snakemake --profile local --configfile config.yaml -c 4 -p annotate
 
 Read-based analysis
 ===================
@@ -211,7 +234,7 @@ taxonomic clades in your samples.
 
 .. code-block:: bash
 
-    snakemake --use-conda --configfile config.yaml -j 4 -p classify
+    snakemake --profile local --configfile config.yaml -c 4 -p classify
 
 **Output**
 
@@ -252,7 +275,7 @@ edit your config file to contain:
 
 .. code-block:: bash
 
-    snakemake --use-conda --configfile config.yaml -j 4 -p classify
+    snakemake --profile local --configfile config.yaml -c 4 -p classify
 
 **Output**
 

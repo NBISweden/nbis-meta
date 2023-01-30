@@ -33,13 +33,11 @@ environment:
 .. code-block:: bash
 
     cd nbis-meta
-    conda env create -f environment.yml
+    mamba env create -f environment.yml
 
-.. note:: mamba instead of conda
-
-    ``mamba`` is a faster replacement for conda. Give it a try by installing it from
-    the conda-forge channel: ``conda install -c conda-forge mamba``.
-    You can then run ``mamba env create -f environment.yml``.
+``mamba`` is a faster implementation of the ``conda`` package manager. Refer
+to the `mamba documentation <https://mamba.readthedocs.io/en/latest/installation.html>`_
+for installation instructions.
 
 From DockerHub
 ==============
@@ -58,7 +56,7 @@ What's next?
 You are now ready to start using the workflow!
 
 * for information on how to prepare necessary files see :doc:`Getting-started <setup>`
-* then check out the :doc:`How-to page <howto>` for more info on how to run the workflow
+* then check out the  for more info on how to run the workflow
 
 *****************
 Workflow overview

@@ -7,6 +7,19 @@ HPC clusters here are some helpful tips.
 
 .. toctree::
 
+**************
+Uppmax profile
+**************
+
+The workflow comes with a pre-configured profile for the Uppmax cluster. To use
+it, first make sure you set your SLURM account to the configuration file with
+the ``slurm_acount`` parameter in your config, then run the workflow with
+``--profile uppmax`` in the command line call, *e.g.*:
+
+.. code-block::bash
+
+    snakemake --profile uppmax --configfile myconfig.yaml
+
 *************************
 Setting up database files
 *************************
@@ -32,7 +45,7 @@ simply symlink the files in the directory into a directory ``resources/eggnog-ma
 .. code-block:: bash
 
     mkdir resources/eggnog-mapper
-    ln -s /sw/data/eggNOG/5.0/* resources/eggnog-mapper
+    ln -s /sw/data/eggNOG/5.0/$CLUSTER/eggnog{.db,_proteins.dmnd} resources/eggnog-mapper/
     head -1 /sw/data/eggNOG/eggNOG_data-5.0_install-README.md > resources/eggnog-mapper/eggnog.version
     touch resources/eggnog-mapper/download.log
 
@@ -46,8 +59,9 @@ location, run the following:
 .. code-block:: bash
 
     mkdir resources/pfam
-    ln -s /sw/data/Pfam/31.0/Pfam-A.hmm* resources/pfam/
-    cat /sw/data/Pfam/31.0/Pfam.version > resources/pfam/Pfam-A.version
+    version="35.0"
+    ln -s /sw/data/Pfam/$version/Pfam-A.hmm* resources/pfam/
+    cat /sw/data/Pfam/$version/Pfam.version > resources/pfam/Pfam-A.version
 
 This installs the necessary files for release ``31.0``. Check the directories
 under ``/sw/data/Pfam/`` to see available release versions.
@@ -65,7 +79,7 @@ standard index, do the following:
 .. code-block:: bash
 
     mkdir -p resources/kraken/standard
-    ln -s /sw/data/Kraken2/latest/*.k2d resources/kraken/standard/
+    ln -s /sw/data/Kraken2_data/latest/*.k2d resources/kraken/standard/
 
 2. From a reproducibility perspective it's essential to keep track of when the
 index was created, so generate a version file inside your kraken directory by
@@ -73,7 +87,7 @@ running:
 
 .. code-block:: bash
 
-    file /sw/data/Kraken2/latest | egrep -o "[0-9]{8}\-[0-9]{6}" > resources/kraken/standard/kraken.version
+    file /sw/data/Kraken2_data/latest | egrep -o "[0-9]{8}\-[0-9]{6}" > resources/kraken/standard/kraken.version
 
 3. Modify your config file so that it contains:
 
@@ -95,8 +109,8 @@ a simple process, *e.g.* for the latest SILVA index:
 .. code-block:: bash
 
     mkdir -p resources/kraken/silva
-    ln -s /sw/data/Kraken2/latest_silva/*.k2d resources/kraken/silva/
-    file /sw/data/Kraken2/latest_silva | egrep -o "[0-9]{8}\-[0-9]{6}" > resources/kraken/silva/kraken.version
+    ln -s /sw/data/Kraken2_data/latest_silva/*.k2d resources/kraken/silva/
+    file /sw/data/Kraken2_data/latest_silva | egrep -o "[0-9]{8}\-[0-9]{6}" > resources/kraken/silva/kraken.version
 
 Then update your config file with:
 
@@ -142,7 +156,7 @@ Uppmax, do:
 .. code-block:: bash
 
     mkdir -p resources/gtdb
-    ln -s /sw/data/GTDB/R04-RS89/rackham/release89/* resources/gtdb/
+    ln -s /sw/data/GTDB/R202/$CLUSTER/release202/* resources/gtdb/
 
 
 Then make sure your config file contains:
@@ -197,26 +211,3 @@ database:
 
     taxonomy:
         database: "uniref90"
-
-*************************************************
-Configure workflow for the SLURM Workload Manager
-*************************************************
-
-The workflow comes with the `SLURM snakemake profile <https://github.com/Snakemake-Profiles/slurm>`_
-pre-installed. All you have to do is to modify the ``config/cluster.yaml`` file
-and insert your cluster account ID:
-
-.. code-block:: yaml
-
-    __default__:
-        account: staff # <-- exchange staff with your SLURM account id
-
-Then you can run the workflow with ``--profile slurm`` from the root of the
-workflow directory, *e.g.*:
-
-.. code-block:: bash
-
-    snakemake --use-conda --profile slurm -j 100 --configfile myconfig.yaml
-
-Here the ``-j 100`` flag means that snakemake can have at most 100 jobs in the
-queue at the same time for this run.
