@@ -40,6 +40,9 @@ rule prodigal:
     resources:
         runtime=120,
         mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/annotation.yml"
     envmodules:
@@ -62,6 +65,12 @@ rule trnascan:
     log:
         results + "/annotation/{assembly}/tRNA.log",
     threads: 4
+    resources:
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
+        runtime=600,
     conda:
         "../envs/annotation.yml"
     envmodules:
@@ -157,7 +166,11 @@ rule infernal:
         db="resources/infernal/Rfam.rRNA.cm",
     threads: 4
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 10,
+        runtime=600,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/annotation.yml"
     envmodules:
@@ -201,6 +214,7 @@ rule download_pfam_info:
         info="resources/pfam/Pfam-A.clans.tsv",
     log:
         "resources/pfam/info.log",
+    retries: 3
     params:
         ftp="ftp://ftp.ebi.ac.uk/pub/databases/Pfam/current_release",
     shell:
@@ -249,7 +263,11 @@ rule pfam_scan:
         tmp_out=temppath + "/{assembly}.pfam.out",
     threads: 2
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 10,
+        runtime=600,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     shell:
         """
         pfam_scan.pl -fasta {input[0]} -dir {params.dir} -cpu {threads} \
@@ -333,7 +351,11 @@ rule emapper_homology_search:
         "eggNOG-mapper/2.1.9",
     threads: 10
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        runtime=240,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     shell:
         """
         mkdir -p {params.tmpdir}
@@ -370,7 +392,10 @@ if config["runOnUppMax"]:
             "Annotating hits table for {wildcards.assembly}"
         threads: 10
         resources:
-            runtime=lambda wildcards, attempt: attempt**2 * 60,
+            runtime=60,
+            mem_mib=mem_allowed,
+            slurm_account=lambda wildcards: config["slurm_account"] if config[
+                "slurm_account"] else None,
         shell:
             """
             if [ -z ${{SLURM_JOB_ID+x}} ]; then SLURM_JOB_ID="emapper_annotate_hits_uppmax"; fi
@@ -406,7 +431,10 @@ else:
             "eggNOG-mapper/2.1.9",
         threads: 10
         resources:
-            runtime=lambda wildcards, attempt: attempt**2 * 60,
+            runtime=60,
+            mem_mib=mem_allowed,
+            slurm_account=lambda wildcards: config["slurm_account"] if config[
+                "slurm_account"] else None,
         shell:
             """
             emapper.py {params.flags} --cpu {threads} -o {params.out} \
@@ -436,6 +464,7 @@ rule download_rgi_data:
         version="resources/card/card.version",
     log:
         "resources/card/log",
+    retries: 3
     params:
         tar="resources/card/data.tar.gz",
         dir=lambda w, output: os.path.dirname(output.json),
@@ -470,7 +499,11 @@ rule rgi:
         "../envs/rgi.yml"
     threads: 10
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60,
+        runtime=60,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"] if config[
+            "slurm_account"] else None,
+
     shell:
         """
         mkdir -p {params.tmpdir}
