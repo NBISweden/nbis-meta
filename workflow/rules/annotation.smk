@@ -66,11 +66,11 @@ rule trnascan:
         results + "/annotation/{assembly}/tRNA.log",
     threads: 4
     resources:
+        runtime = 600,
         mem_mib=mem_allowed,
         slurm_account=lambda wildcards: config["slurm_account"]
         if config["slurm_account"]
         else None,
-        runtime=600,
     conda:
         "../envs/annotation.yml"
     envmodules:
@@ -92,6 +92,7 @@ rule download_rfams:
         clanin="resources/infernal/Rfam.clanin",
     log:
         "resources/infernal/download.log",
+    retries: 3
     params:
         url="ftp://ftp.ebi.ac.uk/pub/databases/Rfam/CURRENT",
         rfams=" ".join(

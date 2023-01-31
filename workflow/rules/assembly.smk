@@ -65,6 +65,7 @@ rule metaspades:
     threads: config["metaspades"]["threads"]
     resources:
         runtime=240,
+        mem_mib=mem_allowed,
         slurm_account=lambda wildcards: config["slurm_account"]
         if config["slurm_account"]
         else None,
@@ -149,6 +150,7 @@ rule megahit:
     threads: config["megahit"]["threads"]
     resources:
         runtime=240,
+        mem_mib=mem_allowed,
         slurm_account=lambda wildcards: config["slurm_account"]
         if config["slurm_account"]
         else None,
@@ -227,6 +229,7 @@ rule bowtie_build:
     threads: config["bowtie2"]["threads"]
     resources:
         runtime=240,
+        mem_mib=mem_allowed,
         slurm_account=lambda wildcards: config["slurm_account"]
         if config["slurm_account"]
         else None,
@@ -271,6 +274,7 @@ rule bowtie_map_pe:
     threads: config["bowtie2"]["threads"]
     resources:
         runtime=240,
+        mem_mib=mem_allowed,
         slurm_account=lambda wildcards: config["slurm_account"]
         if config["slurm_account"]
         else None,
@@ -312,6 +316,7 @@ rule bowtie_map_se:
     threads: config["bowtie2"]["threads"]
     resources:
         runtime=240,
+        mem_mib=mem_allowed,
         slurm_account=lambda wildcards: config["slurm_account"]
         if config["slurm_account"]
         else None,
