@@ -67,7 +67,11 @@ rule metabat_coverage:
     log:
         results + "/binning/metabat/{assembly}/cov/log",
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 2,
+        runtime=120,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"] if
+        config["slurm_account"] else None,
+    threads: 1
     conda:
         "../envs/metabat.yml"
     envmodules:
@@ -97,7 +101,10 @@ rule metabat:
         "MetaBat/2.12.1",
     threads: config["binning"]["threads"]
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        runtime=240,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"] if
+        config["slurm_account"] else None,
     shell:
         """
         metabat2 -i {input.fa} -a {input.depth} -m {wildcards.l} -t {threads} \
@@ -171,7 +178,11 @@ rule concoct_coverage_table:
         "bioinfo-tools",
         "CONCOCT/1.1.0",
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 2,
+        runtime=120,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"] if
+        config["slurm_account"] else None,
+    threads: 1
     params:
         samplenames=results + "/binning/concoct/{assembly}/cov/samplenames",
         p=POSTPROCESS,
@@ -228,7 +239,10 @@ rule concoct:
         "bioinfo-tools",
         "CONCOCT/1.1.0",
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 2,
+        runtime=120,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"] if
+        config["slurm_account"] else None,
     shell:
         """
         concoct -t {threads} --coverage_file {input.cov} -l {params.length} \
@@ -359,84 +373,89 @@ rule download_checkm:
 
 
 if config["checkm"]["taxonomy_wf"]:
-
-    rule checkm_taxonomy_wf:
-        input:
-            db="resources/checkm/.dmanifest",
-            tsv=results + "/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
-        output:
-            tsv=results + "/binning/{binner}/{assembly}/{l}/checkm/genome_stats.tsv",
-            ms=results + "/binning/{binner}/{assembly}/{l}/checkm/lineage.ms",
-        log:
-            results + "/binning/{binner}/{assembly}/{l}/checkm/checkm.log",
-        conda:
-            "../envs/checkm.yml"
-        envmodules:
-            "bioinfo-tools",
-            "CheckM/1.1.3",
-        threads: 10
-        resources:
-            runtime=lambda wildcards, attempt: attempt**2 * 60,
-        params:
-            suff="fa",
-            indir=lambda wildcards, input: os.path.dirname(input.tsv),
-            outdir=lambda wildcards, output: os.path.dirname(output.tsv),
-            rank=config["checkm"]["rank"],
-            taxon=config["checkm"]["taxon"],
-        shell:
-            """
-            lines=$(wc -l {input.tsv} | cut -f1 -d ' ')
-            if [ $lines == 1 ] ; then
-                echo "NO BINS FOUND" > {output.tsv}
-                touch {output.ms}
-            else
-                checkm taxonomy_wf -t {threads} -x {params.suff} -q \
-                    --tab_table -f {output.tsv} \
-                    {params.rank} {params.taxon} {params.indir} {params.outdir} \
-                    > {log} 2>&1
-                ln -s {params.taxon}.ms {output.ms}
-            fi
-            """
-
-
+    ruleorder checkm_taxonomy_wf > checkm_lineage_wf
 else:
+    ruleorder checkm_lineage_wf > checkm_taxonomy_wf
+rule checkm_taxonomy_wf:
+    input:
+        db="resources/checkm/.dmanifest",
+        tsv=results + "/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
+    output:
+        tsv=results + "/binning/{binner}/{assembly}/{l}/checkm/genome_stats.tsv",
+        ms=results + "/binning/{binner}/{assembly}/{l}/checkm/lineage.ms",
+    log:
+        results + "/binning/{binner}/{assembly}/{l}/checkm/checkm.log",
+    conda:
+        "../envs/checkm.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CheckM/1.1.3",
+    threads: 10
+    resources:
+        runtime=60,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"] if
+        config["slurm_account"] else None,
+    params:
+        suff="fa",
+        indir=lambda wildcards, input: os.path.dirname(input.tsv),
+        outdir=lambda wildcards, output: os.path.dirname(output.tsv),
+        rank=config["checkm"]["rank"],
+        taxon=config["checkm"]["taxon"],
+    shell:
+        """
+        lines=$(wc -l {input.tsv} | cut -f1 -d ' ')
+        if [ $lines == 1 ] ; then
+            echo "NO BINS FOUND" > {output.tsv}
+            touch {output.ms}
+        else
+            checkm taxonomy_wf -t {threads} -x {params.suff} -q \
+                --tab_table -f {output.tsv} \
+                {params.rank} {params.taxon} {params.indir} {params.outdir} \
+                > {log} 2>&1
+            ln -s {params.taxon}.ms {output.ms}
+        fi
+        """
 
-    rule checkm_lineage_wf:
-        input:
-            db="resources/checkm/.dmanifest",
-            tsv=results + "/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
-        output:
-            tsv=results + "/binning/{binner}/{assembly}/{l}/checkm/genome_stats.tsv",
-            ms=results + "/binning/{binner}/{assembly}/{l}/checkm/lineage.ms",
-        log:
-            results + "/binning/{binner}/{assembly}/{l}/checkm/checkm.log",
-        conda:
-            "../envs/checkm.yml"
-        envmodules:
-            "bioinfo-tools",
-            "CheckM/1.1.3",
-        threads: 10
-        resources:
-            runtime=lambda wildcards, attempt: attempt**2 * 60,
-        params:
-            suff="fa",
-            indir=lambda wildcards, input: os.path.dirname(input.tsv),
-            outdir=lambda wildcards, output: os.path.dirname(output.tsv),
-            tree=get_tree_settings(config),
-        shell:
-            """
-            lines=$(wc -l {input.tsv} | cut -f1 -d ' ')
-            if [ $lines == 0 ] ; then
-                echo "NO BINS FOUND" > {output.tsv}
-                touch {output.ms}
-            else
-                checkm lineage_wf -t {threads} --pplacer_threads {threads} \
-                    -x {params.suff} {params.tree} -q \
-                    --tab_table -f {output.tsv} \
-                    {params.indir} {params.outdir} \
-                    > {log} 2>&1
-            fi
-            """
+rule checkm_lineage_wf:
+    input:
+        db="resources/checkm/.dmanifest",
+        tsv=results + "/binning/{binner}/{assembly}/{l}/summary_stats.tsv",
+    output:
+        tsv=results + "/binning/{binner}/{assembly}/{l}/checkm/genome_stats.tsv",
+        ms=results + "/binning/{binner}/{assembly}/{l}/checkm/lineage.ms",
+    log:
+        results + "/binning/{binner}/{assembly}/{l}/checkm/checkm.log",
+    conda:
+        "../envs/checkm.yml"
+    envmodules:
+        "bioinfo-tools",
+        "CheckM/1.1.3",
+    threads: 10
+    resources:
+        runtime=60,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"] if
+        config["slurm_account"] else None,
+    params:
+        suff="fa",
+        indir=lambda wildcards, input: os.path.dirname(input.tsv),
+        outdir=lambda wildcards, output: os.path.dirname(output.tsv),
+        tree=get_tree_settings(config),
+    shell:
+        """
+        lines=$(wc -l {input.tsv} | cut -f1 -d ' ')
+        if [ $lines == 0 ] ; then
+            echo "NO BINS FOUND" > {output.tsv}
+            touch {output.ms}
+        else
+            checkm lineage_wf -t {threads} --pplacer_threads {threads} \
+                -x {params.suff} {params.tree} -q \
+                --tab_table -f {output.tsv} \
+                {params.indir} {params.outdir} \
+                > {log} 2>&1
+        fi
+        """
 
 
 rule checkm_qa:
@@ -488,7 +507,10 @@ rule checkm_coverage:
         dir=lambda wildcards, input: os.path.dirname(input.tsv),
     threads: 20
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 10,
+        runtime=600,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"] if
+        config["slurm_account"] else None,
     conda:
         "../envs/checkm.yml"
     envmodules:
@@ -587,6 +609,7 @@ rule download_gtdb:
         + "/"
         + os.path.basename(config["gtdbtk"]["url"]),
         dir=lambda wildcards, output: os.path.dirname(os.path.dirname(output.met)),
+    retries: 3
     shell:
         """
         curl -L -o {params.tar} {params.url} > {log} 2>&1
@@ -611,7 +634,10 @@ rule gtdbtk_classify:
         outdir=lambda wildcards, output: os.path.dirname(output[0]),
     threads: 20
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60,
+        runtime=60,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"] if
+        config["slurm_account"] else None,
     conda:
         "../envs/gtdbtk.yml"
     envmodules:
@@ -675,7 +701,10 @@ rule barrnap:
         gtdbtk_dir=lambda wildcards, input: os.path.dirname(input.gtdbtk),
         outdir=lambda wildcards, output: os.path.dirname(output[0]),
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 30,
+        runtime=30,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"] if
+        config["slurm_account"] else None,
     threads: 1
     shell:
         """
@@ -728,7 +757,10 @@ rule trnascan_bins:
         indir=lambda wildcards, input: os.path.dirname(input.tsv),
         gtdbtk_dir=lambda wildcards, input: os.path.dirname(input.gtdbtk),
     resources:
-        runtime=lambda wildcards, attempt: attempt * 30,
+        runtime=30,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"] if
+        config["slurm_account"] else None,
     threads: 4
     conda:
         "../envs/annotation.yml"
@@ -852,7 +884,10 @@ rule fastANI:
         "bioinfo-tools",
         "FastANI/1.33",
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60,
+        runtime=60,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"] if
+        config["slurm_account"] else None,
     shell:
         """
         fastANI --rl {input[0]} --ql {input[1]} -k {params.k} -t {threads} \
