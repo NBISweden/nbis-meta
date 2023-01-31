@@ -23,6 +23,16 @@ localrules:
     binning_report,
 
 
+if config["checkm"]["taxonomy_wf"]:
+
+    ruleorder: checkm_taxonomy_wf > checkm_lineage_wf
+
+
+else:
+
+    ruleorder: checkm_lineage_wf > checkm_taxonomy_wf
+
+
 ##### master rule for binning #####
 
 
@@ -69,8 +79,9 @@ rule metabat_coverage:
     resources:
         runtime=120,
         mem_mib=mem_allowed,
-        slurm_account=lambda wildcards: config["slurm_account"] if
-        config["slurm_account"] else None,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     threads: 1
     conda:
         "../envs/metabat.yml"
@@ -103,8 +114,9 @@ rule metabat:
     resources:
         runtime=240,
         mem_mib=mem_allowed,
-        slurm_account=lambda wildcards: config["slurm_account"] if
-        config["slurm_account"] else None,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     shell:
         """
         metabat2 -i {input.fa} -a {input.depth} -m {wildcards.l} -t {threads} \
@@ -180,8 +192,9 @@ rule concoct_coverage_table:
     resources:
         runtime=120,
         mem_mib=mem_allowed,
-        slurm_account=lambda wildcards: config["slurm_account"] if
-        config["slurm_account"] else None,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     threads: 1
     params:
         samplenames=results + "/binning/concoct/{assembly}/cov/samplenames",
@@ -241,8 +254,9 @@ rule concoct:
     resources:
         runtime=120,
         mem_mib=mem_allowed,
-        slurm_account=lambda wildcards: config["slurm_account"] if
-        config["slurm_account"] else None,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     shell:
         """
         concoct -t {threads} --coverage_file {input.cov} -l {params.length} \
@@ -372,10 +386,6 @@ rule download_checkm:
         """
 
 
-if config["checkm"]["taxonomy_wf"]:
-    ruleorder checkm_taxonomy_wf > checkm_lineage_wf
-else:
-    ruleorder checkm_lineage_wf > checkm_taxonomy_wf
 rule checkm_taxonomy_wf:
     input:
         db="resources/checkm/.dmanifest",
@@ -394,8 +404,9 @@ rule checkm_taxonomy_wf:
     resources:
         runtime=60,
         mem_mib=mem_allowed,
-        slurm_account=lambda wildcards: config["slurm_account"] if
-        config["slurm_account"] else None,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     params:
         suff="fa",
         indir=lambda wildcards, input: os.path.dirname(input.tsv),
@@ -417,6 +428,7 @@ rule checkm_taxonomy_wf:
         fi
         """
 
+
 rule checkm_lineage_wf:
     input:
         db="resources/checkm/.dmanifest",
@@ -435,8 +447,9 @@ rule checkm_lineage_wf:
     resources:
         runtime=60,
         mem_mib=mem_allowed,
-        slurm_account=lambda wildcards: config["slurm_account"] if
-        config["slurm_account"] else None,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     params:
         suff="fa",
         indir=lambda wildcards, input: os.path.dirname(input.tsv),
@@ -509,8 +522,9 @@ rule checkm_coverage:
     resources:
         runtime=600,
         mem_mib=mem_allowed,
-        slurm_account=lambda wildcards: config["slurm_account"] if
-        config["slurm_account"] else None,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/checkm.yml"
     envmodules:
@@ -636,8 +650,9 @@ rule gtdbtk_classify:
     resources:
         runtime=60,
         mem_mib=mem_allowed,
-        slurm_account=lambda wildcards: config["slurm_account"] if
-        config["slurm_account"] else None,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/gtdbtk.yml"
     envmodules:
@@ -703,8 +718,9 @@ rule barrnap:
     resources:
         runtime=30,
         mem_mib=mem_allowed,
-        slurm_account=lambda wildcards: config["slurm_account"] if
-        config["slurm_account"] else None,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     threads: 1
     shell:
         """
@@ -759,8 +775,9 @@ rule trnascan_bins:
     resources:
         runtime=30,
         mem_mib=mem_allowed,
-        slurm_account=lambda wildcards: config["slurm_account"] if
-        config["slurm_account"] else None,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     threads: 4
     conda:
         "../envs/annotation.yml"
@@ -886,8 +903,9 @@ rule fastANI:
     resources:
         runtime=60,
         mem_mib=mem_allowed,
-        slurm_account=lambda wildcards: config["slurm_account"] if
-        config["slurm_account"] else None,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     shell:
         """
         fastANI --rl {input[0]} --ql {input[1]} -k {params.k} -t {threads} \
