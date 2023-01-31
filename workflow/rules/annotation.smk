@@ -66,7 +66,7 @@ rule trnascan:
         results + "/annotation/{assembly}/tRNA.log",
     threads: 4
     resources:
-        runtime = 600,
+        runtime=600,
         mem_mib=mem_allowed,
         slurm_account=lambda wildcards: config["slurm_account"]
         if config["slurm_account"]
@@ -395,8 +395,9 @@ if config["runOnUppMax"]:
         resources:
             runtime=60,
             mem_mib=mem_allowed,
-            slurm_account=lambda wildcards: config["slurm_account"] if config[
-                "slurm_account"] else None,
+            slurm_account=lambda wildcards: config["slurm_account"]
+            if config["slurm_account"]
+            else None,
         shell:
             """
             if [ -z ${{SLURM_JOB_ID+x}} ]; then SLURM_JOB_ID="emapper_annotate_hits_uppmax"; fi
@@ -434,8 +435,9 @@ else:
         resources:
             runtime=60,
             mem_mib=mem_allowed,
-            slurm_account=lambda wildcards: config["slurm_account"] if config[
-                "slurm_account"] else None,
+            slurm_account=lambda wildcards: config["slurm_account"]
+            if config["slurm_account"]
+            else None,
         shell:
             """
             emapper.py {params.flags} --cpu {threads} -o {params.out} \
@@ -502,9 +504,9 @@ rule rgi:
     resources:
         runtime=60,
         mem_mib=mem_allowed,
-        slurm_account=lambda wildcards: config["slurm_account"] if config[
-            "slurm_account"] else None,
-
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     shell:
         """
         mkdir -p {params.tmpdir}

@@ -46,7 +46,9 @@ rule pfam_scan_split:
     resources:
         runtime=240,
         mem_mib=mem_allowed,
-        slurm_account=lambda wildcards: config["slurm_account"] if config["slurm_account"] else None,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     shell:
         """
         pfam_scan.pl -fasta {input[0]} -dir {params.dir} -cpu {threads} \
@@ -58,11 +60,11 @@ rule pfam_scan_split:
 rule pfam_scan_gather:
     input:
         gather.split(
-            results+"/annotation/{{assembly}}/splits/split_{scatteritem}.pfam.out"
+            results + "/annotation/{{assembly}}/splits/split_{scatteritem}.pfam.out"
         ),
     output:
-        results+"/annotation/{assembly}/{assembly}.pfam.out",
-        touch(results+"/annotation/{assembly}/{assembly}.pfam.gathered"),
+        results + "/annotation/{assembly}/{assembly}.pfam.out",
+        touch(results + "/annotation/{assembly}/{assembly}.pfam.gathered"),
     shell:
         """
         egrep "^#" {input[0]} > {output[0]}
