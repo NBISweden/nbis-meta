@@ -39,7 +39,7 @@ rule generate_metaspades_input:
         assembler="metaspades",
     envmodules:
         "bioinfo-tools",
-        "biopython"
+        "biopython",
     script:
         "../scripts/assembly_utils.py"
 
@@ -65,7 +65,9 @@ rule metaspades:
     threads: config["metaspades"]["threads"]
     resources:
         runtime=240,
-        slurm_account=lambda wildcards: config["slurm_account"] if config["slurm_account"] else None,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/metaspades.yml"
     envmodules:
@@ -121,7 +123,7 @@ rule generate_megahit_input:
         results + "/assembly/{assembly}/input_list.log",
     envmodules:
         "bioinfo-tools",
-        "biopython"
+        "biopython",
     params:
         assembly=lambda wildcards: assemblies[wildcards.assembly],
     script:
@@ -147,7 +149,9 @@ rule megahit:
     threads: config["megahit"]["threads"]
     resources:
         runtime=240,
-        slurm_account=lambda wildcards: config["slurm_account"] if config["slurm_account"] else None
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/megahit.yml"
     envmodules:
@@ -200,7 +204,7 @@ rule fasta2bed:
         results + "/assembly/{assembly}/final_contigs.bed",
     envmodules:
         "bioinfo-tools",
-        "biopython"
+        "biopython",
     script:
         "../scripts/assembly_utils.py"
 
@@ -223,7 +227,9 @@ rule bowtie_build:
     threads: config["bowtie2"]["threads"]
     resources:
         runtime=240,
-        slurm_account= lambda wildcards: config["slurm_account"] if config["slurm_account"] else None,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/quantify.yml"
     envmodules:
@@ -265,7 +271,9 @@ rule bowtie_map_pe:
     threads: config["bowtie2"]["threads"]
     resources:
         runtime=240,
-        slurm_account= lambda wildcards: config["slurm_account"] if config["slurm_account"] else None,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/quantify.yml"
     envmodules:
@@ -304,7 +312,9 @@ rule bowtie_map_se:
     threads: config["bowtie2"]["threads"]
     resources:
         runtime=240,
-        slurm_account= lambda wildcards: config["slurm_account"] if config["slurm_account"] else None,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/quantify.yml"
     envmodules:
@@ -375,7 +385,7 @@ rule assembly_stats:
         results + "/report/assembly/assembly_size_dist.tsv",
     envmodules:
         "biointo-tools",
-        "biopython"
+        "biopython",
     script:
         "../scripts/assembly_utils.py"
 
