@@ -61,7 +61,11 @@ rule remove_mark_duplicates:
     threads: 10
     priority: 50
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        runtime=240,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/quantify.yml"
     envmodules:
@@ -113,7 +117,11 @@ rule featurecount:
         tmpdir=config["paths"]["temp"],
         setting=lambda wildcards: "-Q 10 -B -p" if wildcards.seq_type == "pe" else "",
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 30,
+        runtime=30,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/quantify.yml"
     envmodules:
