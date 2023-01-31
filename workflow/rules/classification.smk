@@ -35,6 +35,7 @@ rule download_kraken_build:
         "resources/kraken/prebuilt/{kraken_prebuilt}/download.log".format(
             kraken_prebuilt=config["kraken"]["prebuilt"]
         ),
+    retries: 3
     params:
         dir=lambda w, output: os.path.dirname(output[0]),
         tar="{temp}/{base}.tgz".format(
@@ -68,7 +69,11 @@ rule kraken_build_standard:
         "bioinfo-tools",
         "Kraken2/2.1.1",
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 24,
+        runtime=1440,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     shell:
         """
         kraken2-build --standard --db {params.dir} --threads {threads} > {log.build} 2>&1
@@ -112,7 +117,11 @@ rule kraken_pe:
         mem=config["kraken"]["mem"],
     threads: 10
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 10,
+        runtime=600,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/kraken.yml"
     envmodules:
@@ -157,7 +166,11 @@ rule kraken_se:
         mem=config["kraken"]["mem"],
     threads: 10
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 10,
+        runtime=600,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/kraken.yml"
     envmodules:
@@ -187,6 +200,7 @@ rule download_centrifuge_build:
         "{centrifuge_dir}/download.log".format(
             centrifuge_dir=config["centrifuge"]["dir"]
         ),
+    retries: 3
     params:
         dir=config["centrifuge"]["dir"],
         tar="{centrifuge_dir}/{base}.tar.gz".format(
@@ -249,7 +263,11 @@ rule centrifuge_pe:
         k=config["centrifuge"]["max_assignments"],
     threads: 20
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60,
+        runtime=60,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/centrifuge.yml"
     envmodules:
@@ -308,7 +326,11 @@ rule centrifuge_se:
         k=config["centrifuge"]["max_assignments"],
     threads: 20
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60,
+        runtime=60,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/centrifuge.yml"
     envmodules:
@@ -379,7 +401,11 @@ rule build_metaphlan:
         index=config["metaphlan"]["index"],
     threads: 4
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        runtime=240,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/metaphlan.yml"
     envmodules:
@@ -432,7 +458,11 @@ rule metaphlan_pe:
         "metaphlan2/2.0",
     threads: 10
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        runtime=240,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     shell:
         """
         metaphlan {input.R1},{input.R2} --bowtie2db {params.dir} --add_viruses \
@@ -476,7 +506,11 @@ rule metaphlan_se:
         "metaphlan2/2.0",
     threads: 10
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        runtime=240,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     shell:
         """
         metaphlan {input.se} --bowtie2db {params.dir} --add_viruses --force \
@@ -487,11 +521,9 @@ rule metaphlan_se:
 
 rule merge_metaphlan:
     input:
-        get_all_files(
-            samples, "{}/metaphlan".format(config["paths"]["results"]), ".tsv"
-        ),
+        get_all_files(samples, results + "/metaphlan", ".tsv"),
     output:
-        "{}/report/metaphlan/metaphlan.tsv".format(config["paths"]["results"]),
+        results + "/report/metaphlan/metaphlan.tsv",
     conda:
         "../envs/metaphlan.yml"
     envmodules:
@@ -527,9 +559,9 @@ rule metaphlan2krona:
         ),
         db="resources/krona/taxonomy.tab",
     output:
-        "{}/report/metaphlan/metaphlan.html".format(config["paths"]["results"]),
+        results + "/report/metaphlan/metaphlan.html",
     log:
-        "{}/report/metaphlan/krona.log".format(config["paths"]["results"]),
+        results + "/report/metaphlan/krona.log",
     conda:
         "../envs/krona.yml"
     envmodules:
@@ -547,9 +579,9 @@ rule metaphlan2krona:
 
 rule plot_metaphlan:
     input:
-        "{}/report/metaphlan/metaphlan.tsv".format(config["paths"]["results"]),
+        results + "/report/metaphlan/metaphlan.tsv",
     output:
-        "{}/report/metaphlan/metaphlan.pdf".format(config["paths"]["results"]),
+        results + "/report/metaphlan/metaphlan.pdf",
     params:
         rank=config["metaphlan"]["plot_rank"],
     conda:
