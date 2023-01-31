@@ -41,6 +41,7 @@ rule download_rRNA_database:
         "resources/rRNA_databases/{file}.fasta",
     log:
         "resources/rRNA_databases/{file}.dl.log",
+    retries: 3
     params:
         url="https://raw.githubusercontent.com/biocore/sortmerna/master/data/rRNA_databases/{file}.fasta",
     shell:
@@ -60,7 +61,11 @@ rule index_db:
     log:
         "resources/rRNA_databases/{file}.index.log",
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 5,
+        runtime=300,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/preprocess.yml"
     envmodules:
@@ -87,7 +92,13 @@ rule sortmerna_merge_fastq:
         R2_unzipped=results + "/{sample}_{unit}_R2.fastq",
         merged=temppath + "/{sample}_{unit}_merged.fastq",
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 6,
+        runtime=360,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
+    group:
+        "sortmerna"
     conda:
         "../envs/preprocess.yml"
     envmodules:
@@ -136,7 +147,13 @@ rule sortmerna_fastq_pe:
         ref_string=get_sortmerna_ref_string(config["sortmerna"]["dbs"]),
     threads: 10
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        runtime=240,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
+    group:
+        "sortmerna"
     conda:
         "../envs/preprocess.yml"
     envmodules:
@@ -172,7 +189,13 @@ rule sortmerna_split_fastq:
         R1=temppath + "/{sample}_{unit}_sortmerna/{sample}_{unit}_R1.{RNA_type}.fastq",
         R2=temppath + "/{sample}_{unit}_sortmerna/{sample}_{unit}_R2.{RNA_type}.fastq",
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 6,
+        runtime=360,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
+    group:
+        "sortmerna"
     conda:
         "../envs/preprocess.yml"
     envmodules:
@@ -225,7 +248,11 @@ rule sortmerna_fastq_se:
         ref_string=get_sortmerna_ref_string(config["sortmerna"]["dbs"]),
     threads: 10
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        runtime=240,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/preprocess.yml"
     envmodules:
@@ -348,6 +375,9 @@ rule trimmomatic_pe:
     resources:
         runtime=240,
         mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/preprocess.yml"
     envmodules:
@@ -389,7 +419,11 @@ rule trimmomatic_se:
         trim_string=get_trimmomatic_string("se", config),
     threads: 10
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        runtime=240,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/preprocess.yml"
     envmodules:
@@ -444,7 +478,11 @@ rule cutadapt_pe:
         error_rate=config["cutadapt"]["error_rate"],
         extra_params=config["cutadapt"]["extra_params"],
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        runtime=240,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/preprocess.yml"
     envmodules:
@@ -487,7 +525,11 @@ rule cutadapt_se:
         error_rate=config["cutadapt"]["error_rate"],
         extra_params=config["cutadapt"]["extra_params"],
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        runtime=240,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/preprocess.yml"
     envmodules:
@@ -511,6 +553,7 @@ rule download_phix:
         "resources/phix/phix.fasta",
     log:
         "resources/phix/phix.log",
+    retries: 3
     params:
         url_base="ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/819/615/GCF_000819615.1_ViralProj14015",
     shell:
@@ -581,7 +624,11 @@ rule filter_phix_pe:
         prefix="resources/phix/phix",
     threads: config["bowtie2"]["threads"]
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60,
+        runtime=120,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/preprocess.yml"
     envmodules:
@@ -627,7 +674,11 @@ rule filter_phix_se:
         prefix="resources/phix/phix",
     threads: config["bowtie2"]["threads"]
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60,
+        runtime=60,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/preprocess.yml"
     envmodules:
@@ -687,7 +738,11 @@ rule fastuniq:
         file_list=temppath + "/{sample}_{unit}.filelist",
     threads: 4
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 4,
+        runtime=240,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/preprocess.yml"
     shell:
@@ -742,7 +797,11 @@ rule fastqc:
     shadow:
         "shallow"
     resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60,
+        runtime=60,
+        mem_mib=mem_allowed,
+        slurm_account=lambda wildcards: config["slurm_account"]
+        if config["slurm_account"]
+        else None,
     conda:
         "../envs/preprocess.yml"
     envmodules:
