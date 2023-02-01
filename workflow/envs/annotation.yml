@@ -1,11 +1,13 @@
+name: annotation
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
   - defaults
 dependencies:
-  - python=3.7.6
+  - python
+  - mmseqs2=14.7e284
   - prodigal=2.6.3
   - pfam_scan=1.6
-  - eggnog-mapper=2.1.2
-  - infernal=1.1.2
-  - trnascan-se=2.0.5
+  - eggnog-mapper=2.1.9
+  - infernal=1.1.4
+  - trnascan-se=2.0.11
