@@ -1,9 +1,10 @@
+name: concoct
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
   - defaults
 dependencies:
-  - python=3.7.6
-  - biopython=1.76
+  - python
+  - biopython
   - concoct=1.1.0
-  - samtools=1.9
+  - samtools=1.6
