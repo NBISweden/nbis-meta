@@ -1,0 +1,7 @@
+name: fastuniq
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - fastuniq=1.1
