@@ -7,7 +7,6 @@ localrules:
     merge_metaphlan,
     metaphlan2krona_table,
     metaphlan2krona,
-    plot_metaphlan,
     classifier2krona,
     all2krona,
 
@@ -575,19 +574,6 @@ rule metaphlan2krona:
         ktImportTaxonomy -t 1 -m 2 -o {output} -tax {params.dbdir} \
             {params.input_string} > {log} 2>&1
         """
-
-
-rule plot_metaphlan:
-    input:
-        results + "/report/metaphlan/metaphlan.tsv",
-    output:
-        results + "/report/metaphlan/metaphlan.pdf",
-    params:
-        rank=config["metaphlan"]["plot_rank"],
-    conda:
-        "../envs/plotting.yml"
-    notebook:
-        "../notebooks/metaphlan.py.ipynb"
 
 
 ##### krona #####

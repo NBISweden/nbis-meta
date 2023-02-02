@@ -1,7 +1,6 @@
 localrules:
     assemble,
     fasta2bed,
-    plot_assembly_stats,
     assembly_stats,
     samtools_flagstat,
     generate_metaspades_input,
@@ -22,8 +21,8 @@ elif config["assembly"]["metaspades"]:
 rule assemble:
     input:
         expand(
-            results + "/report/assembly/{f}.pdf",
-            f=["assembly_stats", "assembly_size_dist", "alignment_frequency"],
+            results + "/assembly/{assembly}/final_contigs.fa",
+            assembly=assemblies.keys(),
         ),
 
 
@@ -357,7 +356,7 @@ rule samtools_flagstat:
         "../envs/quantify.yml"
     envmodules:
         "bioinfo-tools",
-        "samtools/1.9",
+        "samtools/1.16",
     shell:
         """
         for f in {input} ;
@@ -393,33 +392,3 @@ rule assembly_stats:
         "biopython",
     script:
         "../scripts/assembly_utils.py"
-
-
-rule plot_assembly_stats:
-    input:
-        stat=results + "/report/assembly/assembly_stats.tsv",
-        dist=results + "/report/assembly/assembly_size_dist.tsv",
-        maps=expand(
-            results + "/assembly/{assembly}/mapping/flagstat.tsv",
-            assembly=assemblies.keys(),
-        ),
-    output:
-        report(
-            results + "/report/assembly/assembly_stats.pdf",
-            caption="../report/assembly.rst",
-            category="Assembly",
-        ),
-        report(
-            results + "/report/assembly/assembly_size_dist.pdf",
-            caption="../report/assembly.rst",
-            category="Assembly",
-        ),
-        report(
-            results + "/report/assembly/alignment_frequency.pdf",
-            caption="../report/assembly.rst",
-            category="Assembly",
-        ),
-    conda:
-        "../envs/plotting.yml"
-    notebook:
-        "../notebooks/assembly_stats.py.ipynb"

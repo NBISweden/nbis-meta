@@ -20,7 +20,6 @@ localrules:
     count_rRNA,
     count_tRNA,
     aggregate_bin_annot,
-    binning_report,
 
 
 if config["checkm"]["taxonomy_wf"]:
@@ -927,23 +926,3 @@ rule cluster_genomes:
         minfrags=config["fastani"]["minfrags"],
     script:
         "../scripts/binning_utils.py"
-
-
-##### rule to generate summary plots
-
-
-rule binning_report:
-    input:
-        binning_input(config, report=True),
-    output:
-        report(
-            results + "/report/binning/bin_report.pdf",
-            category="Binning",
-            caption="../report/binning.rst",
-        ),
-    message:
-        "Plot summary stats of binned genomes"
-    conda:
-        "../envs/plotting.yml"
-    notebook:
-        "../notebooks/binning_report.py.ipynb"
