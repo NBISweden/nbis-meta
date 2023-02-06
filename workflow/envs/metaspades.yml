@@ -1,7 +1,7 @@
+name: metaspades
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
   - defaults
 dependencies:
-  - python=3.8.1
-  - spades=3.14.0
+  - spades=3.15.5
