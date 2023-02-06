@@ -36,11 +36,8 @@ rule generate_metaspades_input:
     params:
         assembly=lambda wildcards: assemblies[wildcards.assembly],
         assembler="metaspades",
-    envmodules:
-        "bioinfo-tools",
-        "biopython",
     script:
-        "../scripts/assembly_utils.py"
+        "../scripts/assembly_io.py"
 
 
 rule metaspades:
@@ -72,7 +69,7 @@ rule metaspades:
         "../envs/metaspades.yml"
     envmodules:
         "bioinfo-tools",
-        "spades/3.14.1",
+        "spades/3.15.5",
     shell:
         """
         # Create directories
@@ -121,13 +118,10 @@ rule generate_megahit_input:
         se=temp(results + "/assembly/{assembly}/input_se"),
     log:
         results + "/assembly/{assembly}/input_list.log",
-    envmodules:
-        "bioinfo-tools",
-        "biopython",
     params:
         assembly=lambda wildcards: assemblies[wildcards.assembly],
     script:
-        "../scripts/assembly_utils.py"
+        "../scripts/assembly_io.py"
 
 
 rule megahit:
@@ -203,9 +197,8 @@ rule fasta2bed:
         results + "/assembly/{assembly}/final_contigs.fa",
     output:
         results + "/assembly/{assembly}/final_contigs.bed",
-    envmodules:
-        "bioinfo-tools",
-        "biopython",
+    conda:
+        "../envs/biopython.yml"
     script:
         "../scripts/assembly_utils.py"
 
