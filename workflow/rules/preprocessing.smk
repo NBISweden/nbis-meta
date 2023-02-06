@@ -67,10 +67,10 @@ rule index_db:
         if config["slurm_account"]
         else None,
     conda:
-        "../envs/preprocess.yml"
+        "../envs/sortmerna.yml"
     envmodules:
         "bioinfo-tools",
-        "SortMeRNA/2.1b",
+        "SortMeRNA/4.3.4",
     shell:
         """
         indexdb_rna --ref {input.fasta},{input.fasta} > {log} 2>&1
@@ -100,10 +100,10 @@ rule sortmerna_merge_fastq:
     group:
         "sortmerna"
     conda:
-        "../envs/preprocess.yml"
+        "../envs/sortmerna.yml"
     envmodules:
         "bioinfo-tools",
-        "SortMeRNA/2.1b",
+        "SortMeRNA/4.3.4",
     shell:
         """
         mkdir -p {params.scratch}
@@ -158,7 +158,7 @@ rule sortmerna_fastq_pe:
         "../envs/preprocess.yml"
     envmodules:
         "bioinfo-tools",
-        "SortMeRNA/2.1b",
+        "SortMeRNA/4.3.4",
     shell:
         """
          mkdir -p {params.scratch}
@@ -200,7 +200,7 @@ rule sortmerna_split_fastq:
         "../envs/preprocess.yml"
     envmodules:
         "bioinfo-tools",
-        "SortMeRNA/2.1b",
+        "SortMeRNA/4.3.4",
     shell:
         """
         mkdir -p {params.tmpdir}
@@ -257,7 +257,7 @@ rule sortmerna_fastq_se:
         "../envs/preprocess.yml"
     envmodules:
         "bioinfo-tools",
-        "SortMeRNA/2.1b",
+        "SortMeRNA/4.3.4",
     shell:
         """
         mkdir -p {params.scratch}
@@ -379,7 +379,7 @@ rule trimmomatic_pe:
         if config["slurm_account"]
         else None,
     conda:
-        "../envs/preprocess.yml"
+        "../envs/trimmomatic.yml"
     envmodules:
         "bioinfo-tools",
         "trimmomatic/0.39",
@@ -425,7 +425,7 @@ rule trimmomatic_se:
         if config["slurm_account"]
         else None,
     conda:
-        "../envs/preprocess.yml"
+        "../envs/trimmomatic.yml"
     envmodules:
         "bioinfo-tools",
         "trimmomatic/0.39",
@@ -484,10 +484,10 @@ rule cutadapt_pe:
         if config["slurm_account"]
         else None,
     conda:
-        "../envs/preprocess.yml"
+        "../envs/cutadapt.yml"
     envmodules:
         "bioinfo-tools",
-        "cutadapt/2.3",
+        "cutadapt/4.0",
     threads: 10
     shell:
         """
@@ -531,10 +531,10 @@ rule cutadapt_se:
         if config["slurm_account"]
         else None,
     conda:
-        "../envs/preprocess.yml"
+        "../envs/cutadapt.yml"
     envmodules:
         "bioinfo-tools",
-        "cutadapt/2.3",
+        "cutadapt/4.0",
     threads: 10
     shell:
         """
@@ -580,7 +580,7 @@ rule bowtie_build_phix:
         prefix=lambda w, input: os.path.splitext(input.fasta)[0],
     threads: 1
     conda:
-        "../envs/preprocess.yml"
+        "../envs/qc.yml"
     envmodules:
         "bioinfo-tools",
         "bowtie2/2.4.5",
@@ -630,7 +630,7 @@ rule filter_phix_pe:
         if config["slurm_account"]
         else None,
     conda:
-        "../envs/preprocess.yml"
+        "../envs/qc.yml"
     envmodules:
         "bioinfo-tools",
         "bowtie2/2.4.5",
@@ -680,7 +680,7 @@ rule filter_phix_se:
         if config["slurm_account"]
         else None,
     conda:
-        "../envs/preprocess.yml"
+        "../envs/qc.yml"
     envmodules:
         "bioinfo-tools",
         "bowtie2/2.4.5",
@@ -744,7 +744,7 @@ rule fastuniq:
         if config["slurm_account"]
         else None,
     conda:
-        "../envs/preprocess.yml"
+        "../envs/fastuniq.yml"
     shell:
         """
         gunzip -c {input.R1} > {params.R1_intmp}
@@ -803,7 +803,7 @@ rule fastqc:
         if config["slurm_account"]
         else None,
     conda:
-        "../envs/preprocess.yml"
+        "../envs/qc.yml"
     envmodules:
         "bioinfo-tools",
         "FastQC/0.11.9",
@@ -832,10 +832,10 @@ rule multiqc:
         config="workflow/.cfg/multiqc_preprocess_config.yaml",
         output_dir=lambda w, output: os.path.dirname(output.html),
     conda:
-        "../envs/preprocess.yml"
+        "../envs/qc.yml"
     envmodules:
         "bioinfo-tools",
-        "MultiQC/1.8",
+        "MultiQC/1.12",
     shell:
         """
         multiqc -f -c {params.config} -n samples_report.html \
