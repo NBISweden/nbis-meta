@@ -1,11 +1,5 @@
 localrules:
     taxonomy,
-    contigtax_download,
-    contigtax_download_taxonomy,
-    contigtax_download_nr_idmap,
-    contigtax_format_nr,
-    contigtax_format_uniref,
-    contigtax_update,
     download_sourmash_db,
     contigtax_assign_orfs,
     sourmash_compute,
@@ -22,201 +16,48 @@ rule taxonomy:
         ),
 
 
-##### contigtax #####
-
-
-rule contigtax_download_taxonomy:
+rule mmseqs_taxonomy:
     output:
-        sqlite="resources/taxonomy/taxonomy.sqlite",
-        taxdump="resources/taxonomy/taxdump.tar.gz",
-        nodes="resources/taxonomy/nodes.dmp",
-        names="resources/taxonomy/names.dmp",
-        pkl="resources/taxonomy/taxonomy.sqlite.traverse.pkl",
+        tsv = results + "/annotation/{assembly}/{seqTaxDB}_lca.tsv",
     log:
-        "resources/taxonomy/contigtax.log",
-    params:
-        taxdir=lambda wildcards, output: os.path.dirname(output.sqlite),
-    conda:
-        "../envs/taxonomy.yml"
-    shell:
-        """
-        contigtax download taxonomy -t {params.taxdir} >{log} 2>&1
-        """
-
-
-rule contigtax_download:
-    output:
-        fasta=temp("resources/{db}/{db}.fasta.gz"),
-    log:
-        "resources/{db}/contigtax_download.log",
-    params:
-        dldir=lambda wildcards, output: os.path.dirname(output.fasta),
-        tmpdir="$TMPDIR",
-    conda:
-        "../envs/taxonomy.yml"
-    shell:
-        """
-        contigtax download {wildcards.db} --tmpdir {params.tmpdir} \
-            -d {params.dldir} --skip_idmap >{log} 2>{log}
-        """
-
-
-rule contigtax_download_nr_idmap:
-    output:
-        idmap="resources/nr/prot.accession2taxid.gz",
-    log:
-        "resources/nr/contigtax_download_idmap.log",
-    params:
-        dldir=lambda wildcards, output: os.path.dirname(output.idmap),
-    conda:
-        "../envs/taxonomy.yml"
-    shell:
-        """
-        contigtax download idmap -d {params.dldir} > {log} 2>&1
-        """
-
-
-rule contigtax_format_uniref:
+        results + "/annotation/{assembly}/{seqTaxDB}.mmseqs.log"
     input:
-        fasta="resources/{db}/{db}.fasta.gz",
-    output:
-        fasta="resources/{db}/{db}.reformat.fasta.gz",
-        idmap="resources/{db}/prot.accession2taxid.gz",
-    log:
-        "resources/{db}/contigtax_format.log",
-    params:
-        tmpdir=temppath,
-    conda:
-        "../envs/taxonomy.yml"
-    shell:
-        """
-        contigtax format -m {output.idmap} --tmpdir {params.tmpdir} \
-            {input.fasta} {output.fasta} > {log} 2>&1
-        """
-
-
-rule contigtax_format_nr:
-    input:
-        fasta="resources/nr/nr.fasta.gz",
-    output:
-        fasta="resources/nr/nr.reformat.fasta.gz",
-    log:
-        "resources/nr/contigtax_format.log",
-    params:
-        tmpdir=temppath,
-    conda:
-        "../envs/taxonomy.yml"
-    shell:
-        """
-        contigtax format --tmpdir {params.tmpdir} {input.fasta} \
-            {output.fasta} > {log} 2>&1
-        """
-
-
-rule contigtax_update:
-    input:
-        idmap="resources/{db}/prot.accession2taxid.gz",
-    output:
-        idmap="resources/{db}/prot.accession2taxid.update.gz",
-    log:
-        "resources/{db}/contigtax_update.log",
-    conda:
-        "../envs/taxonomy.yml"
-    params:
-        dir=lambda wildcards, output: os.path.dirname(output.idmap),
-    shell:
-        """
-        # If an idmap file is available, use it to create an updated idmap file
-        if [ -e {params.dir}/idmap.tsv.gz ] ; then
-            contigtax update {input.idmap} {params.dir}/idmap.tsg.gz \
-                {output.idmap} > {log} 2>&1
-        # Otherwise, just create a symlink
-        else
-            cd {params.dir}
-            ln -s $(basename {input.idmap}) $(basename {output.idmap})
-        fi
-        """
-
-
-rule contigtax_build:
-    input:
-        fasta="resources/{db}/{db}.reformat.fasta.gz",
-        nodes="resources/taxonomy/nodes.dmp",
-        idmap="resources/{db}/prot.accession2taxid.update.gz",
-    output:
-        "resources/{db}/diamond.dmnd",
-    log:
-        "resources/{db}/diamond.log",
-    threads: 20
-    resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 10,
-    conda:
-        "../envs/taxonomy.yml"
-    shell:
-        """
-         contigtax build -d {output} -p {threads} {input.fasta} \
-            {input.idmap} {input.nodes} >{log} 2>&1
-         """
-
-
-rule contigtax_search:
-    input:
-        db=expand("resources/{db}/diamond.dmnd", db=config["taxonomy"]["database"]),
-        fasta=results + "/assembly/{assembly}/final_contigs.fa",
-    output:
-        expand(
-            results + "/annotation/{{assembly}}/final_contigs.{db}.tsv.gz",
-            db=config["taxonomy"]["database"],
+        seqTaxDB=expand(
+            "resources/mmseqs/{{seqTaxDB}}{suff}",
+            suff=[
+                "",
+                ".index",
+                ".dbtype",
+                ".lookup",
+                "_h",
+                "_h.dbtype",
+                "_h.index",
+                "_mapping",
+                "_taxonomy",
+            ],
         ),
-    log:
-        results + "/annotation/{assembly}/contigtax_search.log",
+        fa = results + "/assembly/{assembly}/final_contigs.fa"
     params:
-        tmpdir=temppath,
-        min_len=config["taxonomy"]["min_len"],
-        settings=config["taxonomy"]["search_params"],
-    threads: 20
-    resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 10,
+        seqTaxDB="resources/mmseqs/{seqTaxDB}",
+        tmpdir="$TMPDIR/mmseqs.{assembly}",
+        out = lambda wildcards, output: os.path.dirname(output.tsv) + "/" + wildcards.seqTaxDB,
+        lca_ranks = ",".join(config["taxonomy"]["ranks"]),
+        sensitivity = 7.5
+    envmodules:
+        "bioinfo-tools",
+        "MMseqs2/14-7e284",
     conda:
-        "../envs/taxonomy.yml"
+        "../envs/mmseqs.yml"
+    threads: 10
     shell:
         """
-        contigtax search {params.settings} -p {threads} \
-            --tmpdir {params.tmpdir} -l {params.min_len} \
-            {input.fasta} {input.db} {output} >{log} 2>&1
+        rm -rf {params.tmpdir}*
+        mkdir -p {params.tmpdir}
+        mmseqs easy-taxonomy --local-tmp {params.tmpdir} --lca-mode 3 --tax-lineage 1 \
+            --lca-ranks {params.lca_ranks} --threads {threads} \
+            {input.fa} {params.seqTaxDB} {params.out} {params.tmpdir} > {log} 2>&1
+        rm -rf {params.tmpdir}*
         """
-
-
-rule contigtax_assign:
-    input:
-        tsv=expand(
-            results + "/annotation/{{assembly}}/final_contigs.{db}.tsv.gz",
-            db=config["taxonomy"]["database"],
-        ),
-        sql=ancient("resources/taxonomy/taxonomy.sqlite"),
-    output:
-        expand(
-            results + "/annotation/{{assembly}}/taxonomy/contigtax.{db}.taxonomy.tsv",
-            db=config["taxonomy"]["database"],
-        ),
-    log:
-        results + "/annotation/{assembly}/taxonomy/contigtax_assign.log",
-    params:
-        taxonomy_ranks=" ".join(config["taxonomy"]["ranks"]),
-        taxdir="resources/taxonomy",
-        settings=config["taxonomy"]["assign_params"],
-    threads: 4
-    resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 60 * 6,
-    conda:
-        "../envs/taxonomy.yml"
-    shell:
-        """
-         contigtax assign {params.settings} -p {threads} -m rank_lca \
-            --reportranks {params.taxonomy_ranks} -t {params.taxdir} \
-            {input.tsv} {output} > {log} 2>&1
-         """
-
 
 ##### sourmash #####
 

@@ -1,0 +1,7 @@
+name: mmseqs
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - mmseqs2=14.7e284
