@@ -48,7 +48,10 @@ def all_input(wildcards):
 
     if config["run_assembly"]:
         # add assembly output
-        wanted_input+=[f"{results}/assembly/{assembly}/final_contigs.fa" for assembly in assemblies.keys()]
+        wanted_input += [
+            f"{results}/assembly/{assembly}/final_contigs.fa"
+            for assembly in assemblies.keys()
+        ]
         # get annotation input
         wanted_input += annotation_input(config, assemblies)
         # get binning input
