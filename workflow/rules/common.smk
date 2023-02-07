@@ -48,7 +48,7 @@ wildcard_constraints:
     l="\d+",
     counts_type="(counts|rpkm)",
     norm_method="(TMM|RLE)",
-    seqTaxDB="[A-Za-z0-9]+"
+    seqTaxDB="[A-Za-z0-9/\-]+",
 
 
 config = check_uppmax(config)
