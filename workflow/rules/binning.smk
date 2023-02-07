@@ -779,7 +779,7 @@ rule trnascan_bins:
         else None,
     threads: 4
     conda:
-        "../envs/annotation.yml"
+        "../envs/trnascan.yml"
     envmodules:
         "bioinfo-tools",
         "tRNAscan-SE/2.0.9",

@@ -1,8 +1,7 @@
-name: annotation
+name: trnascan
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - prodigal=2.6.3
-  - eggnog-mapper=2.1.9
+  - trnascan-se=2.0.11

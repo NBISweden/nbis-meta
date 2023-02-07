@@ -1,8 +1,7 @@
-name: annotation
+name: pfam
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - prodigal=2.6.3
-  - eggnog-mapper=2.1.9
+  - pfam_scan=1.6

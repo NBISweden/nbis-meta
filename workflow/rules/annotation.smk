@@ -72,7 +72,7 @@ rule trnascan:
         if config["slurm_account"]
         else None,
     conda:
-        "../envs/annotation.yml"
+        "../envs/trnascan.yml"
     envmodules:
         "bioinfo-tools",
         "tRNAscan-SE/2.0.9",
@@ -142,7 +142,7 @@ rule press_rfams:
     log:
         "resources/infernal/cmpress.log",
     conda:
-        "../envs/annotation.yml"
+        "../envs/infernal.yml"
     envmodules:
         "bioinfo-tools",
         "infernal/1.1.4",
@@ -173,7 +173,7 @@ rule infernal:
         if config["slurm_account"]
         else None,
     conda:
-        "../envs/annotation.yml"
+        "../envs/infernal.yml"
     envmodules:
         "bioinfo-tools",
         "infernal/1.1.4",
@@ -236,7 +236,7 @@ rule press_pfam:
     log:
         "resources/pfam/hmmpress.log",
     conda:
-        "../envs/annotation.yml"
+        "../envs/pfam.yml"
     envmodules:
         "bioinfo-tools",
         "infernal/1.1.4",
@@ -255,7 +255,7 @@ rule pfam_scan:
     log:
         results + "/annotation/{assembly}/{assembly}.pfam.log",
     conda:
-        "../envs/annotation.yml"
+        "../envs/pfam.yml"
     envmodules:
         "bioinfo-tools",
         "pfam_scan/1.6",
