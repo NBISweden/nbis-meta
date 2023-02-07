@@ -20,7 +20,7 @@ preprocessing:
   # if no preprocessing is done, fastqc will be run on the raw reads
   fastqc: True
   # trim reads with trimmomatic? (quality and adapter trimming)
-  trimmomatic: True
+  trimmomatic: False
   # trim reads with cutadapt? (runs instead of trimmomatic, no quality trimming)
   cutadapt: False
   # run fastuniq (removes duplicates from paired-end samples)
@@ -96,7 +96,7 @@ sortmerna:
   extra_settings: "--num_alignments 1"
 
 # remove duplicates from bam files?
-remove_duplicates: True
+remove_duplicates: False
 
 assembly:
   # run Megahit assembler?
@@ -129,38 +129,18 @@ annotation:
   # run tRNAscan-SE?
   tRNAscan: False
   # run infernal for rRNA identification?
-  infernal: True
+  infernal: False
   # run eggnog-mapper to infer KEGG orthologs, pathways and modules?
-  eggnog: False
+  eggnog: True
   # run PFAM-scan to infer protein families from PFAM?
-  pfam: True
+  pfam: False
   # run Resistance gene identifier?
   rgi: False
   # run taxonomic annotation of assembled contigs (using contigtax + sourmash)?
-  taxonomy: False
+  taxonomy: True
 
 # params for taxonomic annotation of contigs/orfs
 taxonomy:
-  # minimum length of contigs to use for taxonomic annotation
-  min_len: 300
-  # parameters for contigtax search
-  # use more permissive settings for search compared to assign in order to
-  # modify assignments without having to rerun the search step
-  search_params: "--evalue 0.01 --top 10"
-  # parameters for contigtax assign
-  # by default the lowest common ancestor is assigned from the list of top hits
-  # to instead use a voting strategy set --mode rank_vote
-  assign_params: "--evalue 0.001 --top 5 --mode rank_lca"
-  # hash fraction to use for sourmash when computing signatures for contigs
-  # this is evaluated as 1/<sourmash_fraction>
-  sourmash_fraction: 100
-  # kmer size to use when computing signatures
-  sourmash_kmer_size: 31
-  # sourmash database to use
-  # see https://sourmash.readthedocs.io/en/latest/databases.html
-  # and choose an LCA database link matching the sourmash_kmer_size
-  sourmash_database_url: https://osf.io/ypsjq/download
-  # ranks to report taxonomy for
   ranks:
     - "superkingdom"
     - "phylum"
@@ -169,9 +149,22 @@ taxonomy:
     - "family"
     - "genus"
     - "species"
-  # protein database to use for taxonomic assignments
-  # choose between uniref50, uniref90, uniref100 and nr.
-  database: "uniref100"
+  # database to use for taxonomic assignments
+  # please refer to the table of available taxonomic databases at the
+  # mmseqs2 wiki https://github.com/soedinglab/MMseqs2/wiki#downloading-databases
+  database:
+    - "UniRef100"
+    #- "UniRef90"
+    #- "UniRef50"
+    #- "UniProtKB"
+    #- "UniProtKB/TrEMBL"
+    #- "UniProtKB/Swiss-Prot"
+    #- "NR
+    #- "GTDB"
+    #- "SILVA"
+    #- "Kalamari"
+  # Extra parameters to pass to mmseqs2 taxonomy
+  mmseqs_extra_params: ""
 
 binning:
   # should all samples be used to generate abundance profiles?
