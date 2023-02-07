@@ -1,48 +1,110 @@
 localrules:
-    taxonomy,
-    download_sourmash_db,
-    contigtax_assign_orfs,
-    sourmash_compute,
-    merge_contigtax_sourmash,
+    taxonomy
 
 
 ##### taxonomy master rule #####
 rule taxonomy:
     input:
         expand(
-            results + "/annotation/{assembly}/taxonomy/orfs.{db}.taxonomy.tsv",
+            results + "/annotation/{assembly}/{db}.taxonomy.tsv",
             assembly=assemblies.keys(),
             db=config["taxonomy"]["database"],
         ),
 
+rule mmseq_downloadDB:
+    output:
+        expand("resources/mmseqs/{{seqTaxDB}}{suff}",
+            suff=["", "_taxonomy", "_mapping", "_h.dbtype", "_h.index", "_h", ".lookup",
+                  ".dbtype", ".index"])
+    params:
+        seqTaxDB = "{seqTaxDB}",
+        tmpdir="$TMPDIR.{seqTaxDB}",
+    threads: 4
+    resources:
+        runtime = 24 * 60 * 3,
+        mem_mib = mem_allowed,
+    envmodules:
+        "bioinfo-tools",
+        "MMseqs2/14-7e284",
+    conda:
+        "../envs/mmseqs.yml"
+    shell:
+        """
+        mkdir -p {params.tmpdir}
+        mmseqs databases  {params.seqTaxDB} {output[0]} {params.tmpdir} --threads {threads}
+        rm -rf {params.tmpdir}
+        """
+
+rule mmseqs_createqueryDB:
+    output:
+        queryDB=expand(
+            results + "/annotation/{{assembly}}/mmseqs/queryDB{suff}",
+            suff=["", "_h", ".index", "_h.index"],
+        ),
+    input:
+        fa=results + "/assembly/{assembly}/final_contigs.fa",
+    log:
+        results + "/annotation/{assembly}/mmseqs/createdb.log",
+    params:
+        mem_mib=mem_allowed,
+    envmodules:
+        "bioinfo-tools",
+        "MMseqs2/14-7e284",
+    conda:
+        "../envs/mmseqs.yml"
+    shell:
+        """
+        mmseqs createdb {input.fa} {output.queryDB[0]} --dbtype 2 --shuffle 0 \
+            --createdb-mode 1 --write-lookup 0 --id-offset 0 --compressed 0 -v 3 > {log} 2>&1
+        """
+
 
 rule mmseqs_taxonomy:
     output:
-        tsv = results + "/annotation/{assembly}/{seqTaxDB}_lca.tsv",
-    log:
-        results + "/annotation/{assembly}/{seqTaxDB}.mmseqs.log"
-    input:
-        seqTaxDB=expand(
-            "resources/mmseqs/{{seqTaxDB}}{suff}",
-            suff=[
-                "",
-                ".index",
-                ".dbtype",
-                ".lookup",
-                "_h",
-                "_h.dbtype",
-                "_h.index",
-                "_mapping",
-                "_taxonomy",
-            ],
+        expand(results + "/annotation/{{assembly}}/mmseqs/{{seqTaxDB}}{suff}",
+            suff=[".dbtype", ".index", "_aln.dbtype", "_aln.index"],
         ),
-        fa = results + "/assembly/{assembly}/final_contigs.fa"
-    params:
+    input:
+        queryDB=rules.mmseqs_createqueryDB.output.queryDB[0],
         seqTaxDB="resources/mmseqs/{seqTaxDB}",
-        tmpdir="$TMPDIR/mmseqs.{assembly}",
-        out = lambda wildcards, output: os.path.dirname(output.tsv) + "/" + wildcards.seqTaxDB,
-        lca_ranks = ",".join(config["taxonomy"]["ranks"]),
-        sensitivity = 7.5
+    log:
+        results + "/annotation/{assembly}/mmseqs/{seqTaxDB}.taxonomy.log",
+    params:
+        lca_ranks=",".join(config["taxonomy"]["ranks"]),
+        out=lambda wildcards, output: os.path.dirname(output[0])
+        + "/"
+        + wildcards.seqTaxDB,
+        tmpdir="$TMPDIR/mmseqs.taxonomy.{assembly}",
+        mem_mib=mem_allowed,
+        extra_params=config["taxonomy"]["mmseqs_extra_params"]
+    threads: 20
+    envmodules:
+        "bioinfo-tools",
+        "MMseqs2/14-7e284",
+    conda:
+        "../envs/mmseqs.yml"
+    shell:
+        """
+        mkdir -p {params.tmpdir}
+        mmseqs taxonomy {input.queryDB} {input.seqTaxDB} {params.out} {params.tmpdir} \
+            --lca-mode 3 --tax-output-mode 2 --lca-ranks {params.lca_ranks} --tax-lineage 1 \
+            --threads {threads} --local-tmp {params.tmpdir} --remove-tmp-files 1 > {log} 2>&1 
+        """
+
+
+rule mmseqs_createtsv:
+    output:
+        lca=results + "/annotation/{assembly}/{seqTaxDB}.taxonomy.tsv",
+    input:
+        queryDB=rules.mmseqs_createqueryDB.output.queryDB[0],
+        taxRes=rules.mmseqs_taxonomy.output,
+    log:
+        results + "/annotation/{assembly}/{seqTaxDB}.createtsv.log",
+    params:
+        taxRes=lambda wildcards, input: os.path.dirname(input.taxRes[0])
+        + "/"
+        + wildcards.seqTaxDB,
+        mem_mib=mem_allowed,
     envmodules:
         "bioinfo-tools",
         "MMseqs2/14-7e284",
@@ -51,93 +113,12 @@ rule mmseqs_taxonomy:
     threads: 10
     shell:
         """
-        rm -rf {params.tmpdir}*
-        mkdir -p {params.tmpdir}
-        mmseqs easy-taxonomy --local-tmp {params.tmpdir} --lca-mode 3 --tax-lineage 1 \
-            --lca-ranks {params.lca_ranks} --threads {threads} \
-            {input.fa} {params.seqTaxDB} {params.out} {params.tmpdir} > {log} 2>&1
-        rm -rf {params.tmpdir}*
+        mmseqs createtsv {input.queryDB} {params.taxRes} {output.lca} \
+            --threads {threads} --first-seq-as-repr 0 --target-column 1 \
+            --full-header 0 --idx-seq-src 0 --db-output 0 --compressed 0 -v 3  
         """
 
-##### sourmash #####
-
-
-rule download_sourmash_db:
-    output:
-        lca="resources/sourmash/sourmash_db.lca.json",
-        version="resources/sourmash/version.txt",
-    log:
-        "resources/sourmash/download.log",
-    params:
-        url=config["taxonomy"]["sourmash_database_url"],
-    shell:
-        """
-        curl -L -v -o {output.lca}.gz {params.url} > {log} 2>&1
-        grep filename {log} | cut -f2 -d ';' > {output.version}
-        gunzip {output.lca}.gz
-        """
-
-
-rule sourmash_compute:
-    input:
-        results + "/assembly/{assembly}/final_contigs.fa",
-    output:
-        results + "/assembly/{assembly}/final_contigs.fa.sig",
-    log:
-        results + "/assembly/{assembly}/sourmash_compute.log",
-    conda:
-        "../envs/sourmash.yml"
-    params:
-        frac=config["taxonomy"]["sourmash_fraction"],
-        k=config["taxonomy"]["sourmash_kmer_size"],
-    shell:
-        """
-        sourmash compute --singleton --scaled {params.frac} \
-            -k {params.k} -o {output} {input} > {log} 2>&1
-        """
-
-
-rule sourmash_classify:
-    input:
-        sig=results + "/assembly/{assembly}/final_contigs.fa.sig",
-        db="resources/sourmash/sourmash_db.lca.json",
-    output:
-        csv=results + "/annotation/{assembly}/taxonomy/sourmash.taxonomy.csv",
-    log:
-        results + "/annotation/{assembly}/taxonomy/sourmash.log",
-    params:
-        frac=config["taxonomy"]["sourmash_fraction"],
-    threads: 4
-    resources:
-        runtime=lambda wildcards, attempt: attempt**2 * 30,
-    conda:
-        "../envs/sourmash.yml"
-    shell:
-        """
-        sourmash lca classify --db {input.db} --scaled {params.frac} \
-            --query {input.sig} -o {output.csv} > {log} 2>&1
-        """
-
-
-##### common taxonomy rules #####
-
-
-rule merge_contigtax_sourmash:
-    input:
-        smash=results + "/annotation/{assembly}/taxonomy/sourmash.taxonomy.csv",
-        contigtax=expand(
-            results + "/annotation/{{assembly}}/taxonomy/contigtax.{db}.taxonomy.tsv",
-            db=config["taxonomy"]["database"],
-        ),
-    output:
-        results + "/annotation/{assembly}/taxonomy/final_contigs.taxonomy.tsv",
-    log:
-        results + "/annotation/{assembly}/taxonomy/merge.log",
-    script:
-        "../scripts/taxonomy_utils.py"
-
-
-rule contigtax_assign_orfs:
+rule assign_orfs:
     input:
         tax=results + "/annotation/{assembly}/taxonomy/final_contigs.taxonomy.tsv",
         gff=results + "/annotation/{assembly}/final_contigs.gff",

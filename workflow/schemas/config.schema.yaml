@@ -270,7 +270,9 @@ properties:
         - "family"
         - "genus"
         - "species"
-      database: "uniref100"
+      database:
+        - "UniRef100"
+      mmseqs_extra_params: ""
     properties:
       min_len:
         type: integer
@@ -291,9 +293,14 @@ properties:
           type: string
           enum: ["superkingdom","kingdom","phylum","class","order","family","genus","species"]
       database:
-        type: string
+        type: array
         description: protein database to use for taxonomic assignments
-        enum: ["uniref100", "uniref90", "uniref50", "nr"]
+        items:
+          type: string
+          enum: ["UniRef100", "UniRef90", "UniRef50", "UniProtKB", "UniProtKB/TrEMBL", "UniProtKB/Swiss-Prot", "NR", "GTDB", "SILVA", "Kalamari"]
+      mmseqs_extra_params:
+        type: string
+        description: extra parameters to pass to mmseqs taxonomy
 
   binning:
     type: object
