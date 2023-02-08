@@ -708,9 +708,10 @@ def annotation_input(config, assemblies):
         # Add taxonomic annotation
         if config["annotation"]["taxonomy"]:
             input += expand(
-                "{results}/annotation/{assembly}/taxonomy/tax.{counts_type}.tsv",
+                "{results}/annotation/{assembly}/{seqTaxDB}.orfs.taxonomy.{counts_type}.tsv",
                 results=[results],
                 assembly=[assembly],
+                seqTaxDB=config["taxonomy"]["database"],
                 counts_type=["counts", "rpkm"],
             )
         # Add Resistance Gene Identifier output
