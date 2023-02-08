@@ -166,48 +166,10 @@ Then make sure your config file contains:
     binning:
         gtdbtk: True
 
-nr
-===================
-
-Uppmax provides monthly snapshots of the ``nr`` non-redundant database. While
-the formatted file cannot be used directly with the ``nbis-meta`` workflow you
-can save time by making use of the already downloaded fasta file.
-
-To use the latest snapshot of ``nr`` for taxonomic annotation of contigs, do:
+MMseqs2 taxonomy databases
+==========================
 
 .. code-block:: bash
 
-    mkdir resources/nr
-    ln -s /sw/data/diamond_databases/Blast/latest/download/nr.gz resources/nr/nr.fasta.gz
-    file /sw/data/diamond_databases/Blast/latest | egrep -o "[0-9]{8}-[0-9]{6}" > resources/nr/nr.version
-
-Then update the ``taxonomy`` section in your config file to use the ``nr`` database:
-
-.. code-block:: yaml
-
-    taxonomy:
-        database: "nr"
-
-
-Uniref90
-========
-
-The UniRef90 database is clustered at 90% sequence identity and Uppmax provides
-downloaded fasta files that can be used directly with the workflow.
-
-To use the latest snapshot of ``UniRef90`` for taxonomic annotation of contigs,
-do:
-
-.. code-block:: bash
-
-    mkdir resources/uniref90
-    ln -s /sw/data/diamond_databases/UniRef90/latest/download/uniref90.fasta.gz resources/uniref90/uniref90.fasta.gz
-    file /sw/data/diamond_databases/UniRef90/latest | egrep -o "[0-9]{4}_[0-9]{2}" > resources/uniref90/uniref90.version
-
-Then update the ``taxonomy`` section in your config file to use the ``uniref90``
-database:
-
-.. code-block:: yaml
-
-    taxonomy:
-        database: "uniref90"
+    mkdir -p resources/mmseqs
+    ln -s /sw/data/MMseqs2_data/20230125/rackham/* resources/mmseqs/

@@ -14,6 +14,23 @@ This will run the workflow on your current computer, using 4 CPU cores. Several
 command-line settings are defined by the ``local`` profile (defined by the ``local/config.yaml``
 configuration file) (run ``snakemake --help`` to see the full list of options).
 
+******************
+Running on Mac OSX
+******************
+
+Several of the conda packages used in the workflow are not supported or outdated
+for Mac OSX. It is therefore recommended to use Docker to run the workflow on
+OSX. Start by obtaining the latest snakemake Docker image:
+.. code-block:: bash
+
+    docker pull snakemake/snakemake:latest
+
+Then use git...
+
+.. code-block:: bash
+
+    docker run --rm -it -v $(pwd):/nbis-meta snakemake/snakemake snakemake --directory /nbis-meta/ -s /nbis-meta/workflow/Snakefile --profile /nbis-meta/local -n
+
 
 ****************************************************
 Running the workflow with the SLURM Workload Manager
