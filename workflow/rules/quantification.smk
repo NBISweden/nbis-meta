@@ -240,12 +240,9 @@ rule sum_to_taxa:
     Sums read counts and RPKM values for genes to assigned taxonomy
     """
     input:
-        tax=expand(
-            results + "/annotation/{{assembly}}/taxonomy/orfs.{db}.taxonomy.tsv",
-            db=config["taxonomy"]["database"],
-        ),
+        tax=results + "/annotation/{assembly}/{seqTaxDB}.orfs.taxonomy.tsv",
         abund=results + "/annotation/{assembly}/gene_{counts_type}.tsv",
     output:
-        results + "/annotation/{assembly}/taxonomy/tax.{counts_type}.tsv",
+        results + "/annotation/{assembly}/{seqTaxDB}.orfs.taxonomy.{counts_type}.tsv",
     script:
         "../scripts/quantification_utils.py"
