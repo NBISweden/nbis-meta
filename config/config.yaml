@@ -265,7 +265,7 @@ bowtie2:
 # what type of read-based classification to do
 classification:
   # run kraken2 read classifier?
-  kraken: True
+  kraken: False
   # run centrifuge to classify reads
   centrifuge: False
   # run metaphlan profiler?

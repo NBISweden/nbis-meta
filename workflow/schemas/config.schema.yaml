@@ -231,10 +231,10 @@ properties:
     default:
       splits: 0
       tRNAscan: False
-      infernal: True
-      eggnog: False
-      pfam: True
-      taxonomy: False
+      infernal: False
+      eggnog: True
+      pfam: False
+      taxonomy: True
     properties:
       splits:
         type: integer
@@ -258,10 +258,6 @@ properties:
   taxonomy:
     type: object
     default:
-      min_len: 300
-      search_params: "--evalue 0.01 --top 10"
-      assign_params: "--evalue 0.001 --top 5"
-      sourmash_fraction: 100
       ranks:
         - "superkingdom"
         - "phylum"
@@ -274,18 +270,6 @@ properties:
         - "UniRef100"
       mmseqs_extra_params: ""
     properties:
-      min_len:
-        type: integer
-        description: minimum length of contigs to assign taxonomy to
-      search_params:
-        type: string
-        description: parameters for contigtax search
-      assign_params:
-        type: string
-        description: parameters for contigtax assign
-      sourmash_fraction:
-        type: integer
-        description: Hash fraction to use for sourmash when computing signatures for contigs
       ranks:
         type: array
         description: ranks to report taxonomy for
@@ -310,7 +294,7 @@ properties:
         - 1500
       metabat: False
       maxbin: False
-      concoct: False
+      concoct: True
       fastani: False
       threads: 20
       checkm: False
