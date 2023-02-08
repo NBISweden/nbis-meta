@@ -121,16 +121,24 @@ class PollSqueueThread(threading.Thread):
             try_num += 1
             try:
                 logger.debug("Calling %s (try %d)", cmd, try_num)
-                output = subprocess.check_output(cmd, timeout=self.squeue_timeout, text=True)
+                output = subprocess.check_output(
+                    cmd, timeout=self.squeue_timeout, text=True
+                )
                 break
             except subprocess.TimeoutExpired as e:
-                logger.debug("Call to %s timed out (try %d of %d)", cmd, try_num, self.max_tries)
+                logger.debug(
+                    "Call to %s timed out (try %d of %d)", cmd, try_num, self.max_tries
+                )
             except subprocess.CalledProcessError as e:
-                logger.debug("Call to %s failed (try %d of %d)", cmd, try_num, self.max_tries)
+                logger.debug(
+                    "Call to %s failed (try %d of %d)", cmd, try_num, self.max_tries
+                )
         if try_num >= self.max_tries:
             raise Exception("Problem with call to %s" % cmd)
         else:
-            parsed = {x.split("|")[0]: x.split("|")[1] for x in output.strip().split("\n")}
+            parsed = {
+                x.split("|")[0]: x.split("|")[1] for x in output.strip().split("\n")
+            }
             logger.debug("Returning state of %s as %s", jobid, parsed[jobid])
             return parsed[jobid]
 
@@ -143,24 +151,35 @@ class PollSqueueThread(threading.Thread):
         """Run the call to ``squeue``"""
         cluster = CookieCutter.get_cluster_option()
         try_num = 0
-        cmd = [SQUEUE_CMD, "--user={}".format(os.environ.get("USER")), "--format=%i,%T", "--state=all"]
+        cmd = [
+            SQUEUE_CMD,
+            "--user={}".format(os.environ.get("USER")),
+            "--format=%i,%T",
+            "--state=all",
+        ]
         if cluster:
             cmd.append(cluster)
         while try_num < self.max_tries:
             try_num += 1
             try:
                 logger.debug("Calling %s (try %d)", cmd, try_num)
-                output = subprocess.check_output(cmd, timeout=self.squeue_timeout, text=True)
+                output = subprocess.check_output(
+                    cmd, timeout=self.squeue_timeout, text=True
+                )
                 logger.debug("Output is:\n---\n%s\n---", output)
                 break
             except subprocess.TimeoutExpired as e:
                 if not allow_failure:
                     raise
-                logger.debug("Call to %s timed out (try %d of %d)", cmd, try_num, self.max_tries)
+                logger.debug(
+                    "Call to %s timed out (try %d of %d)", cmd, try_num, self.max_tries
+                )
             except subprocess.CalledProcessError as e:
                 if not allow_failure:
                     raise
-                logger.debug("Call to %s failed (try %d of %d)", cmd, try_num, self.max_tries)
+                logger.debug(
+                    "Call to %s failed (try %d of %d)", cmd, try_num, self.max_tries
+                )
         if try_num >= self.max_tries:
             logger.debug("Giving up for this round")
         else:
@@ -201,7 +220,8 @@ class JobStateHttpHandler(http.server.BaseHTTPRequestHandler):
         auth_required = "Bearer %s" % self.server.http_secret
         auth_header = self.headers.get("Authorization")
         logger.debug(
-            "Authorization header is %s, required: %s" % (repr(auth_header), repr(auth_required))
+            "Authorization header is %s, required: %s"
+            % (repr(auth_header), repr(auth_required))
         )
         if auth_header != auth_required:
             self.send_response(403)
@@ -240,7 +260,9 @@ class JobStateHttpHandler(http.server.BaseHTTPRequestHandler):
         auth_required = "Bearer %s" % self.server.http_secret
         auth_header = self.headers.get("Authorization")
         logger.debug(
-            "Authorization header is %s, required: %s", repr(auth_header), repr(auth_required)
+            "Authorization header is %s, required: %s",
+            repr(auth_header),
+            repr(auth_required),
         )
         # Otherwise, register job ID
         job_id = self.path[len("/job/status/") :]
