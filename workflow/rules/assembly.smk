@@ -36,6 +36,8 @@ rule generate_metaspades_input:
     params:
         assembly=lambda wildcards: assemblies[wildcards.assembly],
         assembler="metaspades",
+    conda:
+        "../envs/biopython.yml"
     script:
         "../scripts/assembly_io.py"
 
@@ -120,6 +122,8 @@ rule generate_megahit_input:
         results + "/assembly/{assembly}/input_list.log",
     params:
         assembly=lambda wildcards: assemblies[wildcards.assembly],
+    conda:
+        "../envs/biopython.yml"
     script:
         "../scripts/assembly_io.py"
 
