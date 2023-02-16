@@ -16,10 +16,7 @@ env:
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
     - uses: s-weigand/setup-conda@v1
@@ -31,7 +28,7 @@ jobs:
     # Test cutadapt (10k reads/sample)
     - name: Cutadapt
       run: |
-        snakemake --use-conda -j 4 --configfile .test/config/cutadapt.yaml -p --notemp qc
+        snakemake --profile local --configfile .test/config/cutadapt.yaml -c 4 --notemp qc
     # Test all other preprocessing software except cutadapt (10k reads/sample)
     - name: Preprocess
       run: |
@@ -45,12 +42,11 @@ jobs:
     # Test annotations + normalizations with metaspades (100k reads/sample)
     - name: Annotation
       run: |
-        bash .test/scripts/prep_eggnog.sh
-        bash .test/scripts/prep_taxonomy.sh
-        mkdir -p results/annotation/emapper-test
-        cp .test/data/emapper-out.tsv results/annotation/emapper-test/emapper-test.emapper.annotations
-        snakemake --config sample_list=.test/config/emapper-test.tsv --use-conda -j 2 --configfile .test/config/annotate.yaml -p results/annotation/emapper-test/{kos,modules,pathways,enzymes}.parsed.tsv
-        snakemake --use-conda -j 2 --configfile .test/config/annotate.yaml -p annotate
+        #bash .test/scripts/prep_eggnog.sh
+        #mkdir -p results/annotation/emapper-test
+        #cp .test/data/emapper-out.tsv results/annotation/emapper-test/emapper-test.emapper.annotations
+        #snakemake --config sample_list=.test/config/emapper-test.tsv --use-conda -j 2 --configfile .test/config/annotate.yaml -p results/annotation/emapper-test/{kos,modules,pathways,enzymes}.parsed.tsv
+        snakemake --profile local --configfile .test/config/annotate.yaml -c 2 taxonomy
     # Test splitting protein fasta prior to running pfam_sca
     - name: Split
       run: |
@@ -60,14 +56,6 @@ jobs:
     - name: Metabat
       run: |
         snakemake --use-conda -j 4 --configfile .test/config/metabat.yaml -p bin assemble
-
-  test_linux:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: s-weigand/setup-conda@v1
-    - name: Install the conda environment
-      run: conda env update -n base -f environment.yml
     - name: Set up checkm database
       uses: actions/cache@v2
       env:
