@@ -129,23 +129,6 @@ annotation:
 
 # params for taxonomic annotation of contigs/orfs
 taxonomy:
-  # minimum length of contigs to use for taxonomic annotation
-  min_len: 300
-  # parameters for tango search
-  # use more permissive settings for search compared to assign in order to
-  # modify assignments without having to rerun the search step
-  search_params: "--evalue 0.01 --top 10"
-  # parameters for tango assign
-  assign_params: "--evalue 0.001 --top 5"
-  # hash fraction to use for sourmash when computing signatures for contigs
-  # this is evaluated as 1/<sourmash_fraction>
-  sourmash_fraction: 100
-  # kmer size to use when computing signatures
-  sourmash_kmer_size: 31
-  # sourmash database to use
-  # see https://sourmash.readthedocs.io/en/latest/databases.html
-  # and choose an LCA database link matching the sourmash_kmer_size
-  sourmash_database_url: https://osf.io/ypsjq/download
   # ranks to report taxonomy for
   ranks:
     - "superkingdom"
@@ -157,7 +140,8 @@ taxonomy:
     - "species"
   # protein database to use for taxonomic assignments
   # choose between uniref50, uniref90, uniref100 and nr.
-  taxdb: "uniref100"
+  database:
+    - "UniRef100"
 
 binning:
   # minimum contig lengths to use for binning. binning will be run for every
