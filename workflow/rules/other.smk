@@ -47,3 +47,21 @@ rule generate_examples:
          seqtk sample -s {wildcards.s} {input} \
             {params.example_dataset_size} | gzip -c > {output}
          """
+
+rule prep_taxonomy:
+    output:
+        expand("resources/mmseqs/UniRef100{suff}",
+            suff=["", "_taxonomy", "_mapping", "_h.dbtype", "_h.index", "_h",
+                ".lookup", ".dbtype", ".index", ])
+    input:
+        fasta=".test/data/uniref100.fasta",
+        taxmap=".test/data/taxidmap"
+    params:
+        tmpdir = "$TMPDIR"
+    conda:
+        "../envs/mmseqs.yml"
+    shell:
+        """
+        mmseqs createdb {input.fasta} {output[0]}
+        mmseqs createtaxdb {output[0]} {params.tmpdir} --tax-mapping-file {input.taxmap}
+        """
